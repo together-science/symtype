@@ -1,8 +1,27 @@
+/*
+
+Logic.py ported from sympy/core into TypeScript
+
+Notable chnages made (WB & GM):
+- Null is being used as a third boolean value instead of 'none'
+- Arrays are being used instead of tuples
+- The methods hashKey() and toString() are added to Logic for hashing. The 
+  static method hashKey() is also added to Logic and hashes depending on the input.
+- The array args in the AndOr_Base constructor is not sorted or put in a set
+  since we did't see why this would be necesary
+- A constructor is added to the logic class, which is used by the "__new__" 
+methods in the Logic and AndOr_Base classes
+- In the flatten method of AndOr_Base we removed the try catch and changed the 
+while loop to depend on the legnth of the args array
+
+*/
+
+
 function _torf(args: any[]): boolean | null {
     /* Return True if all args are True, False if they
-    are all False, else None (WB: null).
+    are all False, else None 
     >>> from sympy.core.logic import _torf
-    >>> _torf((True, True)) (WB: using arrays instead of tuples)
+    >>> _torf((True, True)) 
     True
     >>> _torf((False, False))
     False
@@ -122,7 +141,9 @@ function fuzzy_and(args: any[]): boolean | null  {
         } if (rv) { // this will stop updating if a None is ever trapped
             rv = ai;
         }
+    }
     return rv;
+
 }
 
 function fuzzy_not(v: any): boolean {
@@ -202,11 +223,31 @@ function fuzzy_nand(args: any[]): boolean | null  {
 
 class Logic {
 
-    static op_2class: Record<string, (...args: any[]) => Logic>;
+    static op_2class: Record<string, (...args: any[]) => Logic> = {
+        '&' : (...args) => {
+            return And.__new__(And.prototype, ...args);
+        },
+        '|' : (...args) => {
+            return Or.__new__(Or.prototype, ...args);
+        },
+        '!' : (arg) => {
+            return Not.__new__(Not.prototype, arg);
+        }
+    }
     args: any[];
 
     constructor(...args: any[]) { 
         this.args = args;
+    }
+
+    static hashKey(x: any) {
+        if (x === null) {
+            return "null";
+        } 
+        if (x.hashKey) {
+            return x.hashKey();
+        } 
+        return x.toString();
     }
 
     static __new__(cls: any, ...args: any[]) {
@@ -222,7 +263,7 @@ class Logic {
     }
 
     toString() {
-        return "Logic " + args.toString();
+        return "Logic " + this.args.toString();
     }
 
     getNewArgs(): any[] {
@@ -270,7 +311,6 @@ class Logic {
         }
     }
 
-    // to-do: test cases
     static fromstring(text: string) {
         /* Logic from string with space around & and | but none after !.
            e.g.
@@ -278,8 +318,8 @@ class Logic {
         */
        let lexpr = null; // current logical expression
        let schedop = null; // scheduled operation
-       for (let term in text.split(", ")) {
-           let flexTerm: string | Logic = term;
+       for (let term of text.split(" ")) {
+            let flexTerm: string | Logic = term;
             // operation symbol
             if ("&|".includes(flexTerm)) {
                 if (schedop != null) {
@@ -296,45 +336,37 @@ class Logic {
             }
             if (flexTerm[0] == "!") {
                 if (flexTerm.length == 1) {
-                    throw new Error("do not include space after")
+                    throw new Error("do not include space after !")
                 }
                 flexTerm = new Not(flexTerm.substring(1)); 
             }
             // already scheduled operation, e.g. '&'
             if (schedop) {
-                lexpr = Logic.op_2class[schedop](lexpr, flexTerm)
+                lexpr = Logic.op_2class[schedop](lexpr, flexTerm);
                 schedop = null;
-                continue
+                continue;
             }
-
             // this should be atom
             if (lexpr != null) {
                 throw new Error("missing op between " + lexpr + " and " + flexTerm )
             }
-
             lexpr = flexTerm
+        }
 
-            // let's check that we ended up in correct state
-            if (schedop != null) {
-                throw new Error("premature end-of-expression in " + text)
-            } if (lexpr == null) {
-                throw new Error(text + " is empty")
-            }
-    
-            // everything looks good now
-            return lexpr
-       }
+        // let's check that we ended up in correct state
+        if (schedop != null) {
+            throw new Error("premature end-of-expression in " + text);
+        } 
+        if (lexpr == null) {
+            throw new Error(text + " is empty");
+        }
+        // everything looks good now
+        return lexpr
     }
 }
 
 
 class AndOr_Base extends Logic {
-
-    /*
-    constructor(...args) {
-        super(...args);
-    }
-    */
 
     static __new__(cls: any, ...args: any[]) {
         let bargs: any[] = [];
@@ -347,12 +379,12 @@ class AndOr_Base extends Logic {
             bargs.push(a);
         }
 
-        // args = sorted(set(this.flatten(bargs)), key=hash) 
+        // prev version: args = sorted(set(this.flatten(bargs)), key=hash) 
         // we think we don't need the sort and set
         args = AndOr_Base.flatten(bargs);
 
         // creating a set with hash keys for args
-        let args_set = new Set(args.map((e) => e.hashKey()));
+        let args_set = new Set(args.map((e) => Logic.hashKey(e)));
 
         for (let a of args) { 
             if (args_set.has((new Not()).hashKey())) { 
@@ -373,13 +405,9 @@ class AndOr_Base extends Logic {
         // quick-n-dirty flattening for And and Or
         let args_queue: any[] = [...args];
         let res = []
-        while (true) {
+        while (args_queue.length > 0) {
             let arg: any;
-            try {
-                arg = args_queue.pop()
-            } catch {
-                break;
-            }
+            arg = args_queue.pop()
             if (arg instanceof Logic) {
                 if (arg instanceof this) {
                     args_queue.push(arg.args)
@@ -449,13 +477,13 @@ class Or extends AndOr_Base {
         return true;
     }
 
-    _eval_propagate_not(): Or {
+    _eval_propagate_not(): And {
         //! (a&b&c ...) == !a | !b | !c ...
         let param = new Array()
         for (let a of param) {
-            param.push(new Not(a)) // ??
+            param.push(new Not(a)) 
         }
-        return new And(...param) // ???
+        return new And(...param) 
     }
     
 }
@@ -481,26 +509,6 @@ class Not extends Logic {
     arg() {
         return this.args[0];
     }
-}
-
-
-Logic.op_2class['&'] = (...args) => {
-    return And.__new__(And.prototype, ...args);
-}
-Logic.op_2class['|'] = (...args) => {
-    return Or.__new__(Or.prototype, ...args);
-}
-Logic.op_2class['!'] = (arg) => {
-    return Not.__new__(Not.prototype, arg);
-}
-
-// make a function to test
-
-function test() {
-    let a = Logic.fromstring("a & b")
-    let b = Logic.fromstring("a | b")
-}
-
 }
 
 
