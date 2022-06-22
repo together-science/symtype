@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+      "allowJs": true,
+      "noImplicitAny": true,
+      "removeComments": true,
+      "preserveConstEnums": true,
+      "sourceMap": true,
+      "allowSyntheticDefaultImports": true,
+      "target": "ES2016",
+      "outDir": "out",
+    },
+    "files" : [
+      "core/logic.ts",
+    ],
+  }
