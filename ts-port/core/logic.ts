@@ -10,11 +10,14 @@ Notable chnages made (WB & GM):
 - The array args in the AndOr_Base constructor is not sorted or put in a set
   since we did't see why this would be necesary
 - A constructor is added to the logic class, which is used by the "__new__" 
-methods in the Logic and AndOr_Base classes
+  methods in the Logic and AndOr_Base classes
 - In the flatten method of AndOr_Base we removed the try catch and changed the 
-while loop to depend on the legnth of the args array
+  while loop to depend on the legnth of the args array
+- Added expand() and eval_propagate_not as abstract methods to the Logic class
 
 */
+
+import { Util } from './utility'
 
 
 function _torf(args: any[]): boolean | null {
@@ -240,14 +243,12 @@ class Logic {
         this.args = args;
     }
 
-    static hashKey(x: any) {
-        if (x === null) {
-            return "null";
-        } 
-        if (x.hashKey) {
-            return x.hashKey();
-        } 
-        return x.toString();
+    _eval_propagate_not(): any {
+        throw new Error("Eval propagate not is abstract in Logic")
+    }
+
+    expand(): any {
+        throw new Error("Expand is abstract in Logic")
     }
 
     static __new__(cls: any, ...args: any[]) {
@@ -384,7 +385,7 @@ class AndOr_Base extends Logic {
         args = AndOr_Base.flatten(bargs);
 
         // creating a set with hash keys for args
-        let args_set = new Set(args.map((e) => Logic.hashKey(e)));
+        let args_set = new Set(args.map((e) => Util.hashKey(e)));
 
         for (let a of args) { 
             if (args_set.has((new Not()).hashKey())) { 
@@ -436,7 +437,7 @@ class And extends AndOr_Base {
     }
 
     // (a|b|...) & c == (a&c) | (b&c) | ...
-    expand() {
+    expand(): any {
         // first locate Or
         for (let i = 0; i < this.args.length; i++) {
             let arg = this.args[i];
@@ -459,7 +460,7 @@ class And extends AndOr_Base {
 
                 for (let j = 0; j < orterms.length; j++) {
                     if (orterms[j] instanceof Logic) {
-                        orterms[j] = (orterms[j] as any).expand();
+                        orterms[j] = orterms[j].expand();
                     }
                 }
                 let res = new Or(...orterms)
@@ -499,7 +500,7 @@ class Not extends Logic {
             return arg.args[0];
         } else if (arg instanceof Logic) {
             // XXX this is a hack to expand right from the beginning
-            arg = (arg as any)._eval_propagate_not();
+            arg = arg._eval_propagate_not();
             return arg;
         } else {
             throw new Error("Not: unknown argument " + arg)
@@ -510,5 +511,7 @@ class Not extends Logic {
         return this.args[0];
     }
 }
+
+export { Logic, And, Or, Not };
 
 
