@@ -32,18 +32,30 @@ class Util {
     }
 }
 
+
+
 // custom version of the Set class
 // needed since sympy relies on item tuples with equal contents being mapped
 // to the same entry
 class HashSet {
-    dict: Record<string, any>
+    dict: Record<string, any>;
+    size: number;
     constructor(arr?: any[]) {
+        this.size = 0;
         this.dict = {};
         if (arr) {
-            arr.forEach(element => {
+            Array.from(arr).forEach(element => {
                 this.add(element);
             });
         }
+    }
+
+    clone(): HashSet {
+        let newset: HashSet = new HashSet();
+        for (let item of this.dict.entries()) {
+            newset.add(item);
+        }
+        return newset;
     }
 
     encode(item: any): string {
@@ -51,7 +63,12 @@ class HashSet {
     }
 
     add(item: any) {
-        this.dict[this.encode(item)] = item;
+        let key = this.encode(item);
+        if (!(key in this.dict)) {
+            this.size++;
+        };
+        this.dict[key] = item;
+
     }
 
     has(item: any) {
@@ -70,41 +87,36 @@ class HashSet {
             .join(',');
     }
 
+    isEmpty() {
+        return this.size === 0;
+    }
+
+    remove(item: any) {
+        delete this.dict[this.encode(item)];
+    }
+
 }
 
-// sympy often uses defaultdict(set) which is not available in ts
-// we create a replacement dictionary class which returns an empty set
-// if the key used is not in the dictionary
-class SetDefaultDict {
+// a hashdict class replacing the dict class in python
+class HashDict {
     dict: Record<any, any>;
 
     constructor() {
         this.dict = {};
     }
 
-    get(key: any) {
-        let keyHash = Util.hashKey(key);
-        if (keyHash in this.dict) {
-            return this.dict[keyHash];
-        } 
-        return new HashSet();
-        /*
-        other way to write this:
-
-        let res = this.dict[key];
-        if (typeof res === "undefined") {
-            return SetDefaultDict.emptySet;
-        }
-        return res;
-        */
+    get(key: any): any {
+        let hash = Util.hashKey(key);
+        return this.dict[hash][1];
     }
 
     has(key: any): boolean {
-        return Util.hashKey(key) in this.dict;
+        let hashKey = Util.hashKey(key);
+        return hashKey in this.dict;
     }
 
     add(key: any, value: any) {
-        let keyHash = Util.hashKey(value);
+        let keyHash = Util.hashKey(key);
         this.dict[keyHash] = [key, value];
     }
 
@@ -121,7 +133,48 @@ class SetDefaultDict {
     entries() {
         return Object.values(this.dict);
     }
-
+    
+    addArr(arr: any[]) {
+        let keyHash = Util.hashKey(arr[0]);
+        this.dict[keyHash] = arr;
+    }
 }
 
-export { Util, HashSet, SetDefaultDict };
+
+
+// sympy often uses defaultdict(set) which is not available in ts
+// we create a replacement dictionary class which returns an empty set
+// if the key used is not in the dictionary
+class SetDefaultDict extends HashDict {
+
+    constructor() {
+        super();
+    }
+
+    get(key: any) {
+        let keyHash = Util.hashKey(key);
+        if (keyHash in this.dict) {
+            return this.dict[keyHash][1];
+        } 
+        return new HashSet();
+    }
+}
+
+
+// an implication class used as an alternative to tuples in sympy
+class Implication {
+    p;
+    q;
+
+    constructor(p: any, q: any) {
+        this.p = p;
+        this.q = q;
+    }
+
+    hashKey() {
+        return (this.p as string) + (this.q as string);
+    }
+}
+
+export { Util, HashSet, SetDefaultDict, HashDict, Implication };
+

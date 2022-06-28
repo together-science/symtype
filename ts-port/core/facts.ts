@@ -34,16 +34,19 @@ https://en.wikipedia.org/wiki/List_of_rules_of_inference
 /*
 
 Significant changes made (WB and GM):
-- Added multiple utility methods to utility.ts which are used in this file
-- Added the SetDefaultDict and HashSet classes which replace defaultdict(set) 
-  and set in the original implementation
+- Created the Implication class, use to represent the implication p -> q which
+  is stored as a tuple in sympy
+- Created the SetDefaultDict, HashDict and HashSet classes. SetDefaultDict acts
+  as a replcacement defaultdict(set), and HashDict and HashSet replace the 
+  dict and set classes.
+- Added isSubset() to the utility class to help with this program
 
 */
 
 
-import { Logic, And, Or, Not } from "./logic";
+import { Logic, True, False, And, Or, Not } from "./logic.js";
 
-import { Util, HashSet, SetDefaultDict } from "./utility";
+import { Util, HashSet, SetDefaultDict, HashDict, Implication } from "./utility.js";
 
 
 function _base_fact(atom: any) {
@@ -63,15 +66,15 @@ function _as_pair(atom: any) {
     Effectively, this merely strips the Not around a fact.
     */
    if (atom instanceof Not) {
-       return [atom.arg, false];
+       return new Implication(atom.arg, Logic.False);
    } else {
-       return [atom, true];
+       return new Implication(atom, Logic.True);
    }
 }
 
 // XXX this prepares forward-chaining rules for alpha-network
 
-function transitive_closure(implications: any[][]) {
+function transitive_closure(implications: Implication[]) {
     /*
     Computes the transitive closure of a list of implications
     Uses Warshall's algorithm, as described at
@@ -83,10 +86,10 @@ function transitive_closure(implications: any[][]) {
 
     for (let k of literals) {
         for (let i of literals) {
-            if (full_implications.has([i, k])) {
+            if (full_implications.has(new Implication(i, k))) {
                 for (let j of literals) {
-                    if (full_implications.has([k, j])) {
-                        full_implications.add([i, j]);
+                    if (full_implications.has(new Implication(k, j))) {
+                        full_implications.add(new Implication(i, j));
                     }
                 }
             }
@@ -96,7 +99,7 @@ function transitive_closure(implications: any[][]) {
 }
 
 
-function deduce_alpha_implications(implications: any[]) {
+function deduce_alpha_implications(implications: Implication[]) {
     /* deduce all implications
        Description by example
        ----------------------
@@ -109,37 +112,36 @@ function deduce_alpha_implications(implications: any[]) {
        implications: [] of (a,b)
        return:       {} of a -> set([b, c, ...])
        */
-    let new_arr: any[];
-    for (let item of implications) {
-        let i = item[0];
-        let j = item[1];
-        new_arr.push([Not[j], Not[i]]);
+    let new_arr: any[] = [];
+    for (let impl of implications) {
+        new_arr.push(new Implication(Not.New(impl.q), Not.New(impl.p)));
     }
     implications = implications.concat(new_arr);
     let res = new SetDefaultDict();
     let full_implications = transitive_closure(implications);
-    for (let item of full_implications.toArray()) {
-        let a = item[0];
-        let b = item[1];
-        if (a === b) {
+    for (let impl of full_implications.toArray()) {
+        if (impl.p === impl.q) {
             continue; // skip a->a cyclic input
         }
-        res.add(a, b);
+        let currSet = res.get(impl.p);
+        currSet.add(impl.q);
+        res.add(impl.p, currSet);
     } 
     // Clean up tautologies and check consistency
-    for (let item of Object.entries(res)) {
+    // impl is the set
+    for (let item of res.entries()) {
         let a = item[0];
-        let impl = item[1];
-        impl.discard(a);
-        let na = new Not(a);
-        if (impl.includes(na)) {  
+        let impl: HashSet = item[1]; 
+        impl.remove(a);
+        let na = Not.New(a);
+        if (impl.has(na)) {  
             throw new Error("implications are inconsistent: " + a + " -> " + na + " " + impl)
         }
     }
     return res;
 }
 
-function apply_beta_to_alpha_route(alpha_implications, beta_rules) {
+function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any[]) {
     /* apply additional beta-rules (And conditions) to already-built
     alpha implication tables
        TODO: write about
@@ -156,41 +158,46 @@ function apply_beta_to_alpha_route(alpha_implications, beta_rules) {
        a  ->  [b, !c, d, e]
     */
 
-    let x_impl: Record<any, any> = {}; 
-    for (let item of Object.entries(alpha_implications)) {
-        let x = item[0];
-        x_impl[x] = [new HashSet(alpha_implications[x]), []];
+       // is beta_rules an array or a dictionary?
+
+    let x_impl: HashDict =  new HashDict; 
+    for (let x of alpha_implications.keys()) {
+        let newset = new HashSet();
+        newset.add(alpha_implications.get(x));
+        let imp = new Implication(newset, []);
+        x_impl.add(x, imp);
     }
     for (let item of beta_rules) {
         let bcond = item[0];
         let bimpl = item[1];
         for (let bk of bcond.args) {
-            if (x_impl.includes(bk)) {
+            if (x_impl.has(bk)) {
                 continue;
             }
-            x_impl[bk] = [new HashSet(), []];
+            let imp = new Implication(new HashSet(), []);
+            x_impl.add(imp.p, imp.q);
         }
     }
     // static extensions to alpha rules:
     // A: x -> a,b   B: &(a,b) -> c  ==>  A: x -> a,b,c
 
-    let seen_static_extension: boolean = true;
-    while (seen_static_extension) {
-        seen_static_extension = false;
+    let seen_static_extension: Logic = Logic.True;
+    while (seen_static_extension instanceof True) {
+        seen_static_extension = Logic.False;
 
-        for (let item of beta_rules) {
-            let bcond = item[0];
-            let bimpl = item[1];
+        for (let impl of beta_rules) {
+            let bcond = impl.p;
+            let bimpl = impl.q;
             if (!(bcond instanceof And)) {
                 throw new Error("Cond is not And");
             }
             let bargs = new HashSet(bcond.args);
-            for (let item of Object.entries(x_impl)) {
-                let x = item[0];
-                let value = item[1];
-                let ximpls = value[0];
-                let bb = value[1];
-                let x_all = ximpls.add(x); 
+            for (let item of x_impl.entries()) {
+                let x = item[0];     
+                let impl = item[1];
+                let ximpls = impl.p;
+                let bb = impl.q;
+                let x_all = ximpls.clone().add(x);
                 // A: ... -> a   B: &(...) -> a  is non-informative
                 if (!(x_all.includes(bimpl)) && Util.isSubset(bargs.toArray(), x_all)) { 
                     ximpls.add(bimpl);
@@ -202,31 +209,33 @@ function apply_beta_to_alpha_route(alpha_implications, beta_rules) {
                     if (bimpl_impl != null) {
                         ximpls |= bimpl_impl[0];
                     }
-                    seen_static_extension = true;
+                    seen_static_extension = Logic.True;
                 }
             }   
         }
     }
     // attach beta-nodes which can be possibly triggered by an alpha-chain
     for (let bidx = 0; bidx < beta_rules.length; bidx++) {
-        let [bcond, bimpl] = beta_rules[bidx];
+        let impl = beta_rules[bidx];
+        let bcond = impl.p;
+        let bimpl = impl.q;
         let bargs = new HashSet(bcond.args);
-        for (let item of Object.entries(x_impl)) {
+        for (let item of x_impl.entries()) {
             let x = item[0];
-            let value = item[1];
-            let ximpls = value[0];
-            let bb = value[1];
-            let x_all = ximpls.add(x); /// 
-            if (x_all.includes(bimpl)) {
+            let value: Implication = item[1];
+            let ximpls = value.p;
+            let bb = value.q;
+            let x_all = ximpls.clone().add(x); 
+            if (x_all.has(bimpl)) {
                 continue;
             }
             // A: x -> a...  B: &(!a,...) -> ... (will never trigger)
             // A: x -> a...  B: &(...) -> !a     (will never trigger)
-            if (x_all.some((e) => (bargs.has(new Not(e)) || new Not(e) === bimpl))) { 
-                    continue;
+            if (x_all.some((e: any) => (bargs.has(Not.New(e)) || Not.New(e) === bimpl))) { 
+                continue;
             }
             if (bargs && x_all) {
-                bb.apend(bidx);
+                bb.push(bidx); 
             }
         }
     }
@@ -253,18 +262,17 @@ function rules_2prereq(rules: SetDefaultDict) {
 
     let prereq = new SetDefaultDict();
     for (let item of rules.entries()) { 
-        let key = item[0];
-        let impl: any = item[1];
-        let a: any = key[0];
+        let a = item[0].p;
+        let impl = item[1];
         if (a instanceof Not) {
             a = a.args[0];
         }
-        for (let item of impl) { 
-            let i: any = item[0];
+        for (let item of impl.toArray()) { 
+            let i = item.p;
             if (i instanceof Not) {
                 i = i.args[0];
             }
-            prereq.add(i, a);
+            prereq.get(i).add(a); 
         }
     }
     return prereq;
@@ -279,7 +287,7 @@ class TautologyDetected extends Error {
 
     args;
 
-    constructor(...args) {
+    constructor(...args: any[]) {
         super();
         this.args = args;
     }
@@ -310,20 +318,20 @@ class Prover {
    
     constructor() {
         this.proved_rules = [];
-        this._rules_seen = new Set();
+        this._rules_seen = new HashSet();
    }
 
    split_alpha_beta() {
         // split proved rules into alpha and beta chains
         let rules_alpha = []    // a      -> b
         let rules_beta = []     // &(...) -> b
-        for (let item of this.proved_rules) {
-            let a = item[0];
-            let b = item[1];
+        for (let impl of this.proved_rules) {
+            let a = impl.p;
+            let b = impl.q;
             if (a instanceof And) {
-                rules_beta.push([a, b]);
+                rules_beta.push(new Implication(a, b));
             } else {
-                rules_alpha.push([a, b])
+                rules_alpha.push(new Implication(a, b));
             }
         }
         return [rules_alpha, rules_beta];
@@ -337,18 +345,18 @@ class Prover {
         return this.split_alpha_beta()[1];
     }
 
-    process_rule(a, b) {
+    process_rule(a: any, b: any) {
         // process a -> b rule  ->  TODO write more?
-        if ((!a) || (b instanceof Boolean)) {
+        if (b instanceof True || b instanceof False) { 
             return;
         } 
-        if (a instanceof Boolean) {
+        if (a instanceof True || a instanceof False) { 
             return;
         }
-        if (this._rules_seen.has([a, b])) {
+        if (this._rules_seen.has(new Implication(a, b))) { 
             return;
         } else {
-            this._rules_seen.add([a, b])
+            this._rules_seen.add(new Implication(a, b))
         }
         // this is the core of the processing
         try {
@@ -361,7 +369,7 @@ class Prover {
         }
     }
 
-    _process_rule(a, b) {
+    _process_rule(a: any, b: any) {
         // right part first
     
         // a -> b & c   -->    a-> b  ;  a -> c
@@ -386,16 +394,16 @@ class Prover {
                     throw new TautologyDetected(a, b, 'a -> a|c|...'); 
                 }
             }
-            let not_bargs: any[];
+            let not_bargs: any[] = new Array();
             for (let barg of b.args) {
-                not_bargs.push(new Not(barg));
+                not_bargs.push(Not.New(barg));
             }
-            this.process_rule(new And(...not_bargs), new Not(a));
+            this.process_rule(And.New(...not_bargs), Not.New(a));
     
             for (let bidx = 0; bidx < b.args.length; bidx++) {
                 let barg = b.args[bidx];
                 let brest = [...b.args].splice(bidx, 1);
-                this.process_rule(new And(a, new Not(barg)), new Or(...brest));
+                this.process_rule(And.New(a, Not.New(barg)), Or.New(...brest));
             }
         }
     
@@ -407,7 +415,7 @@ class Prover {
             if (a.args.includes(b)) {
                 throw new TautologyDetected(a, b, 'a & b -> a')
             }
-            this.proved_rules.push([a, b]);
+            this.proved_rules.push(new Implication(a, b));
             // XXX NOTE at present we ignore  !c -> !a | !b
         }
     
@@ -422,8 +430,8 @@ class Prover {
     
         else {
             // both 'a' and 'b' are atoms
-            this.proved_rules.push([a, b]); // a -> b
-            this.proved_rules.push([new Not(b), new Not(a)]);
+            this.proved_rules.push(new Implication(a, b)); // a -> b
+            this.proved_rules.push(new Implication(Not.New(b), Not.New(a)));
         }
     }
 
@@ -459,19 +467,17 @@ class FactRules {
     beta_triggers;
     prereq;
 
-    constructor(rules: any[]) {
+    constructor(rules: any[] | string) {
         // Compile rules into internal lookup tables
-        if (rules instanceof String) {
+        if (typeof rules === "string") {
             rules = rules.split('\n');
         }
-
         // --- parse and process rules ---
         let P: Prover = new Prover;
 
         for (let rule of rules) {
             // XXX `a` is hardcoded to be always atom
             let [a, op, b] = rule.split(" ", 3);
-
             a = Logic.fromstring(a);
             b = Logic.fromstring(b);
 
@@ -488,13 +494,11 @@ class FactRules {
 
         this.beta_rules = [];
         for (let item of P.rules_beta()) {
-            let bcond = item[0];
-            let bimpl = item[1];
-            let pairs_dict: Record<any, any>; 
-            for (let a of bcond.args) {
-                pairs_dict.add(_as_pair(a));
-            }
-            this.beta_rules.push([pairs_dict, _as_pair(bimpl)]);
+            let bcond = item.p;
+            let bimpl = item.q;
+            let pairs: HashSet = new HashSet()
+            bcond.args.forEach((a: any) => pairs.add(_as_pair(a)));
+            this.beta_rules.push(new Implication(pairs, _as_pair(bimpl))); 
         }
 
         // deduce alpha implications
@@ -508,10 +512,9 @@ class FactRules {
         let impl_ab = apply_beta_to_alpha_route(impl_a, P.rules_beta());
 
         // extract defined fact names
-        this.defined_facts = {};
+        this.defined_facts =  new HashSet();
 
-        for (let item of Object.entries(impl_ab)) {
-            let k = item[0];
+        for (let k of impl_ab.keys()) {
             this.defined_facts.add(_base_fact(k));
         }
 
@@ -519,13 +522,14 @@ class FactRules {
 
         let full_implications = new SetDefaultDict();
         let beta_triggers = new SetDefaultDict();
-        for (let item of Object.entries(impl_ab)) {
+        for (let item of impl_ab.entries()) {
             let k = item[0];
             let val = item[1];
-            let impl = val[0];
-            let betaidxs = val[1];
-            let valToAdd = impl.map((e) => _as_pair(e)) // !!! - check
-            full_implications.add(_as_pair(k), {valToAdd});
+            let impl: HashSet = val.p;
+            let betaidxs = val.q;
+            let setToAdd = new HashSet();
+            impl.toArray().forEach((e: any) => setToAdd.add(_as_pair(e)))
+            full_implications.add(_as_pair(k), setToAdd);
             beta_triggers.add(_as_pair(k), betaidxs);
         }
         this.full_implications = full_implications;
@@ -549,7 +553,7 @@ class InconsistentAssumptions extends Error {
 
     args;
 
-    constructor(...args) {
+    constructor(...args: any[]) {
         super();
         this.args = args;
     }
@@ -561,46 +565,48 @@ class InconsistentAssumptions extends Error {
     }
 }
 
-class FactKB { 
+class FactKB extends HashDict { 
     /*
     A simple propositional knowledge base relying on compiled inference rules.
     */
 
     rules;
 
-    toString() {
+    toString(): string {
         // string representation of dictionary
-        let res: string;
-        for (let item in this) {
+        let res: string = '';
+        for (let item of Object.values(this.dict)) {
             res += item[0] + " : " + item[1] + ",\n";
         }
+        return res;
     }
 
-    constructor(rules) {
+    constructor(rules: any) {
+        super();
         this.rules = rules;
     }
 
-    _tell(k, v) {
+    _tell(k: any, v: any) {
         /* Add fact k=v to the knowledge base.
         Returns True if the KB has actually been updated, False otherwise.
         */
-       if (k in this && typeof this[k] !== "undefined") {
-            if (this[k] === v) {
-                return false;
+        if (k in this.dict && typeof this.get(k) !== "undefined") {
+            if (this.get(k) === v) {
+                return Logic.False;
             } else {
                 throw new InconsistentAssumptions(this, k, v);
             }
-       } else {
-           this[k] = v;
-           return true;
-       }
+        } else {
+            this.add(k, v);
+            return Logic.True;
+        }
     }
 
     ////////////////////////////////////////////////
     //* This is the workhorse, so keep it *fast*. //
     ////////////////////////////////////////////////
 
-    deduce_all_facts(facts) {
+    deduce_all_facts(facts: any) {
         /*
         Update the KB with all the implications of a list of facts.
         Facts can be specified as a dictionary or as a list of (key, value)
@@ -611,31 +617,32 @@ class FactKB {
 
         let full_implications: SetDefaultDict = this.rules.full_implications;
         let beta_triggers: SetDefaultDict = this.rules.beta_triggers;
-        let beta_rules = this.rules.beta_rules;
+        let beta_rules: any[] = this.rules.beta_rules;
 
-        if (facts instanceof SetDefaultDict) {
+        if (facts instanceof HashDict) {
             facts = facts.entries();
         }
 
-        while (facts) {
+        while (facts.length != 0) {
             let beta_maytrigger = new HashSet();
 
             // --- alpha chains ---
             for (let item of facts) {
                 let k = item[0];
                 let v = item[1];
-                if (!(this._tell(k, v)) || (typeof v === "undefined")) {
+                if (this._tell(k, v) instanceof False || (typeof v === "undefined")) {
                     continue;
                 }
 
                 // lookup routing tables
-                for (let item of full_implications.get([k, v])) { // !!! - check (and stuff below)
-                    let key = item[0];
-                    let value = item[1];
-                    this._tell(key, value); 
+                let arr = full_implications.get(new Implication(k, v)).toArray();
+                for (let item of arr) { 
+                    this._tell(item[0], item[1]); 
                 }
-
-                beta_maytrigger.add(beta_triggers.get([k, v]))
+                let currimp = beta_triggers.get(new Implication(k, v));
+                if (!(currimp.isEmpty())) {
+                    beta_maytrigger.add(beta_triggers.get(new Implication(k, v)))
+                }
             }
             // --- beta chains ---
             facts = [];
@@ -644,7 +651,7 @@ class FactKB {
                 for (let item of bcond) {
                     let k = item[0];
                     let v = item[1];
-                    if (this[k] !== v) { // !!! - unsure about this
+                    if (this.get(k) !== v) { 
                         continue;
                     }
                     facts.push(bimpl);
@@ -653,5 +660,3 @@ class FactKB {
         }
     }
 }
-
-

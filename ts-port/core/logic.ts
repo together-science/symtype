@@ -1,7 +1,5 @@
 /*
 
-Logic.py ported from sympy/core into TypeScript
-
 Notable chnages made (WB & GM):
 - Null is being used as a third boolean value instead of 'none'
 - Arrays are being used instead of tuples
@@ -9,18 +7,21 @@ Notable chnages made (WB & GM):
   static method hashKey() is also added to Logic and hashes depending on the input.
 - The array args in the AndOr_Base constructor is not sorted or put in a set
   since we did't see why this would be necesary
-- A constructor is added to the logic class, which is used by the "__new__" 
-  methods in the Logic and AndOr_Base classes
+- A constructor is added to the logic class, which is used by Logic and its 
+  subclasses (AndOr_Base, And, Or, Not)
 - In the flatten method of AndOr_Base we removed the try catch and changed the 
   while loop to depend on the legnth of the args array
 - Added expand() and eval_propagate_not as abstract methods to the Logic class
+- Added static New methods to Not, And, and Or which function as constructors
+- Replacemd normal booleans with Logic.True and Logic.False since it is sometimes 
+necesary to find if a given argumenet is a boolean
 
 */
 
-import { Util } from './utility'
+import { Util } from './utility.js'
 
 
-function _torf(args: any[]): boolean | null {
+function _torf(args: any[]): Logic | null {
     /* Return True if all args are True, False if they
     are all False, else None 
     >>> from sympy.core.logic import _torf
@@ -30,19 +31,19 @@ function _torf(args: any[]): boolean | null {
     False
     >>> _torf((True, False))
     */
-    let sawT: boolean = false;
-    let sawF: boolean = false;
+    let sawT = Logic.False;
+    let sawF = Logic.False;
     for (let a of args) {
-        if (a === true) {
-            if (sawF) {
+        if (a === Logic.True) {
+            if (sawF instanceof True) {
                 return null;
             }
-            sawT = true;
-        } else if (a === false) {
-            if (sawT) {
+            sawT = Logic.True;
+        } else if (a === Logic.False) {
+            if (sawT instanceof True) {
                 return null;
             }
-            sawF = true;
+            sawF = Logic.True;
         } else {
             return null;
         }
@@ -50,7 +51,7 @@ function _torf(args: any[]): boolean | null {
     return sawT;
 }
 
-function _fuzzy_group(args: any[], quick_exit: boolean = false): boolean | null {
+function _fuzzy_group(args: any[], quick_exit = Logic.False): Logic | null {
     /* Return True if all args are True, None if there is any None else False
     unless ``quick_exit`` is True (then return None as soon as a second False
     is seen.
@@ -76,22 +77,25 @@ function _fuzzy_group(args: any[], quick_exit: boolean = false): boolean | null 
     >>> _fuzzy_group([False, True, True], quick_exit=True)
     False
     */
-    let saw_other: boolean = false;
+    let saw_other = Logic.False;
     for (let a of args) {
-        if (a === true) {
+        if (a === Logic.True) {
             continue;
         } if (a == null) {
             return null;
-        } if (quick_exit && saw_other) {
+        } if (quick_exit instanceof True && saw_other instanceof True) {
             return null;
         }
-        saw_other = true;
+        saw_other = Logic.True;
     }
-    return !saw_other;
+    if (saw_other instanceof True) {
+        return Logic.False;
+    }
+    return Logic.True
 }
 
 
-function fuzzy_bool(x: boolean): boolean | null {
+function fuzzy_bool(x: Logic): Logic | null {
     /* Return True, False or None according to x.
     Whereas bool(x) returns True or False, fuzzy_bool allows
     for the None value and non - false values(which become None), too.
@@ -107,16 +111,16 @@ function fuzzy_bool(x: boolean): boolean | null {
     if (x == null) {
         return null;
     }
-    if (x === true) {
-        return true;
+    if (x instanceof True) {
+        return Logic.True;
     } 
-    if (x === false) {
-        return false;
+    if (x instanceof False) {
+        return Logic.False;
     }
 }
 
 
-function fuzzy_and(args: any[]): boolean | null  {
+function fuzzy_and(args: any[]): Logic | null  {
     /* Return True (all True), False (any False) or None.
     Examples
     ========
@@ -136,12 +140,12 @@ function fuzzy_and(args: any[]): boolean | null  {
     False
     */
 
-    let rv: boolean = true
+    let rv = Logic.True;
     for (let ai of args) {
         ai = fuzzy_bool(ai);
-        if (ai === false) {
-            return false;
-        } if (rv) { // this will stop updating if a None is ever trapped
+        if (ai instanceof False) {
+            return Logic.False;
+        } if (rv instanceof True) { // this will stop updating if a None is ever trapped
             rv = ai;
         }
     }
@@ -149,7 +153,7 @@ function fuzzy_and(args: any[]): boolean | null  {
 
 }
 
-function fuzzy_not(v: any): boolean {
+function fuzzy_not(v: any): Logic | null {
     /*
     Not in fuzzy logic
         Return None if `v` is None else `not v`.
@@ -164,14 +168,15 @@ function fuzzy_not(v: any): boolean {
     */
     if (v == null) {
         return v;
-    } else {
-        return !v;
+    } else if (v instanceof True) {
+        return Logic.False;
     }
+    return Logic.True;
 }
 
 
 
-function fuzzy_or(args: any[]): boolean {
+function fuzzy_or(args: any[]): Logic {
     /*
     Or in fuzzy logic.Returns True(any True), False(all False), or None
         See the docstrings of fuzzy_and and fuzzy_not for more info.fuzzy_or is
@@ -186,38 +191,42 @@ function fuzzy_or(args: any[]): boolean {
         >>> print(fuzzy_or([False, None]))
     None
     */
-    let rv: boolean = false
+    let rv = Logic.False
 
     for (let ai of args) {
         ai = fuzzy_bool(ai);
-        if (ai === true) {
-            return true;
+        if (ai instanceof True) {
+            return Logic.True;
         }
-        if (rv === false) { // this will stop updating if a None is ever trapped
+        if (rv instanceof False) { // this will stop updating if a None is ever trapped
             rv = ai;
         }
     }
+    return rv;
 }
 
-function fuzzy_xor(args: any[]): boolean | null  {
+function fuzzy_xor(args: any[]): Logic | null  {
     /* Return None if any element of args is not True or False, else
     True(if there are an odd number of True elements), else False. */
     let t = 0;
     let f = 0;
     for (let a of args) {
-        let ai: boolean = fuzzy_bool(a);
-        if (ai === true) {
+        let ai = fuzzy_bool(a);
+        if (ai instanceof True) {
             t += 1;
-        } else if (ai === false) {
+        } else if (ai instanceof False) {
             f += 1;
         } else {
             return null;
         }
     }
-    return t % 2 == 1;
+    if (t % 2 == 1) {
+        return Logic.True;
+    }
+    return Logic.False;
 }
 
-function fuzzy_nand(args: any[]): boolean | null  {
+function fuzzy_nand(args: any[]): Logic | null  {
     /* Return False if all args are True, True if they are all False,
     else None. */
     return fuzzy_not(fuzzy_and(args))
@@ -225,6 +234,9 @@ function fuzzy_nand(args: any[]): boolean | null  {
 
 
 class Logic {
+
+    static True: Logic;
+    static False: Logic;
 
     static op_2class: Record<string, (...args: any[]) => Logic> = {
         '&' : (...args) => {
@@ -237,6 +249,7 @@ class Logic {
             return Not.__new__(Not.prototype, arg);
         }
     }
+
     args: any[];
 
     constructor(...args: any[]) { 
@@ -251,8 +264,14 @@ class Logic {
         throw new Error("Expand is abstract in Logic")
     }
 
-    static __new__(cls: any, ...args: any[]) {
-        return new Logic(...args);
+    static __new__(cls: any, ...args: any[]): any {
+        if (cls === Not) {
+            return new Not(args[0]);
+        } else if (cls === And) {
+            return new And(args);
+        } else if (cls === Or) {
+            return new Or(args);
+        }
     }
 
     get_op_x_notx(): any {
@@ -271,27 +290,33 @@ class Logic {
         return this.args;
     }
     
-    static equals(a: any, b: any): boolean {
+    static equals(a: any, b: any): Logic {
         if (!(b instanceof a.constructor)) {
-            return false;
+            return Logic.False;
         } else {
-            return a.args == b.args;
+            if (a.args == b.args) {
+                return Logic.True;
+            }
+            return Logic.False;
         }
     }
     
-    static notEquals(a: any, b: any): boolean {
+    static notEquals(a: any, b: any): Logic {
         if (!(b instanceof a.constructor)) {
-            return true;
+            return Logic.True;
         } else {
-            return a.args != b.args;
+            if (a.args == b.args) {
+                return Logic.False;
+            }
+            return Logic.True;
         }
     }
 
-    lessThan(other: Object): boolean {
+    lessThan(other: Object): Logic {
         if (this.compare(other) == -1) {
-            return true;
+            return Logic.True;
         }
-        return false;
+        return Logic.False;
     }
 
     compare(other: any): number {
@@ -339,7 +364,7 @@ class Logic {
                 if (flexTerm.length == 1) {
                     throw new Error("do not include space after !")
                 }
-                flexTerm = new Not(flexTerm.substring(1)); 
+                flexTerm = Not.New(flexTerm.substring(1)); 
             }
             // already scheduled operation, e.g. '&'
             if (schedop) {
@@ -366,6 +391,28 @@ class Logic {
     }
 }
 
+class True extends Logic {
+
+    _eval_propagate_not(): any {
+        return False.False;
+    }
+
+    expand(): any {
+        return this;
+    }
+}
+
+class False extends Logic {
+
+    _eval_propagate_not(): any {
+        return True.True;
+    }
+
+    expand(): any {
+        return this;
+    }
+}
+
 
 class AndOr_Base extends Logic {
 
@@ -388,7 +435,7 @@ class AndOr_Base extends Logic {
         let args_set = new Set(args.map((e) => Util.hashKey(e)));
 
         for (let a of args) { 
-            if (args_set.has((new Not()).hashKey())) { 
+            if (args_set.has((Not.New(a)).hashKey())) { 
                 return cls.get_op_x_notx();
             }
         }
@@ -396,7 +443,10 @@ class AndOr_Base extends Logic {
         if (args.length == 1) {
             return args.pop();
         } else if (args.length == 0) {
-            return !cls.get_op_x_notx()
+            if (cls.get_op_x_notx() instanceof True) {
+                return Logic.False;
+            }
+            return Logic.True;
         }
 
         return super.__new__(cls, ...args);
@@ -423,17 +473,21 @@ class AndOr_Base extends Logic {
 
 class And extends AndOr_Base {
 
-    get_op_x_notx() {
-        return false;
+    static New(...args: any[]) {
+        return super.__new__(And, args);
+    }
+
+    get_op_x_notx(): Logic {
+        return Logic.False;
     }
 
     _eval_propagate_not(): Or {
         //! (a&b&c ...) == !a | !b | !c ...
         let param = new Array()
         for (let a of param) {
-            param.push(new Not(a)) // ??
+            param.push(Not.New(a)) // ??
         }
-        return new Or(...param) // ???
+        return Or.New(...param) // ???
     }
 
     // (a|b|...) & c == (a&c) | (b&c) | ...
@@ -455,7 +509,7 @@ class And extends AndOr_Base {
                 }
                 */
 
-                let orterms = arg.args.map((e) => new And(...arest.concat([e])))
+                let orterms = arg.args.map((e) => And.New(...arest.concat([e])))
 
 
                 for (let j = 0; j < orterms.length; j++) {
@@ -463,7 +517,7 @@ class And extends AndOr_Base {
                         orterms[j] = orterms[j].expand();
                     }
                 }
-                let res = new Or(...orterms)
+                let res = Or.New(...orterms)
                 return res
             }
         }
@@ -474,28 +528,39 @@ class And extends AndOr_Base {
 
 class Or extends AndOr_Base {
 
-    get_op_x_notx() {
-        return true;
+    static New(...args: any[]) {
+        return super.__new__(Or, args);
+    }
+
+    get_op_x_notx(): Logic {
+        return Logic.True;
     }
 
     _eval_propagate_not(): And {
         //! (a&b&c ...) == !a | !b | !c ...
         let param = new Array()
         for (let a of param) {
-            param.push(new Not(a)) 
+            param.push(Not.New(a)) 
         }
-        return new And(...param) 
+        return And.New(...param) 
     }
     
 }
 
 class Not extends Logic {
 
+
+    static New(args: any) {
+        return Not.__new__(Not, args);
+    }
+
     static __new__(cls: any, arg: any) {
-        if (arg instanceof cls) {
+        if (typeof arg === "string") {
             return super.__new__(cls, arg);
-        } else if (arg instanceof Boolean) {
-            return !arg;
+        } else if (arg instanceof True) {
+            return Logic.False;
+        } else if (arg instanceof False) {
+            return Logic.True;
         } else if (arg instanceof Not) {
             return arg.args[0];
         } else if (arg instanceof Logic) {
@@ -512,6 +577,9 @@ class Not extends Logic {
     }
 }
 
-export { Logic, And, Or, Not };
+Logic.True = new True();
+Logic.False = new False();
+
+export { Logic, True, False, And, Or, Not };
 
 

@@ -1,15 +1,13 @@
 {
     "compilerOptions": {
+      "moduleResolution": "node",
+      "preserveConstEnums": true,
       "allowJs": true,
       "noImplicitAny": true,
       "removeComments": true,
-      "preserveConstEnums": true,
       "sourceMap": true,
       "allowSyntheticDefaultImports": true,
-      "target": "es2017",
+      "target": "es2019",
       "outDir": "out",
     },
-    "files" : [
-      "core/logic.ts",
-    ],
   }
