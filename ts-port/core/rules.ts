@@ -2,6 +2,15 @@
 Replacement rules.
 */
 
+/*
+
+Notable changes made (WB and GM):
+- Combined __get__ and get_item
+
+*/
+
+import { Logic, True, False } from "./logic.js"
+
 class Transform {
     /*
     Immutable mapping that can be used as a generic transformation rule.
@@ -50,28 +59,23 @@ class Transform {
 
     _filter
 
-
-    // !!! - check that lambda is correect
-    constructor(transform, filter=((x) => true)) {
+    constructor(transform: ((x: any) => any), filter: ((x: any) => Logic) = ((x: any) => Logic.True)) {
         this._transform = transform;
         this._filter = filter;
     }
 
-    __contains__(item) {
+    has(item: any): Logic {
         return this._filter(item);
     }
 
-    __getitem__(key) {
-        if (this._filter(key)) {
+    get(key: any, def?: any) {
+        if (this._filter(key) instanceof True) {
             return this._transform(key);
-        }
-    }
-
-    get(item, def = null) {
-        if (item in this) {
-            return this[item];
         } else {
-            return def;
+            if (typeof def !== "undefined") {
+                return def;
+            }
+            throw new Error(key + " is not valid")
         }
     }
 }

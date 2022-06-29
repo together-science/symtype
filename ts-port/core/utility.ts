@@ -99,9 +99,11 @@ class HashSet {
 
 // a hashdict class replacing the dict class in python
 class HashDict {
+    size: number;
     dict: Record<any, any>;
 
     constructor() {
+        this.size = 0;
         this.dict = {};
     }
 
@@ -117,6 +119,9 @@ class HashDict {
 
     add(key: any, value: any) {
         let keyHash = Util.hashKey(key);
+        if (!(keyHash in Object.keys(this.dict))) {
+            this.size++;
+        } 
         this.dict[keyHash] = [key, value];
     }
 
@@ -137,6 +142,15 @@ class HashDict {
     addArr(arr: any[]) {
         let keyHash = Util.hashKey(arr[0]);
         this.dict[keyHash] = arr;
+    }
+
+    delete(key: any) {
+        let keyhash = Util.hashKey(key);
+        if (keyhash in this.dict) {
+            this.size--;
+            delete this.dict[keyhash];
+        }
+
     }
 }
 
@@ -176,5 +190,78 @@ class Implication {
     }
 }
 
-export { Util, HashSet, SetDefaultDict, HashDict, Implication };
+
+// an LRU cache implementation used for cache.ts
+
+interface Node {
+    key: any;
+    value: any;
+    prev: any;
+    next: any; 
+}
+
+class LRUCache {
+    capacity: number;
+    map: HashDict;
+    head: any;
+    tail: any;
+
+    constructor(capacity: number) {
+        this.capacity = capacity;
+        this.map = new HashDict();
+
+        // these are boundaries for the double linked list
+        this.head = {};
+        this.tail = {};
+
+        this.head.next = this.head;
+        this.tail.prev = this.head;
+    }
+
+    get(key: any) {
+        if (this.map.has(key)) {
+            // remove element from the current position
+            let c = this.map.get(key);
+            c.prev.next = c.next;
+            c.next.prev = c.prev;
+
+            this.tail.prev.next = c; // insert after last element
+            c.prev = this.tail.prev;
+            c.next = this.tail;
+            this.tail.prev = c;
+
+            return c.value;
+        } else {
+            return undefined; // invalid key
+        }
+    }
+
+    put(key: any, value: any) {
+        if (typeof this.get(key) !== "undefined") { // the key is invalid
+            this.tail.prev.value = value;
+        } else {
+            // check for capacity
+            if (this.map.size === this.capacity) {
+                this.map.delete(this.head.next.key); // delete first element
+                this.head.next = this.head.next.next; // replace with next
+                this.head.next.prev = this.head;
+            }
+        }
+        let newNode: Node = {
+            value, 
+            key,
+            prev : null,
+            next : null,
+        }; // each node is a hash entry
+
+        // when adding a new node, we need to update both map and DLL
+        this.map.add(key, newNode); // add the current node
+        this.tail.prev.next = newNode; // add node to the end
+        newNode.prev = this.tail.prev; 
+        newNode.next = this.tail; 
+        this.tail.prev = newNode;
+    }
+}
+
+export { Util, HashSet, SetDefaultDict, HashDict, Implication, LRUCache };
 
