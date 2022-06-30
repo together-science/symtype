@@ -3,8 +3,15 @@ Provides functionality for multidimensional usage of scalar-functions.
 Read the vectorize docstring for more details.
 */
 
-// !!! - import for wraps thing
-import { Logic, True, False } from "./logic.js" 
+/*
+
+Notable changes made (WB and GM):
+- Removed everything related to kwargs
+- Restructed vectorize class as a function 
+
+*/
+
+import { Logic, True, False } from "./logic.js"
 
 function apply_on_element(f: any, args: any[], n: any) {
     /*
@@ -24,9 +31,10 @@ function apply_on_element(f: any, args: any[], n: any) {
     // Define reduced function that is only dependent on the specified argument.
     function f_reduced(x: any) {
         if (Symbol.iterator in Object(x)) {
-            return x.map((e: any) => f_reduced(e)); // !!!
+            return x.map((e: any) => f_reduced(e)); 
         } else {
-            return f(x);
+            args[n] = x;
+            return f(...args);
         }
     }
     // f_reduced will call itself recursively so that in the end f is applied to
@@ -40,34 +48,6 @@ function apply_on_element(f: any, args: any[], n: any) {
     return res;
 }
 
-// wrap a scalar function so that it can be applied to vectors and matricies
-// works on vector and scalar inputs
-function vectorize(func: any): (x: any) => any[] {
-    return ((x) => {
-        // if x is not an array, return the function value
-        if (typeof x.length === "undefined") {
-            return func(x);
-        }
-        // else, apply the function on every value
-        let res = [];
-        for (let i = 0; i < x.length; i++) {
-            let eval_arr = apply_on_element(func, x, i);
-            res.push(eval_arr);
-        }
-        return res;
-    })
-}
-
-let sin_vectorized = vectorize(Math.sin);
-
-console.log(sin_vectorized(Math.PI/2))
-console.log(sin_vectorized([Math.PI/2, Math.PI]))
-console.log(sin_vectorized([[Math.PI/2, 0, [Math.PI / 2]], Math.PI]))
-
-/*
-
-Ported code not currently being used
-
 function iter_copy(structure: any): any {
 
     let l = [];
@@ -79,15 +59,67 @@ function iter_copy(structure: any): any {
         }
     }
     return l;
- }
- 
- function structure_copy(structure: any) {
-     if (structure.copy) {
-         return structure.copy();
-     }
-     return iter_copy(structure);
- }
- 
+}
+
+function structure_copy(structure: any) {
+    if (structure.copy) {
+        return structure.copy();
+    }
+    return iter_copy(structure);
+}
+
+/*
+    Generalizes a function taking scalars to accept multidimensional arguments.
+
+    Examples
+
+    ========
+    >>> from sympy import vectorize, diff, sin, symbols, Function
+    >>> x, y, z = symbols('x y z')
+    >>> f, g, h = list(map(Function, 'fgh'))
+    >>> @vectorize(0)
+    ... def vsin(x):
+    ...     return sin(x)
+    >>> vsin([1, x, y])
+    [sin(1), sin(x), sin(y)]
+    >>> @vectorize(0, 1)
+    ... def vdiff(f, y):
+    ...     return diff(f, y)
+    >>> vdiff([f(x, y, z), g(x, y, z), h(x, y, z)], [x, y, z])
+    [[Derivative(f(x, y, z), x), Derivative(f(x, y, z), y), Derivative(f(x, y, z), z)], 
+    [Derivative(g(x, y, z), x), Derivative(g(x, y, z), y), Derivative(g(x, y, z), z)], 
+    [Derivative(h(x, y, z), x), Derivative(h(x, y, z), y), Derivative(h(x, y, z), z)]]
 */
+function vectorize(func: any, mdargs: any) {
+    /*
+    The given numbers and strings characterize the arguments that will be
+    treated as data structures, where the decorated function will be applied
+    to every single element.
+    
+    If no argument is given, everything is treated as multidimensional.
+    */
+    function wrapper(...args: any) {
+        if (!(Array.isArray(mdargs))) {
+            mdargs = [mdargs];
+        }
+            if (mdargs !== null) {
+                for (let n of mdargs) {
+                    let entry = args[n];
+                    if ((Symbol.iterator in Object(entry))) {
+                        args[n] = structure_copy(entry);
+                        return apply_on_element(wrapper, args, n)
+                    }
+                }
+                return func(...args);
+            }
+    }
+    return wrapper;
+}
+
+
+
+
+
+
 
 
