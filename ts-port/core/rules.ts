@@ -59,17 +59,17 @@ class Transform {
 
     _filter
 
-    constructor(transform: ((x: any) => any), filter: ((x: any) => Logic) = ((x: any) => Logic.True)) {
+    constructor(transform: ((x: any) => any), filter: ((x: any) => boolean) = ((x: any) => true)) {
         this._transform = transform;
         this._filter = filter;
     }
 
-    has(item: any): Logic {
+    has(item: any): boolean {
         return this._filter(item);
     }
 
     get(key: any, def?: any) {
-        if (this._filter(key) instanceof True) {
+        if (this._filter(key)) {
             return this._transform(key);
         } else {
             if (typeof def !== "undefined") {

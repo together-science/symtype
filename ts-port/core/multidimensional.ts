@@ -11,8 +11,6 @@ Notable changes made (WB and GM):
 
 */
 
-import { Logic, True, False } from "./logic.js"
-
 function apply_on_element(f: any, args: any[], n: any) {
     /*
     Returns a structure with the same dimension as the specified argument,
