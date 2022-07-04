@@ -1,5 +1,14 @@
 /* The core's core. */
 
+/*
+
+Notable changes made (WB and GM)
+- Replaced array of classes with dictionary for quicker index retrievals
+- Implemented a constructor system for basicmeta rather than __new__ 
+
+*/
+
+
 import { HashSet } from "./utility.js"
 
 // used for canonical ordering of symbolic sequences

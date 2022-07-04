@@ -95,6 +95,14 @@ class HashSet {
         delete this.dict[this.encode(item)];
     }
 
+    get(key: any) {
+        return this.dict[Util.hashKey(key)];
+    }
+
+    set(key: any, val: any) {
+        this.dict[Util.hashKey(key)] = val;
+    }
+
 }
 
 // a hashdict class replacing the dict class in python
