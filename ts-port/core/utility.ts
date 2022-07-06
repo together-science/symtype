@@ -30,9 +30,125 @@ class Util {
         }
         return true;
     }
+
+    // convert an integer to binary
+    // functional for negative numbers
+    static bin(num: number) {
+        return (num >>> 0).toString(2);
+    }
+
+    static * product(repeat: number = 1, ...args: any[]) {
+        let toAdd: any[] = [];
+        for (let a of args) {
+            toAdd.push([a]);
+        }
+        let pools: any[] = [];
+        for (let i = 0; i < repeat; i++) {
+            toAdd.forEach((e: any) => pools.push(e[0]));
+        }
+        let res: any[][] = [[]];
+        for (let pool of pools) {
+            let res_temp: any[] = new Array();
+            for (let x of res) {
+                for (let y of pool) {
+                    if (typeof x[0] === "undefined") {
+                        res_temp.push([y]);
+                    } else {
+                        res_temp.push(x.concat(y));
+                    }
+                }
+            }
+            res = res_temp;
+        }
+        for (let prod of res) {
+            yield prod;
+        }
+    }
+
+    static * permutations(iterable: any, r: any = undefined) {
+        let n = iterable.length;
+        if (typeof r === "undefined") {
+            r = n;
+        }
+        let range = this.range(n);
+        for (let indices of Util.product(r, range)) {
+            if (indices.length === r) {
+                let y: any[] = [];
+                for (let i of indices) {
+                    y.push(iterable[i]);
+                }
+                yield y;
+            }
+        }
+    }
+
+    static * from_iterable(iterables: any) {
+        for (let it of iterables) {
+            for (let element of it) {
+                yield element;
+            }
+        }
+    }
+
+    static arrEq(arr1: any[], arr2: any) {
+        if (arr1.length !== arr2.length) {
+            return false;
+        }
+        for (let i = 0; i < arr1.length; i++) {
+            if (!(arr1[i] === arr2[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static * combinations(iterable: any, r: any) {
+        let n = iterable.length;
+        let range = this.range(n)
+        for (let indices of Util.permutations(range, r)) {
+            if (Util.arrEq(indices.sort(function(a, b){return a - b}), indices)) {
+                let res: any[] = [];
+                for (let i of indices) {
+                    res.push(iterable[i]);
+                }
+                yield res;
+            }
+        }
+    }
+
+    static * combinations_with_replacement(iterable: any, r: any) {
+        let n = iterable.length;
+        let range = this.range(n)
+        for (let indices of Util.product(r, range)) {
+            if (Util.arrEq(indices.sort(function(a, b){return a - b}), indices)) {
+                let res: any[] = [];
+                for (let i of indices) {
+                    res.push(iterable[i]);
+                }
+                yield res;
+            }
+        }
+    }
+
+    static zip(arr1: any[], arr2: any[]) {
+        return arr1.map(function(e, i) {
+            return [e, arr2[i]];
+          })
+    }
+
+    static range(n: number) {
+        return new Array(n).fill(0).map((_, idx) => idx)
+    }
+
+    static getArrIndex(arr2d: any[][], arr: any[]) {
+        for (let i = 0; i < arr2d.length; i++) {
+            if (Util.arrEq(arr2d[i], arr)) {
+                return i;
+            }
+        }
+        return undefined;
+    }
 }
-
-
 
 // custom version of the Set class
 // needed since sympy relies on item tuples with equal contents being mapped
@@ -40,6 +156,8 @@ class Util {
 class HashSet {
     dict: Record<string, any>;
     size: number;
+    sortedArr: any[];
+
     constructor(arr?: any[]) {
         this.size = 0;
         this.dict = {};
@@ -68,7 +186,12 @@ class HashSet {
             this.size++;
         };
         this.dict[key] = item;
+    }
 
+    addArr(arr: any[]) {
+        for (let e of arr) {
+            this.add(e);
+        }
     }
 
     has(item: any) {
@@ -92,6 +215,7 @@ class HashSet {
     }
 
     remove(item: any) {
+        this.size--;
         delete this.dict[this.encode(item)];
     }
 
@@ -103,6 +227,24 @@ class HashSet {
         this.dict[Util.hashKey(key)] = val;
     }
 
+    sort(keyfunc: any = ((a: any, b: any) => a - b), reverse: boolean = true) {
+        this.sortedArr = this.toArray();
+        this.sortedArr.sort(keyfunc);
+        if (reverse) {
+            this.sortedArr.reverse();
+        }
+    }
+
+    pop() {
+        this.sort(); // !!! slow but I don't see a work around
+        if (this.sortedArr.length >= 1) {
+            let temp = this.sortedArr[this.sortedArr.length - 1];
+            this.remove(temp);
+            return temp;
+        } else {
+            return undefined;
+        }
+    }
 }
 
 // a hashdict class replacing the dict class in python
@@ -158,7 +300,12 @@ class HashDict {
             this.size--;
             delete this.dict[keyhash];
         }
+    }
 
+    merge(other: HashDict) {
+        for (let item of other.entries()) {
+            this.add(item[0], item[1]);
+        }
     }
 }
 
@@ -179,6 +326,38 @@ class SetDefaultDict extends HashDict {
             return this.dict[keyHash][1];
         } 
         return new HashSet();
+    }
+}
+
+class IntDefaultDict extends HashDict {
+
+    constructor() {
+        super();
+    }
+
+    increment(key: any, val: any) {
+        let keyHash = Util.hashKey(key);
+        if (keyHash in this.dict) {
+            this.dict[keyHash] += val;
+        } else {
+            this.dict[keyHash] = 0;
+            this.dict[keyHash] += val;
+        }
+    }
+}
+
+class ArrDefaultDict extends HashDict {
+
+    constructor() {
+        super();
+    }
+
+    get(key: any) {
+        let keyHash = Util.hashKey(key);
+        if (keyHash in this.dict) {
+            return this.dict[keyHash][1];
+        } 
+        return new Array();
     }
 }
 
@@ -271,5 +450,25 @@ class LRUCache {
     }
 }
 
-export { Util, HashSet, SetDefaultDict, HashDict, Implication, LRUCache };
+class Iterator {
+
+    arr: any[]
+    counter;
+
+    constructor(arr: any[]) {
+        this.arr = arr;
+        this.counter = 0;
+    }
+
+    next() {
+        if (this.counter >= this.arr.length) {
+            return undefined;
+        }
+        this.counter++;
+        return this.arr[this.counter-1];
+    }
+
+}
+
+export { Util, HashSet, SetDefaultDict, HashDict, Implication, LRUCache, Iterator, IntDefaultDict, ArrDefaultDict };
 

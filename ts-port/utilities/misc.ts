@@ -101,4 +101,7 @@ function as_int(n: any) {
     if (!Number.isInteger(n)) { // !!! - might need to update this
         throw new Error(n + " is not int")
     }
+    return n;
 }
+
+export { as_int, filldedent }

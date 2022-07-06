@@ -1328,3 +1328,4 @@ function part_key(part: any) {
     return rval;
 }
 
+export {multiset_partitions_taocp, list_visitor, MultisetPartitionTraverser}
