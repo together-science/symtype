@@ -2,14 +2,16 @@
 A file with utility classes and functions to help with porting
 Developd by WB and GM
 */
-
 // general util functions
 class Util {
-    // hashkey function 
+    // hashkey function
     // should be able to handle multiple types of inputs
     static hashKey(x: any): string {
+        if (typeof x === "undefined") {
+            return "undefined";
+        }
         if (Array.isArray(x)) {
-            return x.map((e) => Util.hashKey(e)).join(',');
+            return x.map((e) => Util.hashKey(e)).join(",");
         }
         if (x === null) {
             return "null";
@@ -22,8 +24,7 @@ class Util {
 
     // check if arr1 is a subset of arr2
     static isSubset(arr1: any[], arr2: any[]): boolean {
-
-        for (let e of arr1) {
+        for (const e of arr1) {
             if (!(arr2.includes(e))) {
                 return false;
             }
@@ -37,20 +38,20 @@ class Util {
         return (num >>> 0).toString(2);
     }
 
-    static * product(repeat: number = 1, ...args: any[]) {
-        let toAdd: any[] = [];
-        for (let a of args) {
+    static* product(repeat: number = 1, ...args: any[]) {
+        const toAdd: any[] = [];
+        for (const a of args) {
             toAdd.push([a]);
         }
-        let pools: any[] = [];
+        const pools: any[] = [];
         for (let i = 0; i < repeat; i++) {
             toAdd.forEach((e: any) => pools.push(e[0]));
         }
         let res: any[][] = [[]];
-        for (let pool of pools) {
-            let res_temp: any[] = new Array();
-            for (let x of res) {
-                for (let y of pool) {
+        for (const pool of pools) {
+            const res_temp: any[] = [];
+            for (const x of res) {
+                for (const y of pool) {
                     if (typeof x[0] === "undefined") {
                         res_temp.push([y]);
                     } else {
@@ -60,21 +61,21 @@ class Util {
             }
             res = res_temp;
         }
-        for (let prod of res) {
+        for (const prod of res) {
             yield prod;
         }
     }
 
-    static * permutations(iterable: any, r: any = undefined) {
-        let n = iterable.length;
+    static* permutations(iterable: any, r: any = undefined) {
+        const n = iterable.length;
         if (typeof r === "undefined") {
             r = n;
         }
-        let range = this.range(n);
-        for (let indices of Util.product(r, range)) {
+        const range = this.range(n);
+        for (const indices of Util.product(r, range)) {
             if (indices.length === r) {
-                let y: any[] = [];
-                for (let i of indices) {
+                const y: any[] = [];
+                for (const i of indices) {
                     y.push(iterable[i]);
                 }
                 yield y;
@@ -82,9 +83,9 @@ class Util {
         }
     }
 
-    static * from_iterable(iterables: any) {
-        for (let it of iterables) {
-            for (let element of it) {
+    static* from_iterable(iterables: any) {
+        for (const it of iterables) {
+            for (const element of it) {
                 yield element;
             }
         }
@@ -102,13 +103,15 @@ class Util {
         return true;
     }
 
-    static * combinations(iterable: any, r: any) {
-        let n = iterable.length;
-        let range = this.range(n)
-        for (let indices of Util.permutations(range, r)) {
-            if (Util.arrEq(indices.sort(function(a, b){return a - b}), indices)) {
-                let res: any[] = [];
-                for (let i of indices) {
+    static* combinations(iterable: any, r: any) {
+        const n = iterable.length;
+        const range = this.range(n);
+        for (const indices of Util.permutations(range, r)) {
+            if (Util.arrEq(indices.sort(function(a, b) {
+                return a - b;
+            }), indices)) {
+                const res: any[] = [];
+                for (const i of indices) {
                     res.push(iterable[i]);
                 }
                 yield res;
@@ -116,13 +119,15 @@ class Util {
         }
     }
 
-    static * combinations_with_replacement(iterable: any, r: any) {
-        let n = iterable.length;
-        let range = this.range(n)
-        for (let indices of Util.product(r, range)) {
-            if (Util.arrEq(indices.sort(function(a, b){return a - b}), indices)) {
-                let res: any[] = [];
-                for (let i of indices) {
+    static* combinations_with_replacement(iterable: any, r: any) {
+        const n = iterable.length;
+        const range = this.range(n);
+        for (const indices of Util.product(r, range)) {
+            if (Util.arrEq(indices.sort(function(a, b) {
+                return a - b;
+            }), indices)) {
+                const res: any[] = [];
+                for (const i of indices) {
                     res.push(iterable[i]);
                 }
                 yield res;
@@ -133,11 +138,11 @@ class Util {
     static zip(arr1: any[], arr2: any[]) {
         return arr1.map(function(e, i) {
             return [e, arr2[i]];
-          })
+        });
     }
 
     static range(n: number) {
-        return new Array(n).fill(0).map((_, idx) => idx)
+        return new Array(n).fill(0).map((_, idx) => idx);
     }
 
     static getArrIndex(arr2d: any[][], arr: any[]) {
@@ -147,6 +152,25 @@ class Util {
             }
         }
         return undefined;
+    }
+
+    static getSupers(obj: any) {
+        const res: any[] = [];
+        let s = Object.getPrototypeOf(Object.getPrototypeOf(obj));
+        while (s.constructor.name !== "Object") {
+            res.push(s.constructor.name);
+            s = Object.getPrototypeOf(s);
+        }
+        return res;
+    }
+
+    static shuffleArray(arr: any[]) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            const temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
     }
 }
 
@@ -162,15 +186,15 @@ class HashSet {
         this.size = 0;
         this.dict = {};
         if (arr) {
-            Array.from(arr).forEach(element => {
+            Array.from(arr).forEach((element) => {
                 this.add(element);
             });
         }
     }
 
     clone(): HashSet {
-        let newset: HashSet = new HashSet();
-        for (let item of this.dict.entries()) {
+        const newset: HashSet = new HashSet();
+        for (const item of Object.entries(this.dict)) {
             newset.add(item);
         }
         return newset;
@@ -181,7 +205,7 @@ class HashSet {
     }
 
     add(item: any) {
-        let key = this.encode(item);
+        const key = this.encode(item);
         if (!(key in this.dict)) {
             this.size++;
         };
@@ -189,7 +213,7 @@ class HashSet {
     }
 
     addArr(arr: any[]) {
-        for (let e of arr) {
+        for (const e of arr) {
             this.add(e);
         }
     }
@@ -207,7 +231,7 @@ class HashSet {
         return this.toArray()
             .map((e) => Util.hashKey(e))
             .sort()
-            .join(',');
+            .join(",");
     }
 
     isEmpty() {
@@ -238,12 +262,22 @@ class HashSet {
     pop() {
         this.sort(); // !!! slow but I don't see a work around
         if (this.sortedArr.length >= 1) {
-            let temp = this.sortedArr[this.sortedArr.length - 1];
+            const temp = this.sortedArr[this.sortedArr.length - 1];
             this.remove(temp);
             return temp;
         } else {
             return undefined;
         }
+    }
+
+    difference(other: HashSet) {
+        const res = new HashSet();
+        for (const i of this.toArray()) {
+            if (!(other.has(i))) {
+                res.add(i);
+            }
+        }
+        return res;
     }
 }
 
@@ -252,50 +286,53 @@ class HashDict {
     size: number;
     dict: Record<any, any>;
 
-    constructor() {
+    constructor(d: Record<any, any> = {}) {
         this.size = 0;
-        this.dict = {};
+        this.dict = d;
     }
 
-    get(key: any): any {
-        let hash = Util.hashKey(key);
-        return this.dict[hash][1];
+    get(key: any, def: any = undefined): any {
+        const hash = Util.hashKey(key);
+        if (hash in this.dict) {
+            return this.dict[hash][1];
+        }
+        return def;
     }
 
     has(key: any): boolean {
-        let hashKey = Util.hashKey(key);
+        const hashKey = Util.hashKey(key);
         return hashKey in this.dict;
     }
 
     add(key: any, value: any) {
-        let keyHash = Util.hashKey(key);
+        const keyHash = Util.hashKey(key);
         if (!(keyHash in Object.keys(this.dict))) {
             this.size++;
-        } 
+        }
         this.dict[keyHash] = [key, value];
     }
 
     keys() {
-        let vals = Object.values(this.dict);
+        const vals = Object.values(this.dict);
         return vals.map((e) => e[0]);
     }
 
     values() {
-        let vals = Object.values(this.dict);
+        const vals = Object.values(this.dict);
         return vals.map((e) => e[1]);
     }
 
     entries() {
         return Object.values(this.dict);
     }
-    
+
     addArr(arr: any[]) {
-        let keyHash = Util.hashKey(arr[0]);
+        const keyHash = Util.hashKey(arr[0]);
         this.dict[keyHash] = arr;
     }
 
     delete(key: any) {
-        let keyhash = Util.hashKey(key);
+        const keyhash = Util.hashKey(key);
         if (keyhash in this.dict) {
             this.size--;
             delete this.dict[keyhash];
@@ -303,40 +340,45 @@ class HashDict {
     }
 
     merge(other: HashDict) {
-        for (let item of other.entries()) {
+        for (const item of other.entries()) {
             this.add(item[0], item[1]);
         }
     }
-}
 
+    copy() {
+        const res: HashDict = new HashDict;
+        for (const item of this.entries()) {
+            res.add(item[0], item[1]);
+        }
+        return res;
+    }
+}
 
 
 // sympy often uses defaultdict(set) which is not available in ts
 // we create a replacement dictionary class which returns an empty set
 // if the key used is not in the dictionary
 class SetDefaultDict extends HashDict {
-
     constructor() {
         super();
     }
 
     get(key: any) {
-        let keyHash = Util.hashKey(key);
+        const keyHash = Util.hashKey(key);
         if (keyHash in this.dict) {
             return this.dict[keyHash][1];
-        } 
+        }
         return new HashSet();
     }
 }
 
 class IntDefaultDict extends HashDict {
-
     constructor() {
         super();
     }
 
     increment(key: any, val: any) {
-        let keyHash = Util.hashKey(key);
+        const keyHash = Util.hashKey(key);
         if (keyHash in this.dict) {
             this.dict[keyHash] += val;
         } else {
@@ -347,17 +389,16 @@ class IntDefaultDict extends HashDict {
 }
 
 class ArrDefaultDict extends HashDict {
-
     constructor() {
         super();
     }
 
     get(key: any) {
-        let keyHash = Util.hashKey(key);
+        const keyHash = Util.hashKey(key);
         if (keyHash in this.dict) {
             return this.dict[keyHash][1];
-        } 
-        return new Array();
+        }
+        return [];
     }
 }
 
@@ -384,7 +425,7 @@ interface Node {
     key: any;
     value: any;
     prev: any;
-    next: any; 
+    next: any;
 }
 
 class LRUCache {
@@ -408,7 +449,7 @@ class LRUCache {
     get(key: any) {
         if (this.map.has(key)) {
             // remove element from the current position
-            let c = this.map.get(key);
+            const c = this.map.get(key);
             c.prev.next = c.next;
             c.next.prev = c.prev;
 
@@ -434,25 +475,24 @@ class LRUCache {
                 this.head.next.prev = this.head;
             }
         }
-        let newNode: Node = {
-            value, 
+        const newNode: Node = {
+            value,
             key,
-            prev : null,
-            next : null,
+            prev: null,
+            next: null,
         }; // each node is a hash entry
 
         // when adding a new node, we need to update both map and DLL
         this.map.add(key, newNode); // add the current node
         this.tail.prev.next = newNode; // add node to the end
-        newNode.prev = this.tail.prev; 
-        newNode.next = this.tail; 
+        newNode.prev = this.tail.prev;
+        newNode.next = this.tail;
         this.tail.prev = newNode;
     }
 }
 
 class Iterator {
-
-    arr: any[]
+    arr: any[];
     counter;
 
     constructor(arr: any[]) {
@@ -467,8 +507,24 @@ class Iterator {
         this.counter++;
         return this.arr[this.counter-1];
     }
-
 }
 
-export { Util, HashSet, SetDefaultDict, HashDict, Implication, LRUCache, Iterator, IntDefaultDict, ArrDefaultDict };
+// mixin class used to replicate multiple inheritance
+
+class MixinBuilder {
+    superclass;
+    constructor(superclass: any) {
+        this.superclass = superclass;
+    }
+    with(...mixins: any[]) {
+        return mixins.reduce((c, mixin) => mixin(c), this.superclass);
+    }
+}
+
+class base {}
+
+const mix = (superclass: any) => new MixinBuilder(superclass);
+
+
+export {Util, HashSet, SetDefaultDict, HashDict, Implication, LRUCache, Iterator, IntDefaultDict, ArrDefaultDict, mix, base};
 

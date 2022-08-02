@@ -11,12 +11,12 @@ Notable changes made (WB and GM):
 
 */
 
-import { LRUCache } from './utility.js';
+import {LRUCache} from "./utility.js";
 
-let settings = {
+const settings = {
     debug: false,
     no_cache: false,
-}
+};
 
 export let cacheit: any;
 
@@ -59,7 +59,7 @@ if (settings.debug) {
 // let clear_cache = CACHE.clear_cache // !!!
 
 function _cacheit(func: any, maxsize: number = 10): (x: any) => any {
-    let cache = new LRUCache(maxsize);
+    const cache = new LRUCache(maxsize);
     return ((...x) => {
         let res = cache.get(x);
         if (typeof res === "undefined") {
@@ -67,7 +67,7 @@ function _cacheit(func: any, maxsize: number = 10): (x: any) => any {
             cache.put(x, res);
         }
         return res;
-    })
+    });
 }
 
 function _cacheit_nocache(func: any) {
@@ -75,7 +75,7 @@ function _cacheit_nocache(func: any) {
 }
 
 function _cacheit_debug(func: any, maxsize: number = 10): (x: any) => any {
-    let cache = new LRUCache(maxsize);
+    const cache = new LRUCache(maxsize);
     return ((...x) => {
         let res = cache.get(x);
         if (typeof res === "undefined") {
@@ -85,5 +85,6 @@ function _cacheit_debug(func: any, maxsize: number = 10): (x: any) => any {
             throw new Error("returned values are not the same");
         }
         return res;
-    })
+    });
 }
+

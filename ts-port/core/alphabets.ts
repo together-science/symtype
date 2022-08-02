@@ -1,4 +1,5 @@
-let greeks: string[] = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta',
-'eta', 'theta', 'iota', 'kappa', 'lambda', 'mu', 'nu',
-'xi', 'omicron', 'pi', 'rho', 'sigma', 'tau', 'upsilon',
-'phi', 'chi', 'psi', 'omega'];
+// eslint-disable-next-line no-unused-vars
+const greeks: string[] = ["alpha", "beta", "gamma", "delta", "epsilon", "zeta",
+    "eta", "theta", "iota", "kappa", "lambda", "mu", "nu",
+    "xi", "omicron", "pi", "rho", "sigma", "tau", "upsilon",
+    "phi", "chi", "psi", "omega"];

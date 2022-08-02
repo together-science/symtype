@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /*
 Algorithms and classes to support enumerative combinatorics.
 
@@ -95,7 +96,7 @@ Notable changes made (WB and GM):
 
 */
 
-import { HashSet } from "../core/utility.js";
+import {HashSet} from "../core/utility.js";
 
 class PartComponent {
     /* Internal class used in support of the multiset partitions
@@ -109,16 +110,16 @@ class PartComponent {
     Knuth's pseudocode makes c, u, and v separate arrays.
     */
 
-    __slots__ = ['c', 'u', 'v'];
+    __slots__ = ["c", "u", "v"];
     c;
     u;
     v;
 
     constructor() {
         this.c = 0; // Component numbe
-        this.u = 0   // The as yet unpartitioned amount in component c
+        this.u = 0; // The as yet unpartitioned amount in component c
         // *before* it is allocated by this triple
-        this.v = 0   // Amount of c component in the current part
+        this.v = 0; // Amount of c component in the current part
         // (v<=u).  An invariant of the representation is
         // that the next higher triple for this component
         // (if there is one) will have a value of u-v in
@@ -130,10 +131,10 @@ class PartComponent {
     }
 
     equals(other: any) {
-        return (other.constructor.name === this.constructor.name
-            && this.c === other.c
-            && this.u === other.u
-            && this.v === other.v);
+        return (other.constructor.name === this.constructor.name &&
+            this.c === other.c &&
+            this.u === other.u &&
+            this.v === other.v);
     }
 
     notEquals(other: any) {
@@ -156,7 +157,7 @@ class PartComponent {
 // - flag variable x takes on values True/False instead of 1/0
 //
 
-function * multiset_partitions_taocp(multiplicities: any[]) {
+function* multiset_partitions_taocp(multiplicities: any[]) {
     /* Enumerates partitions of a multiset.
 
     Parameters
@@ -224,10 +225,10 @@ function * multiset_partitions_taocp(multiplicities: any[]) {
 
     // important variables
     // m is the number of components, i.e., number of distinct elements
-    let m = multiplicities.length;
+    const m = multiplicities.length;
     // n is the cardinality, total number of elements whether or not distinct
     let n: number = 0;
-    multiplicities.forEach((e: any) => n += e)
+    multiplicities.forEach((e: any) => n += e);
     // The main data structure, f segments pstack into parts.  See
     // list_visitor() for example code indicating how this internal
     // state corresponds to a partition.
@@ -235,16 +236,16 @@ function * multiset_partitions_taocp(multiplicities: any[]) {
     // Note: allocation of space for stack is conservative.  Knuth's
     // exercise 7.2.1.5.68 gives some indication of how to tighten this
     // bound, but this is not implemented.
-    let pstack: any[] = [];
+    const pstack: any[] = [];
     for (let i = 0; i < n * m + 1; i++) {
-        pstack.push(new PartComponent())
+        pstack.push(new PartComponent());
     }
-    let f = new Array(n + 1).fill(0);
+    const f = new Array(n + 1).fill(0);
     // Step M1 in Knuth (Initialize)
     // Initial state - entire multiset in one part.
 
     for (let j = 0; j < m; j++) {
-        let ps = pstack[j];
+        const ps = pstack[j];
         ps.c = j;
         ps.u = multiplicities[j];
         ps.v = multiplicities[j];
@@ -268,13 +269,13 @@ function * multiset_partitions_taocp(multiplicities: any[]) {
                 if (pstack[k].u === 0) {
                     x = true;
                 } else if (!x) {
-                    pstack[k].c = pstack[j].c
-                    pstack[k].v = Math.min(pstack[j].v, pstack[k].u)
-                    x = pstack[k].u < pstack[j].v
+                    pstack[k].c = pstack[j].c;
+                    pstack[k].v = Math.min(pstack[j].v, pstack[k].u);
+                    x = pstack[k].u < pstack[j].v;
                     k++;
                 } else { // x is true
                     pstack[k].c = pstack[j].c;
-                    pstack[k].v = pstack[k].u
+                    pstack[k].v = pstack[k].u;
                     k++;
                 }
                 j++;
@@ -292,8 +293,8 @@ function * multiset_partitions_taocp(multiplicities: any[]) {
             }
         }
         // M4 visit a partition
-        let state = [f, lpart, pstack]
-        yield state; 
+        const state = [f, lpart, pstack];
+        yield state;
 
         // M5 (decrease v)
         while (true) {
@@ -353,23 +354,23 @@ function factoring_visitor(state: any, primes: any[]) {
     [[24], [8, 3], [12, 2], [4, 6], [4, 2, 3], [6, 2, 2], [2, 2, 2, 3]]
     */
 
-    let [f, lpart, pstack] = state;
-    let factoring: any = [];
+    const [f, lpart, pstack] = state;
+    const factoring: any = [];
     for (let i = 0; i < lpart + 1; i++) {
         let factor = 1;
-        for (let ps of pstack.slice(f[i], f[i + 1])) {
+        for (const ps of pstack.slice(f[i], f[i + 1])) {
             if (ps.v > 0) {
                 factor *= primes[ps.c] ** ps.v;
             }
         }
-        factoring.push(factor)
+        factoring.push(factor);
     }
     return factoring;
 }
 
 
 function list_visitor(state: any, components: any) {
-    /*Return a list of lists to represent the partition.
+    /* Return a list of lists to represent the partition.
 
     Examples
     ========
@@ -384,12 +385,12 @@ function list_visitor(state: any, components: any) {
     >>> list_visitor(s, [1, 2, 3])  # for multiset '1 2 2 3
     [[1, 2, 2], [3]]
     */
-    let [f, lpart, pstack] = state;
+    const [f, lpart, pstack] = state;
 
-    let partition: any[] = [];
+    const partition: any[] = [];
     for (let i = 0; i < lpart + 1; i++) {
-        let part: any[] = [];
-        for (let ps of pstack.slice(f[i], f[i + 1])) {
+        const part: any[] = [];
+        for (const ps of pstack.slice(f[i], f[i + 1])) {
             if (ps.v > 0) {
                 part.push(new Array(ps.v).fill(components[ps.c]));
             }
@@ -467,7 +468,7 @@ class MultisetPartitionTraverser {
         this.lpart = 0;
         this.discarded = 0;
         // dp_stack is list of lists of (part_key, start_count) pairs
-        this.dp_stack = []
+        this.dp_stack = [];
 
         // dp_map is map part_key-> count, where count represents the
         // number of multiset which are descendants of a part with this
@@ -477,7 +478,7 @@ class MultisetPartitionTraverser {
         // value to the running total, cut off the enumeration, and
         // backtrack
 
-        if (!(this.dp_map)) { 
+        if (!(this.dp_map)) {
             this.dp_map = new HashSet();
         }
     }
@@ -489,11 +490,11 @@ class MultisetPartitionTraverser {
             // XXX: animation_visitor is undefined... Clearly this does not
             // work and was not tested. Previous code in comments below.
             throw new Error;
-            //letters = 'abcdefghijklmnopqrstuvwxyz'
-            //state = [self.f, self.lpart, self.pstack]
-            //print("DBG:", msg,
+            // letters = 'abcdefghijklmnopqrstuvwxyz'
+            // state = [self.f, self.lpart, self.pstack]
+            // print("DBG:", msg,
             //      ["".join(part) for part in list_visitor(state, letters)],
-            //      animation_visitor(state))      
+            //      animation_visitor(state))
         }
     }
 
@@ -505,13 +506,13 @@ class MultisetPartitionTraverser {
         This is called from the enumeration/counting routines, so
         there is no need to call it separately. */
 
-        let num_components = multiplicities.length;
+        const num_components = multiplicities.length;
         // cardinality is the total number of elements, whether or not distinct
         let cardinality: number = 0;
         multiplicities.forEach((e: any) => cardinality += e);
         // pstack is the partition stack, which is segmented by
         // f into parts.
-        let parr: any[] = [];
+        const parr: any[] = [];
         for (let i = 0; i < num_components * cardinality + 1; i++) {
             parr.push(new PartComponent());
         }
@@ -519,14 +520,14 @@ class MultisetPartitionTraverser {
         this.f = new Array(cardinality + 1).fill(0);
         // Initial state - entire multiset in one part.
         for (let j = 0; j < num_components; j++) {
-            let ps = this.pstack[j];
+            const ps = this.pstack[j];
             ps.c = j;
-            ps.u = multiplicities[j]
-            ps.v = multiplicities[j]
+            ps.u = multiplicities[j];
+            ps.v = multiplicities[j];
         }
-        this.f[0] = 0
-        this.f[1] = num_components
-        this.lpart = 0
+        this.f[0] = 0;
+        this.f[1] = num_components;
+        this.lpart = 0;
     }
 
     // The decrement_part() method corresponds to step M5 in Knuth's
@@ -551,7 +552,7 @@ class MultisetPartitionTraverser {
            which is to be decremented.
         */
 
-        let plen = part.length;
+        const plen = part.length;
         for (let j = plen - 1; j > -1; j--) {
             if ((j === 0 && part[j].v > 1) || (j > 0 && part[j].v > 0)) {
                 // found val to decrement
@@ -621,7 +622,7 @@ class MultisetPartitionTraverser {
             this.p1++; // increment to keep track of usefulness of tests
             return false;
         }
-        let plen = part.length;
+        const plen = part.length;
         for (let j = plen - 1; j > -1; j--) {
             // Knuth's mod, (answer to problem 7.2.1.5.69)
             if (j == 0 && (part[0].v - 1) * (ub - this.lpart) < part[0].u) {
@@ -640,8 +641,8 @@ class MultisetPartitionTraverser {
                 // that turns out to be surprisingly common - exactly
                 // enough room to expand the leading component, but no
                 // room for the second component, which has v=0.
-                if (plen > 1 && part[1].v === 0 && (part[0].u - part[0].v)
-                    === ((ub - this.lpart - 1) * part[0].v)) {
+                if (plen > 1 && part[1].v === 0 && (part[0].u - part[0].v) ===
+                    ((ub - this.lpart - 1) * part[0].v)) {
                     this.k2++;
                     this.db_trace("decrement fails test 3");
                     return false;
@@ -716,7 +717,7 @@ class MultisetPartitionTraverser {
         // "sufficient unallocated multiplicity" (or fail if this is
         // not possible).
 
-        let min_unalloc = lb - this.lpart;
+        const min_unalloc = lb - this.lpart;
         if (min_unalloc <= 0) {
             return true;
         }
@@ -743,11 +744,11 @@ class MultisetPartitionTraverser {
                 }
             } else {
                 if (part[i].v >= deficit) {
-                    part[i].v -= deficit
-                    return true
+                    part[i].v -= deficit;
+                    return true;
                 } else {
-                    deficit -= part[i].v
-                    part[i].v = 0
+                    deficit -= part[i].v;
+                    part[i].v = 0;
                 }
             }
         }
@@ -807,12 +808,12 @@ class MultisetPartitionTraverser {
 
         */
 
-        let j = this.f[this.lpart]; // base of current top part
+        const j = this.f[this.lpart]; // base of current top part
         let k = this.f[this.lpart + 1]; // ub of current; potential base of next
-        let base = k; // save for later comparison
+        const base = k; // save for later comparison
         let changed = false; // Set to true when the new part (so far) is
-                            // strictly less than (as opposed to less than
-                            // or equal) to the old.
+        // strictly less than (as opposed to less than
+        // or equal) to the old.
         for (let j = this.f[this.lpart]; j < this.f[this.lpart + 1]; j++) {
             this.pstack[k].u = this.pstack[j].u - this.pstack[j].v;
             if (this.pstack[k].u === 0) {
@@ -823,10 +824,10 @@ class MultisetPartitionTraverser {
                     this.pstack[k].v = this.pstack[k].u;
                 } else { // Still maintaining ordering constraint
                     if (this.pstack[k].u < this.pstack[j].v) {
-                        this.pstack[k].v = this.pstack[k].u
+                        this.pstack[k].v = this.pstack[k].u;
                         changed = true;
                     } else {
-                        this.pstack[k].v = this.pstack[j].v
+                        this.pstack[k].v = this.pstack[j].v;
                     }
                 }
                 k++;
@@ -871,13 +872,13 @@ class MultisetPartitionTraverser {
             return True
         return False
     */
-    
+
     top_part() {
         /* Return current top part on the stack, as a slice of pstack.
 
         */
 
-        return this.pstack.slice(this.f[this.lpart], this.f[this.lpart + 1])
+        return this.pstack.slice(this.f[this.lpart], this.f[this.lpart + 1]);
     }
 
     // Same interface and functionality as multiset_partitions_taocp(),
@@ -920,11 +921,11 @@ class MultisetPartitionTraverser {
             }
 
             // M4 visit a partition
-            let state = [this.f, this.lpart, this.pstack];
-            yield state; 
+            const state = [this.f, this.lpart, this.pstack];
+            yield state;
 
             // M5 (decrease v)
-            while (!this.decrement_part(this.top_part())) { 
+            while (!this.decrement_part(this.top_part())) {
                 // M6 (backtrack)
                 if (this.lpart === 0) {
                     return;
@@ -990,14 +991,14 @@ class MultisetPartitionTraverser {
                 }
             } if (!this.spread_part_multiplicity()) {
                 // M4 visit a partition
-                let state = [this.f, this.lpart, this.pstack];
+                const state = [this.f, this.lpart, this.pstack];
                 yield state;
             }
             // M5 (decrease v)
-            let top = this.top_part();
-            let opaisj = ub;
+            const top = this.top_part();
+            const opaisj = ub;
             while (!(this.decrement_part_small(this.top_part(), ub))) {
-                this.db_trace("Failed decrement, going to backtrack")
+                this.db_trace("Failed decrement, going to backtrack");
                 // m6 (backtrack)
                 if (this.lpart === 0) {
                     return;
@@ -1063,7 +1064,7 @@ class MultisetPartitionTraverser {
             }
             // M4 Visit a partition
             if (good_partition) {
-                let state = [this.f, this.lpart, this.pstack];
+                const state = [this.f, this.lpart, this.pstack];
                 yield state;
             }
             // M5 (Decrease v)
@@ -1128,7 +1129,7 @@ class MultisetPartitionTraverser {
             }
             // M4 visit a partition
             if (good_partition) {
-                let state = [this.f, this.lpart, this.pstack];
+                const state = [this.f, this.lpart, this.pstack];
                 yield state;
             }
             // M5 (decrease v)
@@ -1139,9 +1140,9 @@ class MultisetPartitionTraverser {
                     return;
                 }
                 this.lpart--;
-                this.db_trace("Backtracked to")
+                this.db_trace("Backtracked to");
             }
-            this.db_trace("decrement ok, about to expand")
+            this.db_trace("decrement ok, about to expand");
         }
     }
 
@@ -1159,25 +1160,25 @@ class MultisetPartitionTraverser {
             Has the same calling interface, but is much faster.
 
         */
-       this.pcount = 0;
-       this._initialize_enumeration(multiplicies);
-       while (true) {
-           while (this.spread_part_multiplicity()) {
+        this.pcount = 0;
+        this._initialize_enumeration(multiplicies);
+        while (true) {
+            while (this.spread_part_multiplicity()) {
 
-           }
+            }
 
-           // M4 Visit (count) a partition
-           this.pcount += 1;
+            // M4 Visit (count) a partition
+            this.pcount += 1;
 
-           // M5 (decrease v)
-           while (!this.decrement_part(this.top_part())) {
-               // M6 (backtrack)
-               if (this.lpart === 0) {
-                   return this.pcount;
-               }
-               this.lpart--;
-           }
-       }
+            // M5 (decrease v)
+            while (!this.decrement_part(this.top_part())) {
+                // M6 (backtrack)
+                if (this.lpart === 0) {
+                    return this.pcount;
+                }
+                this.lpart--;
+            }
+        }
     }
 
     count_partitions(multiplicities: any[]) {
@@ -1258,7 +1259,7 @@ class MultisetPartitionTraverser {
 
         this._initialize_enumeration(multiplicities);
         let pkey = part_key(this.top_part());
-        this.dp_stack.push([[pkey, 9], ]);
+        this.dp_stack.push([[pkey, 9]]);
         while (true) {
             while (this.spread_part_multiplicity()) {
                 pkey = part_key(this.top_part());
@@ -1274,19 +1275,19 @@ class MultisetPartitionTraverser {
                     this.lpart--;
                     break;
                 } else {
-                    this.dp_stack.append([[pkey, this.pcount], ]);
+                    this.dp_stack.append([[pkey, this.pcount]]);
                 }
             }
             // M4 count a leaf partition
             this.pcount++;
 
-            // M5 (decrease v) 
+            // M5 (decrease v)
             while (!this.decrement_part(this.top_part())) {
                 // M6 (backtrack)
-                for (let item of this.dp_stack.pop()) {
-                    let key = item[0];
-                    let oldcount = item[1];
-                    this.dp_map.set(key, this.pcount - oldcount); 
+                for (const item of this.dp_stack.pop()) {
+                    const key = item[0];
+                    const oldcount = item[1];
+                    this.dp_map.set(key, this.pcount - oldcount);
                 }
                 if (this.lpart === 0) {
                     return this.pcount;
@@ -1297,7 +1298,7 @@ class MultisetPartitionTraverser {
             // the stack and it does not appear in the cache.  It needs
             // to be added to the list at the top of dp_stack
             pkey = part_key(this.top_part());
-            this.dp_stack[this.dp_stack.length - 1].push([pkey, this.pcount],);
+            this.dp_stack[this.dp_stack.length - 1].push([pkey, this.pcount]);
         }
     }
 }
@@ -1320,12 +1321,12 @@ function part_key(part: any) {
 
     // The component number is irrelevant for counting partitions, so
     // leave it out of the memo key.
-    let rval: any[] = [];
-    for (let ps of part) {
+    const rval: any[] = [];
+    for (const ps of part) {
         rval.push(ps.u);
         rval.push(ps.v);
     }
     return rval;
 }
 
-export {multiset_partitions_taocp, list_visitor, MultisetPartitionTraverser}
+export {multiset_partitions_taocp, list_visitor, MultisetPartitionTraverser};

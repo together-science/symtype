@@ -9,8 +9,7 @@ Notable changes made (WB and GM):
 
 */
 
-import { Logic, True, False } from "./logic.js"
-
+// eslint-disable-next-line no-unused-vars
 class Transform {
     /*
     Immutable mapping that can be used as a generic transformation rule.
@@ -57,7 +56,7 @@ class Transform {
 
     _transform;
 
-    _filter
+    _filter;
 
     constructor(transform: ((x: any) => any), filter: ((x: any) => boolean) = ((x: any) => true)) {
         this._transform = transform;
@@ -75,7 +74,7 @@ class Transform {
             if (typeof def !== "undefined") {
                 return def;
             }
-            throw new Error(key + " is not valid")
+            throw new Error(key + " is not valid");
         }
     }
 }

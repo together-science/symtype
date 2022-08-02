@@ -7,7 +7,7 @@ Read the vectorize docstring for more details.
 
 Notable changes made (WB and GM):
 - Removed everything related to kwargs
-- Restructed vectorize class as a function 
+- Restructed vectorize class as a function
 
 */
 
@@ -29,7 +29,7 @@ function apply_on_element(f: any, args: any[], n: any) {
     // Define reduced function that is only dependent on the specified argument.
     function f_reduced(x: any) {
         if (Symbol.iterator in Object(x)) {
-            return x.map((e: any) => f_reduced(e)); 
+            return x.map((e: any) => f_reduced(e));
         } else {
             args[n] = x;
             return f(...args);
@@ -37,7 +37,7 @@ function apply_on_element(f: any, args: any[], n: any) {
     }
     // f_reduced will call itself recursively so that in the end f is applied to
     // all basic elements.
-    let res = structure.map((e: any) => f_reduced(e));
+    const res = structure.map((e: any) => f_reduced(e));
 
     // returned element should only be an array if structure is an array
     if (res.length === 1) {
@@ -47,9 +47,8 @@ function apply_on_element(f: any, args: any[], n: any) {
 }
 
 function iter_copy(structure: any): any {
-
-    let l = [];
-    for (let i of structure) {
+    const l = [];
+    for (const i of structure) {
         if (Symbol.iterator in Object(i)) {
             l.push(iter_copy(i));
         } else {
@@ -84,40 +83,35 @@ function structure_copy(structure: any) {
     ... def vdiff(f, y):
     ...     return diff(f, y)
     >>> vdiff([f(x, y, z), g(x, y, z), h(x, y, z)], [x, y, z])
-    [[Derivative(f(x, y, z), x), Derivative(f(x, y, z), y), Derivative(f(x, y, z), z)], 
-    [Derivative(g(x, y, z), x), Derivative(g(x, y, z), y), Derivative(g(x, y, z), z)], 
+    [[Derivative(f(x, y, z), x), Derivative(f(x, y, z), y), Derivative(f(x, y, z), z)],
+    [Derivative(g(x, y, z), x), Derivative(g(x, y, z), y), Derivative(g(x, y, z), z)],
     [Derivative(h(x, y, z), x), Derivative(h(x, y, z), y), Derivative(h(x, y, z), z)]]
 */
+// eslint-disable-next-line no-unused-vars
 function vectorize(func: any, mdargs: any) {
     /*
     The given numbers and strings characterize the arguments that will be
     treated as data structures, where the decorated function will be applied
     to every single element.
-    
+
     If no argument is given, everything is treated as multidimensional.
     */
     function wrapper(...args: any) {
         if (!(Array.isArray(mdargs))) {
             mdargs = [mdargs];
         }
-            if (mdargs !== null) {
-                for (let n of mdargs) {
-                    let entry = args[n];
-                    if ((Symbol.iterator in Object(entry))) {
-                        args[n] = structure_copy(entry);
-                        return apply_on_element(wrapper, args, n)
-                    }
+        if (mdargs !== null) {
+            for (const n of mdargs) {
+                const entry = args[n];
+                if ((Symbol.iterator in Object(entry))) {
+                    args[n] = structure_copy(entry);
+                    return apply_on_element(wrapper, args, n);
                 }
-                return func(...args);
             }
+            return func(...args);
+        }
     }
     return wrapper;
 }
-
-
-
-
-
-
 
 

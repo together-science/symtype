@@ -210,9 +210,9 @@ References
 
 """
 
-from .facts import FactRules, FactKB
-from .core import BasicMeta
-from .sympify import sympify
+from facts import FactRules, FactKB
+from core import BasicMeta
+from sympify import sympify
 
 from sympy.core.random import shuffle
 

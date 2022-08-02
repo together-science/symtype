@@ -1,9 +1,9 @@
 """Singleton mechanism"""
 
 
-from .core import Registry
-from .assumptions import ManagedProperties
-from .sympify import sympify
+from core import Registry
+from assumptions import ManagedProperties
+from sympify import sympify
 
 
 class SingletonRegistry(Registry):
@@ -179,3 +179,7 @@ class Singleton(ManagedProperties):
 
 # Delayed to avoid cyclic import
 from .basic import Basic
+
+
+ts = Singleton()
+print(ts)

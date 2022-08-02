@@ -23,18 +23,15 @@ Examples
 
 */
 
-import { is_sequence } from "../utilities/iterables"
-import { as_int } from "../utilities/misc"
+const choice = (items: any[]) => items[Math.floor(Math.random()*items.length)];
 
-let choice = (items: any[]) => items[Math.floor(Math.random()*items.length)];
-
-let shuffle = (array: any[]) => {
-    for (var i = array.length - 1; i > 0; i--) {
-        var j = Math.floor(Math.random() * (i + 1));
-        var temp = array[i];
+const shuffle = (array: any[]) => {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = array[i];
         array[i] = array[j];
         array[j] = temp;
     }
-}
+};
 
-export { choice }
+export {choice, shuffle};

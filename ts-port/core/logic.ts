@@ -1,31 +1,33 @@
+/* eslint-disable new-cap */
+/* eslint-disable no-unused-vars */
 /*
 
 Notable chnages made (WB & GM):
 - Null is being used as a third boolean value instead of 'none'
 - Arrays are being used instead of tuples
-- The methods hashKey() and toString() are added to Logic for hashing. The 
+- The methods hashKey() and toString() are added to Logic for hashing. The
   static method hashKey() is also added to Logic and hashes depending on the input.
 - The array args in the AndOr_Base constructor is not sorted or put in a set
   since we did't see why this would be necesary
-- A constructor is added to the logic class, which is used by Logic and its 
+- A constructor is added to the logic class, which is used by Logic and its
   subclasses (AndOr_Base, And, Or, Not)
-- In the flatten method of AndOr_Base we removed the try catch and changed the 
+- In the flatten method of AndOr_Base we removed the try catch and changed the
   while loop to depend on the legnth of the args array
 - Added expand() and eval_propagate_not as abstract methods to the Logic class
 - Added static New methods to Not, And, and Or which function as constructors
-- Replacemd normal booleans with Logic.True and Logic.False since it is sometimes 
+- Replacemd normal booleans with Logic.True and Logic.False since it is sometimes
 necesary to find if a given argumenet is a boolean
 
 */
 
-import { Util } from './utility.js'
+import {Util} from "./utility.js";
 
 
 function _torf(args: any[]): Logic | null {
     /* Return True if all args are True, False if they
-    are all False, else None 
+    are all False, else None
     >>> from sympy.core.logic import _torf
-    >>> _torf((True, True)) 
+    >>> _torf((True, True))
     True
     >>> _torf((False, False))
     False
@@ -33,7 +35,7 @@ function _torf(args: any[]): Logic | null {
     */
     let sawT = Logic.False;
     let sawF = Logic.False;
-    for (let a of args) {
+    for (const a of args) {
         if (a === Logic.True) {
             if (sawF instanceof True) {
                 return null;
@@ -78,7 +80,7 @@ function _fuzzy_group(args: any[], quick_exit = Logic.False): Logic | null {
     False
     */
     let saw_other = Logic.False;
-    for (let a of args) {
+    for (const a of args) {
         if (a === Logic.True) {
             continue;
         } if (a == null) {
@@ -91,7 +93,7 @@ function _fuzzy_group(args: any[], quick_exit = Logic.False): Logic | null {
     if (saw_other instanceof True) {
         return Logic.False;
     }
-    return Logic.True
+    return Logic.True;
 }
 
 
@@ -113,14 +115,14 @@ function fuzzy_bool(x: Logic): Logic | null {
     }
     if (x instanceof True) {
         return Logic.True;
-    } 
+    }
     if (x instanceof False) {
         return Logic.False;
     }
 }
 
 
-function fuzzy_and(args: any[]): Logic | null  {
+function fuzzy_and(args: any[]): Logic | null {
     /* Return True (all True), False (any False) or None.
     Examples
     ========
@@ -150,7 +152,6 @@ function fuzzy_and(args: any[]): Logic | null  {
         }
     }
     return rv;
-
 }
 
 function fuzzy_not(v: any): Logic | null {
@@ -175,7 +176,6 @@ function fuzzy_not(v: any): Logic | null {
 }
 
 
-
 function fuzzy_or(args: any[]): Logic {
     /*
     Or in fuzzy logic.Returns True(any True), False(all False), or None
@@ -191,7 +191,7 @@ function fuzzy_or(args: any[]): Logic {
         >>> print(fuzzy_or([False, None]))
     None
     */
-    let rv = Logic.False
+    let rv = Logic.False;
 
     for (let ai of args) {
         ai = fuzzy_bool(ai);
@@ -205,13 +205,13 @@ function fuzzy_or(args: any[]): Logic {
     return rv;
 }
 
-function fuzzy_xor(args: any[]): Logic | null  {
+function fuzzy_xor(args: any[]): Logic | null {
     /* Return None if any element of args is not True or False, else
     True(if there are an odd number of True elements), else False. */
     let t = 0;
     let f = 0;
-    for (let a of args) {
-        let ai = fuzzy_bool(a);
+    for (const a of args) {
+        const ai = fuzzy_bool(a);
         if (ai instanceof True) {
             t += 1;
         } else if (ai instanceof False) {
@@ -226,42 +226,41 @@ function fuzzy_xor(args: any[]): Logic | null  {
     return Logic.False;
 }
 
-function fuzzy_nand(args: any[]): Logic | null  {
+function fuzzy_nand(args: any[]): Logic | null {
     /* Return False if all args are True, True if they are all False,
     else None. */
-    return fuzzy_not(fuzzy_and(args))
+    return fuzzy_not(fuzzy_and(args));
 }
 
 
 class Logic {
-
     static True: Logic;
     static False: Logic;
 
     static op_2class: Record<string, (...args: any[]) => Logic> = {
-        '&' : (...args) => {
+        "&": (...args) => {
             return And.__new__(And.prototype, ...args);
         },
-        '|' : (...args) => {
+        "|": (...args) => {
             return Or.__new__(Or.prototype, ...args);
         },
-        '!' : (arg) => {
+        "!": (arg) => {
             return Not.__new__(Not.prototype, arg);
-        }
-    }
+        },
+    };
 
     args: any[];
 
-    constructor(...args: any[]) { 
+    constructor(...args: any[]) {
         this.args = args;
     }
 
     _eval_propagate_not(): any {
-        throw new Error("Eval propagate not is abstract in Logic")
+        throw new Error("Eval propagate not is abstract in Logic");
     }
 
     expand(): any {
-        throw new Error("Expand is abstract in Logic")
+        throw new Error("Expand is abstract in Logic");
     }
 
     static __new__(cls: any, ...args: any[]): any {
@@ -289,7 +288,7 @@ class Logic {
     getNewArgs(): any[] {
         return this.args;
     }
-    
+
     static equals(a: any, b: any): Logic {
         if (!(b instanceof a.constructor)) {
             return Logic.False;
@@ -300,7 +299,7 @@ class Logic {
             return Logic.False;
         }
     }
-    
+
     static notEquals(a: any, b: any): Logic {
         if (!(b instanceof a.constructor)) {
             return Logic.True;
@@ -320,10 +319,10 @@ class Logic {
     }
 
     compare(other: any): number {
-        let a, b;
+        let a; let b;
         if (typeof this != typeof other) {
-            let unkSelf: unknown = <unknown> this.constructor;
-            let unkOther: unknown = <unknown> other.constructor;
+            const unkSelf: unknown = <unknown> this.constructor;
+            const unkOther: unknown = <unknown> other.constructor;
             a = <string> unkSelf;
             b = <string> unkOther;
         } else {
@@ -342,9 +341,9 @@ class Logic {
            e.g.
            !a & b | c
         */
-       let lexpr = null; // current logical expression
-       let schedop = null; // scheduled operation
-       for (let term of text.split(" ")) {
+        let lexpr = null; // current logical expression
+        let schedop = null; // scheduled operation
+        for (const term of text.split(" ")) {
             let flexTerm: string | Logic = term;
             // operation symbol
             if ("&|".includes(flexTerm)) {
@@ -358,13 +357,13 @@ class Logic {
                 continue;
             }
             if (flexTerm.includes("|") || flexTerm.includes("&")) {
-                throw new Error("& and | must have space around them")
+                throw new Error("& and | must have space around them");
             }
             if (flexTerm[0] == "!") {
                 if (flexTerm.length == 1) {
-                    throw new Error("do not include space after !")
+                    throw new Error("do not include space after !");
                 }
-                flexTerm = Not.New(flexTerm.substring(1)); 
+                flexTerm = Not.New(flexTerm.substring(1));
             }
             // already scheduled operation, e.g. '&'
             if (schedop) {
@@ -374,25 +373,24 @@ class Logic {
             }
             // this should be atom
             if (lexpr != null) {
-                throw new Error("missing op between " + lexpr + " and " + flexTerm )
+                throw new Error("missing op between " + lexpr + " and " + flexTerm );
             }
-            lexpr = flexTerm
+            lexpr = flexTerm;
         }
 
         // let's check that we ended up in correct state
         if (schedop != null) {
             throw new Error("premature end-of-expression in " + text);
-        } 
+        }
         if (lexpr == null) {
             throw new Error(text + " is empty");
         }
         // everything looks good now
-        return lexpr
+        return lexpr;
     }
 }
 
 class True extends Logic {
-
     _eval_propagate_not(): any {
         return False.False;
     }
@@ -403,7 +401,6 @@ class True extends Logic {
 }
 
 class False extends Logic {
-
     _eval_propagate_not(): any {
         return True.True;
     }
@@ -415,10 +412,9 @@ class False extends Logic {
 
 
 class AndOr_Base extends Logic {
-
     static __new__(cls: any, ...args: any[]) {
-        let bargs: any[] = [];
-        for (let a of args) {
+        const bargs: any[] = [];
+        for (const a of args) {
             if (a == cls.get_op_x_notx()) {
                 return a;
             } else if (a == !(cls.get_op_x_notx())) {
@@ -427,15 +423,15 @@ class AndOr_Base extends Logic {
             bargs.push(a);
         }
 
-        // prev version: args = sorted(set(this.flatten(bargs)), key=hash) 
+        // prev version: args = sorted(set(this.flatten(bargs)), key=hash)
         // we think we don't need the sort and set
         args = AndOr_Base.flatten(bargs);
 
         // creating a set with hash keys for args
-        let args_set = new Set(args.map((e) => Util.hashKey(e)));
+        const args_set = new Set(args.map((e) => Util.hashKey(e)));
 
-        for (let a of args) { 
-            if (args_set.has((Not.New(a)).hashKey())) { 
+        for (const a of args) {
+            if (args_set.has((Not.New(a)).hashKey())) {
                 return cls.get_op_x_notx();
             }
         }
@@ -454,14 +450,13 @@ class AndOr_Base extends Logic {
 
     static flatten(args: any[]): any[] {
         // quick-n-dirty flattening for And and Or
-        let args_queue: any[] = [...args];
-        let res = []
+        const args_queue: any[] = [...args];
+        const res = [];
         while (args_queue.length > 0) {
-            let arg: any;
-            arg = args_queue.pop()
+            const arg: any = args_queue.pop();
             if (arg instanceof Logic) {
                 if (arg instanceof this) {
-                    args_queue.push(arg.args)
+                    args_queue.push(arg.args);
                     continue;
                 }
             }
@@ -472,7 +467,6 @@ class AndOr_Base extends Logic {
 }
 
 class And extends AndOr_Base {
-
     static New(...args: any[]) {
         return super.__new__(And, args);
     }
@@ -482,24 +476,23 @@ class And extends AndOr_Base {
     }
 
     _eval_propagate_not(): Or {
-        //! (a&b&c ...) == !a | !b | !c ...
-        let param = new Array()
-        for (let a of param) {
-            param.push(Not.New(a)) // ??
+        // ! (a&b&c ...) == !a | !b | !c ...
+        const param: any[] = [];
+        for (const a of param) {
+            param.push(Not.New(a)); // ??
         }
-        return Or.New(...param) // ???
+        return Or.New(...param); // ???
     }
 
     // (a|b|...) & c == (a&c) | (b&c) | ...
     expand(): any {
         // first locate Or
         for (let i = 0; i < this.args.length; i++) {
-            let arg = this.args[i];
+            const arg = this.args[i];
             if (arg instanceof Or) {
-
                 // copy of this.args with arg at position i removed
 
-                let arest = [...this.args].splice(i, 1)
+                const arest = [...this.args].splice(i, 1);
 
                 // step by step version of the map below
                 /*
@@ -509,7 +502,7 @@ class And extends AndOr_Base {
                 }
                 */
 
-                let orterms = arg.args.map((e) => And.New(...arest.concat([e])))
+                const orterms = arg.args.map((e) => And.New(...arest.concat([e])));
 
 
                 for (let j = 0; j < orterms.length; j++) {
@@ -517,17 +510,15 @@ class And extends AndOr_Base {
                         orterms[j] = orterms[j].expand();
                     }
                 }
-                let res = Or.New(...orterms)
-                return res
+                const res = Or.New(...orterms);
+                return res;
             }
         }
         return this;
     }
-
 }
 
 class Or extends AndOr_Base {
-
     static New(...args: any[]) {
         return super.__new__(Or, args);
     }
@@ -537,19 +528,16 @@ class Or extends AndOr_Base {
     }
 
     _eval_propagate_not(): And {
-        //! (a&b&c ...) == !a | !b | !c ...
-        let param = new Array()
-        for (let a of param) {
-            param.push(Not.New(a)) 
+        // ! (a&b&c ...) == !a | !b | !c ...
+        const param: any[] = [];
+        for (const a of param) {
+            param.push(Not.New(a));
         }
-        return And.New(...param) 
+        return And.New(...param);
     }
-    
 }
 
 class Not extends Logic {
-
-
     static New(args: any) {
         return Not.__new__(Not, args);
     }
@@ -568,7 +556,7 @@ class Not extends Logic {
             arg = arg._eval_propagate_not();
             return arg;
         } else {
-            throw new Error("Not: unknown argument " + arg)
+            throw new Error("Not: unknown argument " + arg);
         }
     }
 
@@ -580,6 +568,6 @@ class Not extends Logic {
 Logic.True = new True();
 Logic.False = new False();
 
-export { Logic, True, False, And, Or, Not };
+export {Logic, True, False, And, Or, Not, fuzzy_bool};
 
 

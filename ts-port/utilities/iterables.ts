@@ -1,13 +1,11 @@
 /*
-Notable changes made (WB and GM): 
+Notable changes made (WB and GM):
 - iterable and is_sequence are reworked but have the same functionality
 - Current progress: some things are not yet ported, and some things are ported
   but still buggy - revisit this whenever those become necessary
 */
 
-import { multiset_partitions_taocp, list_visitor, MultisetPartitionTraverser } from "./enumerative.js"
-import { as_int } from "./misc.js"
-import { Iterator, IntDefaultDict, ArrDefaultDict, Util, HashSet, HashDict } from "../core/utility.js"
+import {HashDict} from "../core/utility.js";
 
 class NotIterable {
     /*
@@ -113,7 +111,7 @@ function is_sequence(i: any, include: any = undefined): boolean {
     i instanceof include);
 }
 
-export { is_sequence }
+export {is_sequence, iterable};
 
 
 // other stuff which has been ported but is not being used
@@ -318,7 +316,7 @@ export { is_sequence }
 //         return;
 //     } else if (iterables.length === 1) {
 //         for (let e of iterables[0]) {
-//             yield [e]; 
+//             yield [e];
 //         }
 //     } else if (iterables.length === 2) {
 //         for (let e of _iproduct2(iterables[0], iterables[1])) {
@@ -328,7 +326,7 @@ export { is_sequence }
 //         let first = iterables[0];
 //         let others = iterables.slice(1, iterables.length);
 //         for (let e of _iproduct2(first, iproduct(...others))) {
-//             yield [e[0]] + e[1]; 
+//             yield [e[0]] + e[1];
 //         }
 //     }
 // }
@@ -351,7 +349,7 @@ export { is_sequence }
 //     for (let s of seq) {
 //         rv.increment(s, 1);
 //     }
-//     return rv.dict; 
+//     return rv.dict;
 // }
 
 
@@ -713,7 +711,7 @@ export { is_sequence }
 //             if (!alltr) {
 //                 break find;
 //             }
-//         } 
+//         }
 //         i++;
 //     }
 //     return seqs[0].slice(0, i);
@@ -753,7 +751,7 @@ export { is_sequence }
 //             if (!alltr) {
 //                 break find;
 //             }
-//         } 
+//         }
 //         i--;
 //     }
 //     if (i === -1) {
@@ -888,7 +886,7 @@ export { is_sequence }
 //                     search: {
 //                         for (let i = 0; i < arr.length; i++) {
 //                             let s = arr[i];
-    
+
 //                             if (key(v, s) > 0) {
 //                                 console.log(i, v)
 //                                 S.add([i, v]);
@@ -899,8 +897,8 @@ export { is_sequence }
 //                     }
 //                 }
 //             }
-//         }   
-//     }   
+//         }
+//     }
 //     if (E) {
 //         throw "cycle detected";
 //     } else {

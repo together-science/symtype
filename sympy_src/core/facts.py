@@ -48,7 +48,7 @@ https://en.wikipedia.org/wiki/List_of_rules_of_inference
 
 from collections import defaultdict
 
-from .logic import Logic, And, Or, Not
+from logic import Logic, And, Or, Not
 
 
 def _base_fact(atom):
