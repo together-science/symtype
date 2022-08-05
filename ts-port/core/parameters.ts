@@ -1,3 +1,8 @@
+/*
+Notable changes made:
+- Dictionary system reworked as class properties
+*/
+
 class _global_parameters {
     /*
     Thread-local global parameters.
@@ -40,21 +45,20 @@ class _global_parameters {
     .. [1] https://docs.python.org/3/library/threading.html
     */
 
-    static dict: Record<any, any>;
+    dict: Record<any, any> = {};
 
-    evaluate: boolean;
-    distribute: boolean;
-    exp_is_pow: boolean;
+    evaluate;
+    distribute;
+    exp_is_pow;
 
     constructor(dict: Record<string, any>) {
-        Object.assign(_global_parameters.dict, dict);
-    }
-
-    get(key: any) {
-        return _global_parameters.dict[key];
+        this.dict = dict;
+        this.evaluate = this.dict["evaluate"];
+        this.distribute = this.dict["distribute"];
+        this.exp_is_pow = this.dict["exp_is_pow"];
     }
 }
 
-const global_parameters = new _global_parameters({evaluate: true, distribute: true, exp_is_pow: false});
+const global_parameters = new _global_parameters({"evaluate": true, "distribute": true, "exp_is_pow": false});
 
 export {global_parameters};

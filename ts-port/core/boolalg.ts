@@ -1,14 +1,22 @@
-import {Basic} from "./basic.js";
-import {BooleanKind} from "./kind.js";
-import {mix} from "./utility.js";
+/*
+Notable changes made (and notes):
+- Barebones implementation - only enough as needed for symbol
+*/
 
-const Boolean = (superclass: any) => class Boolean extends mix(superclass).with(Basic) {
+import {_Basic} from "./basic.js";
+import {BooleanKind} from "./kind.js";
+import {base, mix} from "./utility.js";
+import {ManagedProperties} from "./assumptions.js";
+
+const Boolean = (superclass: any) => class Boolean extends mix(base).with(_Basic) {
     __slots__: any[] = [];
 
-    kind = BooleanKind;
+    static kind = BooleanKind;
 
     // !!!  methods not yet implemented
 };
+
+ManagedProperties.register(Boolean(Object));
 
 export {Boolean};
 

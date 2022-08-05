@@ -2,6 +2,7 @@
 A file with utility classes and functions to help with porting
 Developd by WB and GM
 */
+
 // general util functions
 class Util {
     // hashkey function
@@ -10,14 +11,14 @@ class Util {
         if (typeof x === "undefined") {
             return "undefined";
         }
+        if (x.hashKey) {
+            return x.hashKey();
+        }
         if (Array.isArray(x)) {
             return x.map((e) => Util.hashKey(e)).join(",");
         }
         if (x === null) {
             return "null";
-        }
-        if (x.hashKey) {
-            return x.hashKey();
         }
         return x.toString();
     }
@@ -194,7 +195,7 @@ class HashSet {
 
     clone(): HashSet {
         const newset: HashSet = new HashSet();
-        for (const item of Object.entries(this.dict)) {
+        for (const item of Object.values(this.dict)) {
             newset.add(item);
         }
         return newset;
@@ -288,7 +289,10 @@ class HashDict {
 
     constructor(d: Record<any, any> = {}) {
         this.size = 0;
-        this.dict = d;
+        this.dict = {};
+        for (const item of Object.entries(d)) {
+            this.dict[Util.hashKey(item[0])] = [item[0], item[1]];
+        }
     }
 
     get(key: any, def: any = undefined): any {
@@ -351,6 +355,17 @@ class HashDict {
             res.add(item[0], item[1]);
         }
         return res;
+    }
+
+    isSame(other: HashDict) {
+        const arr1 = this.entries().sort();
+        const arr2 = other.entries().sort();
+        for (let i = 0; i < arr1.length; i++) {
+            if (!(Util.arrEq(arr1[i], arr2[i]))) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 

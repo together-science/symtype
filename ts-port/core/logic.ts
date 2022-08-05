@@ -121,6 +121,29 @@ function fuzzy_bool(x: Logic): Logic | null {
     }
 }
 
+function fuzzy_bool_v2(x: boolean) {
+    /* Return True, False or None according to x.
+    Whereas bool(x) returns True or False, fuzzy_bool allows
+    for the None value and non - false values(which become None), too.
+    Examples
+    ========
+    >>> from sympy.core.logic import fuzzy_bool
+    >>> from sympy.abc import x
+    >>> fuzzy_bool(x), fuzzy_bool(None)
+    (None, None)
+    >>> bool(x), bool(None)
+        (True, False)
+    */
+    if (typeof x === "undefined") {
+        return null;
+    }
+    if (x === true) {
+        return true;
+    }
+    if (x === false) {
+        return false;
+    }
+}
 
 function fuzzy_and(args: any[]): Logic | null {
     /* Return True (all True), False (any False) or None.
@@ -148,6 +171,19 @@ function fuzzy_and(args: any[]): Logic | null {
         if (ai instanceof False) {
             return Logic.False;
         } if (rv instanceof True) { // this will stop updating if a None is ever trapped
+            rv = ai;
+        }
+    }
+    return rv;
+}
+
+function fuzzy_and_v2(args: any[]) {
+    let rv = true;
+    for (let ai of args) {
+        ai = fuzzy_bool_v2(ai);
+        if (ai === false) {
+            return false;
+        } if (rv === true) {
             rv = ai;
         }
     }
@@ -568,6 +604,6 @@ class Not extends Logic {
 Logic.True = new True();
 Logic.False = new False();
 
-export {Logic, True, False, And, Or, Not, fuzzy_bool};
+export {Logic, True, False, And, Or, Not, fuzzy_bool, fuzzy_and, fuzzy_bool_v2, fuzzy_and_v2};
 
 

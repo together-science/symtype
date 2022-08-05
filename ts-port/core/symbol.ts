@@ -1,16 +1,18 @@
+/*
+Notable changes
+- Still a work in progress (not all methods implemented)
+- Class structure reworked based on a constructor system (view source)
+*/
+
 import {mix, base, HashDict} from "./utility.js";
 import {AtomicExpr} from "./expr.js";
 import {Boolean} from "./boolalg.js";
 import {NumberKind, UndefinedKind} from "./kind.js";
-import {fuzzy_bool} from "./logic.js";
-import {Expr} from "./expr.js";
+import {fuzzy_bool_v2} from "./logic.js";
 import {StdFactKB} from "./assumptions.js";
-import {cacheit} from "./cache.js";
+import {ManagedProperties} from "./assumptions.js";
 
-// eslint-disable-next-line new-cap
-const _Expr = Expr(Object);
 
-// eslint-disable-next-line no-unused-vars
 class Symbol extends mix(base).with(AtomicExpr, Boolean) {
     /*
     Assumptions:
@@ -26,19 +28,22 @@ class Symbol extends mix(base).with(AtomicExpr, Boolean) {
     True
     */
 
-    is_comparable = false;
+    static is_comparable = false;
 
     __slots__ = ["name"];
 
     name: string;
 
-    is_Symbol = true;
+    static is_Symbol = true;
 
-    is_symbol = true;
+    static is_symbol = true;
 
+    static is_commutative = true;
+
+    args: any[];
 
     kind() {
-        if (this.is_commutative) {
+        if ((this.constructor as any).is_commutative) {
             return NumberKind;
         }
         return UndefinedKind;
@@ -48,52 +53,47 @@ class Symbol extends mix(base).with(AtomicExpr, Boolean) {
         return true;
     }
 
-    static _sanitize(aspts: Record<any, any> = undefined) {
+    constructor(name: any, properties: Record<any, any> = undefined) {
+        super();
+        const assumptions = new HashDict(properties);
+        Symbol._sanitize(assumptions);
+        this.name = name;
+        const tmp_asm_copy = assumptions.copy();
+        const is_commutative = fuzzy_bool_v2(assumptions.get("commutative", true));
+        assumptions.add("commutative", is_commutative);
+        this._assumptions = new StdFactKB(assumptions);
+        this._assumptions._generator = tmp_asm_copy;
+    }
+
+    equals(other: Symbol) {
+        if (this.name = other.name) {
+            if (this._assumptions.isSame(other._assumptions)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static _sanitize(assumptions: HashDict = new HashDict()) {
         // remove none, convert values to bool, check commutativity *in place*
 
         // be strict about commutativity: cannot be undefined
-        if (typeof aspts !== "undefined") {
-            const assumptions = new HashDict(aspts);
-            const is_commutative = fuzzy_bool(assumptions.get("commutative", true));
-            if (typeof is_commutative === "undefined") {
-                throw new Error("commutativity must be true or false");
+        const is_commutative = fuzzy_bool_v2(assumptions.get("commutative", true));
+        if (typeof is_commutative === "undefined") {
+            throw new Error("commutativity must be true or false");
+        }
+        for (const key of assumptions.keys()) {
+            const v = assumptions.get(key);
+            if (typeof v === "undefined") {
+                assumptions.delete(key);
+                continue;
             }
-
-            for (const key of assumptions.keys()) {
-                const v = assumptions.get(key);
-                if (typeof v === "undefined") {
-                    assumptions.delete(key);
-                    continue;
-                }
-                assumptions.add(key, v as boolean);
-            }
+            assumptions.add(key, v as boolean);
         }
     }
-
-    constructor(name: any, assumptions: Record<any, any> = undefined) {
-        super();
-        Symbol._sanitize(assumptions);
-        const res: any = Symbol.__xnew_cached(name, assumptions);
-        return res;
-    }
-
-    static __xnew__(name: any, aspts: Record<any, any>) {
-        if (typeof name !== "string") {
-            throw new Error("name must be string");
-        }
-        const assumptions = new HashDict();
-        if (typeof aspts !== "undefined") {
-            assumptions.merge(new HashDict(aspts));
-        }
-        const obj = new _Expr();
-        obj.name = name;
-        const is_commutative = fuzzy_bool(assumptions.get("commutative", true));
-        assumptions.add("commutative", is_commutative);
-        const tmp_asm_copy = assumptions.copy();
-        obj._assumptions = new StdFactKB(assumptions);
-        obj._assumptions._generator = tmp_asm_copy;
-        return obj;
-    }
-
-    static __xnew_cached = cacheit(Symbol.__xnew__);
 }
+
+// eslint-disable-next-line new-cap
+ManagedProperties.register(Symbol);
+
+export {Symbol};

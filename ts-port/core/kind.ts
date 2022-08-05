@@ -1,3 +1,9 @@
+/*
+Notable changes made (and notes):
+- Very barebones versions of classes implemented so far
+- Same registry system as Singleton - using static dictionary
+*/
+
 /* eslint-disable new-cap */
 class KindRegistry {
     static registry: Record<any, any> = {};

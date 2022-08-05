@@ -1,8 +1,14 @@
+/*
+Notable changes made (and notes):
+- Basic reworked with constructor system
+- All properties of Basic (and subclasses) are static
+*/
+
 import {ManagedProperties} from "./assumptions.js";
-import {Util, HashDict, mix} from "./utility.js";
+import {Util, HashDict, mix, base} from "./utility.js";
 import {UndefinedKind} from "./kind.js";
 
-const Basic = (superclass: any) => class Basic extends superclass {
+const _Basic = (superclass: any) => class _Basic extends superclass {
     /*
     Base class for all SymPy objects.
     Notes and conventions
@@ -35,45 +41,45 @@ const Basic = (superclass: any) => class Basic extends superclass {
 
     __slots__ = ["_mhash", "_args", "_assumptions"];
 
-    _args: [Basic, any];
+    _args: any[];
     _mhash: Number | undefined;
     _assumptions;
 
     // To be overridden with True in the appropriate subclasses
-    is_number = false;
-    is_Atom = false;
-    is_Symbol = false;
-    is_symbol = false;
-    is_Indexed = false;
-    is_Dummy = false;
-    is_Wild = false;
-    is_Function = false;
-    is_Add = false;
-    is_Mul = false;
-    is_Pow = false;
-    is_Number = false;
-    is_Float = false;
-    is_Rational = false;
-    is_Integer = false;
-    is_NumberSymbol = false;
-    is_Order = false;
-    is_Derivative = false;
-    is_Piecewise = false;
-    is_Poly = false;
-    is_AlgebraicNumber = false;
-    is_Relational = false;
-    is_Equality = false;
-    is_Boolean = false;
-    is_Not = false;
-    is_Matrix = false;
-    is_Vector = false;
-    is_Point = false;
-    is_MatAdd = false;
-    is_MatMul = false;
-    is_negative: boolean | undefined;
-    is_commutative: boolean | undefined;
+    static is_number = false;
+    static is_Atom = false;
+    static is_Symbol = false;
+    static is_symbol = false;
+    static is_Indexed = false;
+    static is_Dummy = false;
+    static is_Wild = false;
+    static is_Function = false;
+    static is_Add = false;
+    static is_Mul = false;
+    static is_Pow = false;
+    static is_Number = false;
+    static is_Float = false;
+    static is_Rational = false;
+    static is_Integer = false;
+    static is_NumberSymbol = false;
+    static is_Order = false;
+    static is_Derivative = false;
+    static is_Piecewise = false;
+    static is_Poly = false;
+    static is_AlgebraicNumber = false;
+    static is_Relational = false;
+    static is_Equality = false;
+    static is_Boolean = false;
+    static is_Not = false;
+    static is_Matrix = false;
+    static is_Vector = false;
+    static is_Point = false;
+    static is_MatAdd = false;
+    static is_MatMul = false;
+    static is_negative: boolean | undefined;
+    static is_commutative: boolean | undefined;
 
-    kind = UndefinedKind;
+    static kind = UndefinedKind;
 
 
     constructor(...args: any) {
@@ -83,7 +89,6 @@ const Basic = (superclass: any) => class Basic extends superclass {
         this._mhash = undefined;
         this._args = args;
     }
-
 
     __getnewargs__() {
         return this._args;
@@ -95,7 +100,7 @@ const Basic = (superclass: any) => class Basic extends superclass {
 
     hash() {
         if (typeof this._mhash === "undefined") {
-            return this.constructor.name + this._hashable_content();
+            return this.constructor.name + this.hashKey();
         }
         return this._mhash;
     }
@@ -127,7 +132,7 @@ const Basic = (superclass: any) => class Basic extends superclass {
         return {};
     }
 
-    _hashable_content() {
+    hashKey() {
         /* Return a tuple of information about self that can be used to
         compute the hash. If a class defines additional attributes,
         like ``name`` in Symbol, then this method should be updated
@@ -138,7 +143,7 @@ const Basic = (superclass: any) => class Basic extends superclass {
         return this._args;
     }
 
-    cmp(other: any): any {
+    static cmp(self: any, other: any): any {
         /*
         Return -1, 0, 1 if the object is smaller, equal, or greater than other.
         Not in the mathematical sense. If the object is of a different type
@@ -154,16 +159,16 @@ const Basic = (superclass: any) => class Basic extends superclass {
         >>> y.compare(x)
         1
         */
-        if (this === other) {
+        if (self === other) {
             return 0;
         }
-        const n1 = this.constructor.name;
+        const n1 = self.constructor.name;
         const n2 = other.constructor.name;
         if (n1 && n2) {
             return (n1 > n2 as unknown as number) - (n1 < n2 as unknown as number);
         }
 
-        const st = this._hashable_content();
+        const st = self._hashable_content();
         const ot = other._hashable_content();
         if (st && ot) {
             return (st.length > ot.length as unknown as number) - (st.length < ot.length as unknown as number);
@@ -184,11 +189,25 @@ const Basic = (superclass: any) => class Basic extends superclass {
         }
         return 0;
     }
+
+    _constructor_postprocessor_mapping: Record<any, any> = {};
+
+    _exec_constructor_postprocessors(obj: any) {
+        const clsname = this.constructor.name;
+        const postprocessors = new HashDict();
+        // !!! for loop not implemented - complicated to recreate
+        for (const f of postprocessors.get(clsname, [])) {
+            obj = f(obj);
+        }
+        return obj;
+    }
 };
 
+// eslint-disable-next-line new-cap
+const Basic = _Basic(Object);
 ManagedProperties.register(Basic);
 
-const Atom = (superclass: any) => class Atom extends mix(superclass).with(Basic) {
+const Atom = (superclass: any) => class Atom extends mix(base).with(_Basic) {
     /*
     A parent class for atomic things. An atom is an expression with no subexpressions.
     Examples
@@ -197,7 +216,7 @@ const Atom = (superclass: any) => class Atom extends mix(superclass).with(Basic)
     But not: Add, Mul, Pow, ...
     */
 
-    is_Atom = true;
+    static is_Atom = true;
 
     __slots__: any[] = [];
 
@@ -219,4 +238,6 @@ const Atom = (superclass: any) => class Atom extends mix(superclass).with(Basic)
     }
 };
 
-export {Basic, Atom};
+// eslint-disable-next-line new-cap
+ManagedProperties.register(Atom(Object));
+export {_Basic, Basic, Atom};

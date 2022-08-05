@@ -1,10 +1,17 @@
+/*
+Notable changes made (and notes):
+- ManagedProperties reworked as normal class - each class is registered directly
+  after defined
+- ManagedProperties tracks properties of base classes by tracking all properties
+  (see comments within class)
+*/
+
 import {FactKB, FactRules} from "./facts.js";
 import {BasicMeta} from "./core.js";
 import {HashDict, HashSet, Util} from "./utility.js";
 
 
 const _assume_rules = new FactRules([
-
     "integer -> rational",
     "rational -> real",
     "rational -> algebraic",
@@ -100,6 +107,35 @@ function as_property(fact: any) {
     return "is_" + fact;
 }
 
+function make_property(cls: any, fact: any) {
+    cls[as_property(fact)] = () => {
+        try {
+            return cls._assumptions[fact];
+        } catch (Error) {
+            if (cls._assumptions === cls.default_assumptions) {
+                cls._assumptions = cls.default_assumptions.copy();
+            }
+            return _ask(fact, cls);
+        }
+    };
+}
+
+/*
+def make_property(fact):
+    """Create the automagic property corresponding to a fact."""
+
+    def getit(self):
+        try:
+            return self._assumptions[fact]
+        except KeyError:
+            if self._assumptions is self.default_assumptions:
+                self._assumptions = self.default_assumptions.copy()
+            return _ask(fact, self)
+
+    getit.func_name = as_property(fact)
+    return property(getit)
+*/
+
 // eslint-disable-next-line no-unused-vars
 function _ask(fact: any, obj: any) {
     /*
@@ -119,7 +155,7 @@ function _ask(fact: any, obj: any) {
     */
 
     // FactKB which is dict-like and maps facts to their known values:
-    const assumptions: FactKB = obj._assumptions;
+    const assumptions: FactKB = obj.default_assumptions;
 
     // A dict that maps facts to their handlers:
     const handler_map: HashDict = obj._prop_handler;
@@ -149,6 +185,7 @@ function _ask(fact: any, obj: any) {
         const new_facts_to_check = new Array(_assume_rules.prereq.get(fact_i).difference(facts_queued));
         Util.shuffleArray(new_facts_to_check);
         facts_to_check.push(new_facts_to_check);
+        facts_to_check.flat();
         facts_queued.addArr(new_facts_to_check);
     }
 
@@ -182,68 +219,79 @@ class ManagedProperties {
     //     }
     // }
 
+    static all_explicit_assumptions: HashDict = new HashDict();
+    static all_default_assumptions: HashSet = new HashSet();
+
 
     static register(cls: any) {
+        // register with BasicMeta (record class name)
         BasicMeta.register(cls);
+
+        // For all properties we want to define, determine if they are defined
+        // by the class or if we set them as undefined.
+        // Add these properties to a dict called local_defs
         const local_defs = new HashDict();
         for (const k of _assume_defined.toArray()) {
-            let v = cls.k;
+            const attrname = as_property(k);
+            let v = cls[attrname];
             if ((typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean" || typeof v === "undefined") {
-                if (!(typeof v === "undefined")) {
+                if (typeof v !== "undefined") {
                     v = !!v;
                 }
                 local_defs.add(k, v);
             }
         }
-        const defs = new HashDict();
-        for (const base of Util.getSupers(cls).reverse()) {
-            if (base._explicit_class_assumptions) {
-                defs.merge(base._explicit_class_assumptions());
-            }
-        }
-        defs.merge(local_defs);
 
-        cls._explicit_class_assumptions = defs;
-        cls.default_assumptions = new StdFactKB(defs);
+        // Keep track of the explicit assumptions for all registered classes.
+        // For a given class, this looks like the assumptions for all of its
+        // superclasses since we register classes top-down.
+        this.all_explicit_assumptions.merge(local_defs);
 
+        // Set class properties
+        cls._explicit_class_assumptions = this.all_explicit_assumptions;
+        cls.default_assumptions = new StdFactKB(this.all_explicit_assumptions);
+
+        // Create a dictionary to handle the current properties of the class
         cls._prop_handler = new HashDict();
         for (const k of _assume_defined.toArray()) {
+            // note: most of the _eval_is_ methods are not yet implemented
             const meth1 = "_eval_is_" + k;
             const meth2 = "_eval_is_";
-            if ((this as any).meth1) {
-                cls._prop_handler(k, meth1);
-            } else if ((this as any).meth2) {
-                cls._prop_handler(k, meth2);
+            if (cls.meth1) {
+                cls._prop_handler.add(k, meth1);
+            } else if (cls.meth2) {
+                cls._prop_handler.add(k, meth2);
             }
         }
+
+        // Add default assumptions as class properties
         for (const item of cls.default_assumptions.entries()) {
             cls[as_property(item[0])] = item[1];
         }
 
-        const derived_from_bases = new HashSet();
-        for (const base of Util.getSupers(cls)) {
-            if (base.default_assumptions) {
-                derived_from_bases.add(cls.default_assumptions);
-            }
-        }
-
+        // Create two sets: one of the default assumption keys for this class
+        // another for the base classes
         const s = new HashSet();
-        s.add(cls.default_assumptions);
+        s.addArr(cls.default_assumptions.keys());
+        this.all_default_assumptions.addArr(cls.default_assumptions.keys());
 
-        for (const fact of derived_from_bases.difference(s).toArray()) {
+
+        // Add only the properties from base classes that we don't already have
+        for (const fact of this.all_default_assumptions.difference(s).toArray()) {
             const pname = as_property(fact);
-            if (!(pname in cls.__dict__)) {
-                cls[pname] = fact;
+            if (!(pname in cls)) {
+                make_property(cls, fact); // need to debug !!!!!!!
             }
         }
 
+        // Make sure we're not missing anything (add all properties left over)
         for (const fact of _assume_defined.toArray()) {
             const pname = as_property(fact);
-            if (!(this as any).fact) {
-                cls[pname] = fact; // !!! doubts about this
+            if (!(pname in cls)) {
+                make_property(cls, fact); // need to debug !!!!!!!!
             }
         }
     }
 }
 
-export {StdFactKB, ManagedProperties};
+export {StdFactKB, ManagedProperties, make_property};

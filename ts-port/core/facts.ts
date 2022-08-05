@@ -55,7 +55,7 @@ function _base_fact(atom: any) {
     Effectively, this merely strips the Not around a fact.
     */
     if (atom instanceof Not) {
-        return atom.arg;
+        return atom.arg();
     } else {
         return atom;
     }
@@ -67,7 +67,7 @@ function _as_pair(atom: any) {
     Effectively, this merely strips the Not around a fact.
     */
     if (atom instanceof Not) {
-        return new Implication(atom.arg, Logic.False);
+        return new Implication(atom.arg(), Logic.False);
     } else {
         return new Implication(atom, Logic.True);
     }
@@ -161,7 +161,7 @@ function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any
 
     // is beta_rules an array or a dictionary?
 
-    const x_impl: HashDict = new HashDict;
+    const x_impl: HashDict = new HashDict();
     for (const x of alpha_implications.keys()) {
         const newset = new HashSet();
         newset.add(alpha_implications.get(x));
@@ -494,6 +494,7 @@ class FactRules {
         // extract defined fact names
         this.defined_facts = new HashSet();
 
+
         for (const k of impl_ab.keys()) {
             this.defined_facts.add(_base_fact(k));
         }
@@ -513,6 +514,7 @@ class FactRules {
             beta_triggers.add(_as_pair(k), betaidxs);
         }
         this.full_implications = full_implications;
+
         this.beta_triggers = beta_triggers;
 
         // build prereq (backward chains)

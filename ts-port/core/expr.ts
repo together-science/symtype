@@ -1,8 +1,15 @@
-import {Basic, Atom} from "./basic.js";
-import {mix} from "./utility.js";
+/*
+Notable changes made (and notes):
+- Very barebones versions of Expr implemented so far - very few util methods
+*/
+
+import {Add} from "./add.js";
+import {_Basic, Atom} from "./basic.js";
+import {base, mix} from "./utility.js";
+import {ManagedProperties} from "./assumptions.js";
 
 
-const Expr = (superclass: any) => class Expr extends mix(superclass).with(Basic) { // !!! evalfmixin not yet implemented
+const Expr = (superclass: any) => class Expr extends mix(base).with(_Basic) { // !!! evalfmixin not yet implemented
     /*
     Base class for algebraic expressions.
     Explanation
@@ -22,23 +29,30 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(Basic)
 
     __slots__: any[] = [];
 
-    is_scalar = true;
+    static is_scalar = true;
 
-    __add__(other: any) {
-        // return Add(this, other);
+    constructor(...args: any) {
+        super(args);
+    }
+
+    add(other: any) {
+        return new Add(undefined, true, this, other);
     }
 
     // !!! other stuff not yet implemented
 };
 
-const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(superclass).with(Atom, Expr) {
+// eslint-disable-next-line new-cap
+ManagedProperties.register(Expr(Object));
+
+const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(base).with(Atom, Expr) {
     /*
     A parent class for object which are both atoms and Exprs.
     For example: Symbol, Number, Rational, Integer, ...
     But not: Add, Mul, Pow, ...
     */
-    is_number = false;
-    is_Atom = true;
+    static is_number = false;
+    static is_Atom = true;
 
     __slots__: any[] = [];
 
@@ -59,5 +73,7 @@ const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(superclass)
     }
 };
 
+// eslint-disable-next-line new-cap
+ManagedProperties.register(AtomicExpr(Object));
 
 export {AtomicExpr, Expr};
