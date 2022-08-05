@@ -9,6 +9,7 @@ import {S} from "./singleton.js";
 import {Basic} from "./basic.js";
 import {_Number_} from "./numbers.js";
 import {ManagedProperties} from "./assumptions.js";
+import {Symbol} from "./symbol.js";
 
 function _addsort(args: any[]) {
     // eslint-disable-next-line new-cap
@@ -207,7 +208,15 @@ ManagedProperties.register(Add);
 
 export {Add};
 
-const n1 = _Number_.new(1);
+const n1 = _Number_.new(0);
 const n2 = _Number_.new(2);
-console.log(new Add(true, true, n1, n2));
+const n3 = _Number_.new(1);
+const x = new Symbol("x");
+// This example works, and returns Add(2, x)
+console.log(new Add(true, true, n1, x, n2));
+
+// This example does NOT work, because the system currently has no way to
+// evaluate 1 + 2, and I'm not quite sure how this is evaluated in their code.
+// This SHOULD return Add(3, x)
+console.log(new Add(true, true, n1, n3, x));
 
