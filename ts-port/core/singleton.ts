@@ -6,7 +6,6 @@ Notable changes made (and notes)
 
 /* eslint-disable new-cap */
 import {ManagedProperties} from "./assumptions.js";
-import {One, Zero} from "./numbers.js";
 
 class Singleton {
     static registry: Record<any, any> = {};
@@ -20,11 +19,5 @@ class Singleton {
 
 const S: any = new Singleton();
 
-Singleton.register("Zero", Zero);
-S.Zero = Singleton.registry["Zero"];
 
-Singleton.register("One", One);
-S.One = Singleton.registry["One"];
-
-
-export {S};
+export {S, Singleton};

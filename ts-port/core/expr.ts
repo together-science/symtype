@@ -2,11 +2,10 @@
 Notable changes made (and notes):
 - Very barebones versions of Expr implemented so far - very few util methods
 */
-
-import {Add} from "./add.js";
 import {_Basic, Atom} from "./basic.js";
 import {base, mix} from "./utility.js";
 import {ManagedProperties} from "./assumptions.js";
+import {S} from "./singleton.js";
 
 
 const Expr = (superclass: any) => class Expr extends mix(base).with(_Basic) { // !!! evalfmixin not yet implemented
@@ -35,15 +34,16 @@ const Expr = (superclass: any) => class Expr extends mix(base).with(_Basic) { //
         super(args);
     }
 
-    add(other: any) {
-        return new Add(undefined, true, this, other);
+    as_base_exp() {
+        return [this, S.One];
     }
 
     // !!! other stuff not yet implemented
 };
 
 // eslint-disable-next-line new-cap
-ManagedProperties.register(Expr(Object));
+const _Expr = Expr(Object);
+ManagedProperties.register(_Expr);
 
 const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(base).with(Atom, Expr) {
     /*
@@ -74,6 +74,7 @@ const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(base).with(
 };
 
 // eslint-disable-next-line new-cap
-ManagedProperties.register(AtomicExpr(Object));
+const _AtomicExpr = AtomicExpr(Object);
+ManagedProperties.register(_AtomicExpr);
 
-export {AtomicExpr, Expr};
+export {AtomicExpr, _AtomicExpr, Expr, _Expr};

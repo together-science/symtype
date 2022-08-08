@@ -13,7 +13,7 @@ import {StdFactKB} from "./assumptions.js";
 import {ManagedProperties} from "./assumptions.js";
 
 
-class Symbol extends mix(base).with(AtomicExpr, Boolean) {
+class Symbol extends mix(base).with(Boolean, AtomicExpr) {
     /*
     Assumptions:
        commutative = True

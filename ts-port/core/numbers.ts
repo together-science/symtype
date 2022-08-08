@@ -10,7 +10,10 @@ import {AtomicExpr} from "./expr.js";
 import {mix, base} from "./utility.js";
 import {NumberKind} from "./kind.js";
 import {ManagedProperties} from "./assumptions.js";
-import {S} from "./singleton.js";
+import {global_parameters} from "./parameters.js";
+import {Add} from "./add.js";
+import {Mul} from "./mul.js";
+import {S, Singleton} from "./singleton.js";
 
 const _Number = (superclass: any) => class _Number extends mix(base).with(AtomicExpr) {
     static is_commutative = true;
@@ -72,13 +75,41 @@ ManagedProperties.register(Rational);
 
 const _Integer = (superclass: any) => class _Integer extends mix(base).with(_Rational) {
     static is_integer = true;
-    static q = 1;
+    q = 1;
     static is_Integer = true;
     __slots__: any[] = [];
 
     constructor(p: any) {
         super();
         this.p = p;
+    }
+
+    __add__(other: any) {
+        if (global_parameters.evaluate) {
+            if (typeof other === "number") {
+                return new Integer(this.p + other);
+            } else if (other instanceof Integer || other instanceof One || other instanceof Zero) {
+                return new Integer(this.p + other.p);
+            } else {
+                return new Add(true, true, this, other);
+            }
+        }
+    }
+
+    _eval_power(expt: any) {
+        return new Integer(this.p ** expt.p);
+    }
+
+    __mul__(other: any) {
+        if (global_parameters.evaluate) {
+            if (typeof other === "number") {
+                return new Integer(this.p * other);
+            } else if (other instanceof _Integer) {
+                return new Integer(this.p * other.p);
+            } else {
+                return new Mul(true, true, this, other);
+            }
+        }
     }
 };
 
@@ -97,8 +128,8 @@ ManagedProperties.register(IntegerConstant);
 
 const _Zero = (superclass: any) => class _Zero extends mix(base).with(_IntegerConstant) {
     __slots__: any[] = [];
-    static p = 0;
-    static q = 1;
+    p = 0;
+    q = 1;
     static is_positive = false;
     static is_negative = false;
     static is_zero = true;
@@ -114,8 +145,8 @@ ManagedProperties.register(Zero);
 const _One = (superclass: any) => class _One extends mix(base).with(_IntegerConstant) {
     static is_number = true;
     static is_positive = true;
-    static p = 1;
-    static q = 1;
+    p = 1;
+    q = 1;
     __slots__: any[] = [];
 };
 
@@ -124,4 +155,11 @@ const One = _One(Object);
 ManagedProperties.register(One);
 
 
-export {Rational, _Number_, Zero, One};
+Singleton.register("Zero", Zero);
+S.Zero = Singleton.registry["Zero"];
+
+Singleton.register("One", One);
+S.One = Singleton.registry["One"];
+
+
+export {Rational, _Number_, Integer, _Integer, Zero, One, _One};

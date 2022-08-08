@@ -7,7 +7,6 @@ Notable changes made (and notes):
 import {ManagedProperties} from "./assumptions.js";
 import {Util, HashDict, mix, base} from "./utility.js";
 import {UndefinedKind} from "./kind.js";
-
 const _Basic = (superclass: any) => class _Basic extends superclass {
     /*
     Base class for all SymPy objects.
@@ -84,6 +83,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
 
     constructor(...args: any) {
         super();
+        console.log(this.constructor.name);
         const cls: any = this.constructor;
         this._assumptions = cls.default_assumptions;
         this._mhash = undefined;
