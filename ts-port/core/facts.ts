@@ -45,6 +45,7 @@ Significant changes made (WB and GM):
 */
 
 
+import {StdFactKB} from "./assumptions.js";
 import {Logic, True, False, And, Or, Not} from "./logic.js";
 
 import {Util, HashSet, SetDefaultDict, HashDict, Implication} from "./utility.js";
@@ -551,15 +552,6 @@ class FactKB extends HashDict {
 
     rules;
 
-    toString(): string {
-        // string representation of dictionary
-        let res: string = "";
-        for (const item of Object.values(this.dict)) {
-            res += item[0] + " : " + item[1] + ",\n";
-        }
-        return res;
-    }
-
     constructor(rules: any) {
         super();
         this.rules = rules;
@@ -598,7 +590,7 @@ class FactKB extends HashDict {
         const beta_triggers: SetDefaultDict = this.rules.beta_triggers;
         const beta_rules: any[] = this.rules.beta_rules;
 
-        if (facts instanceof HashDict) {
+        if (facts instanceof HashDict || facts instanceof StdFactKB) {
             facts = facts.entries();
         }
 

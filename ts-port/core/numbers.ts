@@ -6,16 +6,96 @@ Notable changes made (and notes):
 */
 
 // basic implementations only - no utility added yet
-import {AtomicExpr} from "./expr.js";
-import {mix, base} from "./utility.js";
+import {_AtomicExpr} from "./expr.js";
 import {NumberKind} from "./kind.js";
 import {ManagedProperties} from "./assumptions.js";
 import {global_parameters} from "./parameters.js";
 import {Add} from "./add.js";
-import {Mul} from "./mul.js";
 import {S, Singleton} from "./singleton.js";
+import Decimal from "decimal.js";
+import {as_int} from "../utilities/misc.js";
+import {Pow} from "./power.js";
+import {Global} from "./global.js";
+import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_.js";
+import {HashDict} from "./utility.js";
+import {Mul} from "./mul.js";
 
-const _Number = (superclass: any) => class _Number extends mix(base).with(AtomicExpr) {
+function igcd(x: number, y: number) {
+    while (y) {
+        const t = y;
+        y = x % y;
+        x = t;
+    }
+    return x;
+}
+
+export function int_nthroot(y: number, n: number) {
+    const x = Math.floor(y**(1/n));
+    const isexact = x**n === y;
+    return [x, isexact];
+}
+
+function toRatio(n: any, eps: number) {
+    const gcde = (e: number, x: number, y: number) => {
+        const _gcd: any = (a: number, b: number) => (b < e ? a : _gcd(b, a % b));
+        return _gcd(Math.abs(x), Math.abs(y));
+    };
+    const c = gcde(Boolean(eps) ? eps : (1 / 10000), 1, n);
+    return [Math.floor(n / c), Math.floor(1 / c)];
+}
+
+function igcdex(a: number = undefined, b: number = undefined) {
+    if (typeof a === "undefined" && typeof b === "undefined") {
+        return [0, 1, 0];
+    }
+
+    if (typeof a === "undefined") {
+        return [0, Math.floor(b / Math.abs(b)), Math.abs(b)];
+    }
+
+    if (typeof b === "undefined") {
+        return [Math.floor(a / Math.abs(a)), 0, Math.abs(a)];
+    }
+    let x_sign;
+    let y_sign;
+    if (a < 0) {
+        a = -1;
+        x_sign = -1;
+    } else {
+        x_sign = 1;
+    }
+    if (b < 0) {
+        b = -b;
+        y_sign = -1;
+    } else {
+        y_sign = 1;
+    }
+
+    let [x, y, r, s] = [1, 0, 0, 1];
+    let c; let q;
+    while (b) {
+        [c, q] = [a % b, Math.floor(a / b)];
+        [a, b, r, s, x, y] = [b, c, x - q * r, y - q * s, r, s];
+    }
+    return [x * x_sign, y * y_sign, a];
+}
+
+function mod_inverse(a: any, m: any) {
+    let c = undefined;
+    [a, m] = [as_int(a), as_int(m)];
+    if (m !== 1 && m !== -1) {
+        // eslint-disable-next-line no-unused-vars
+        const [x, b, g] = igcdex(a, m);
+        if (g === 1) {
+            c = x & m;
+        }
+    }
+    return c;
+}
+
+Global.registerfunc("mod_inverse", mod_inverse);
+
+class _Number_ extends _AtomicExpr {
     static is_commutative = true;
     static is_number = true;
     static is_Number = true;
@@ -25,134 +105,840 @@ const _Number = (superclass: any) => class _Number extends mix(base).with(Atomic
         if (obj.length === 1) {
             obj = obj[0];
         }
-        if (obj instanceof _Number) {
+        if (obj instanceof _Number_) {
             return obj;
-        }
-        if (Number.isInteger(obj)) {
-            if (obj === 0) {
-                return S.Zero;
-            } if (obj === 1) {
-                return S.One;
-            }
+        } else if (typeof obj === "number" && !Number.isInteger(obj) || obj instanceof Decimal || typeof obj === "string") {
+            return new Float(obj);
+        } else if (Number.isInteger(obj)) {
             return new Integer(obj);
+        } else if (obj.length === 2) {
+            return new Rational(obj[0], obj[1]);
+        } else if (typeof obj === "string") {
+            const _obj = obj.toLowerCase();
+            if (_obj === "nan") {
+                return S.NaN;
+            } else if (_obj === "inf") {
+                return S.Infinity;
+            } else if (_obj === "+inf") {
+                return S.Infinity;
+            } else if (_obj === "-inf") {
+                return S.NegativeInfinity;
+            } else {
+                throw new Error("argument for number is invalid");
+            }
         }
-        if (obj.length === 2) {
-            return new Rational(...obj);
+        throw new Error("argument for number is invalid");
+    }
+
+    as_coeff_Mul(rational: boolean = false) {
+        if (rational && !this.is_Rational) {
+            return [S.One, this];
         }
+        if (this) {
+            return [this, S.One];
+        } else {
+            return [S.One, this];
+        }
+    }
+
+    as_coeff_Add() {
+        return [this, S.Zero];
+    }
+
+    // NOTE: THESE METHODS ARE NOT YET IMPLEMENTED IN THE SUPERCLASS
+
+    __add__(other: any) {
+        if (other instanceof Number && global_parameters.evaluate) {
+            if (other === S.NaN) {
+                return S.NaN;
+            } else if (other === S.Infinity) {
+                return S.Infinity;
+            } else if (other === S.NegativeInfinity) {
+                return S.NegativeInfinity;
+            }
+        }
+        return super.__add__(other);
+    }
+
+    __sub__(other: any) {
+        if (other instanceof Number && global_parameters.evaluate) {
+            if (other === S.NaN) {
+                return S.NaN;
+            } else if (other === S.Infinity) {
+                return S.NegativeInfinity;
+            } else if (other === S.NegativeInfinity) {
+                return S.Infinity;
+            }
+        }
+        return super.__sub__(other);
+    }
+
+    __mul__(other: any) {
+        if (other instanceof Number && global_parameters.evaluate) {
+            const cls: any = this.constructor;
+            if (other === S.Nan) {
+                return S.Nan;
+            } else if (other === S.Infinity) {
+                if (cls.is_zero) {
+                    return S.NaN;
+                } else if (cls.is_positive) {
+                    return S.Infinity;
+                } else {
+                    return S.NegativeInfinity;
+                }
+            } else if (other === S.NegativeInfinity) {
+                if (cls.is_zero) {
+                    return S.NaN;
+                } else if (cls.is_positive) {
+                    return S.NegativeInfinity;
+                } else {
+                    return S.Infinity;
+                }
+            }
+        }
+        return super.__mul__(other);
+    }
+    __truediv__(other: any) {
+        if (other instanceof Number && global_parameters.evaluate) {
+            if (other === S.NaN) {
+                return S.NaN;
+            } else if (other === S.Infinity || other === S.NegativeInfinity) {
+                return S.Zero;
+            }
+        }
+        return super.__truediv__(other);
+    }
+
+    eval_evalf(prec: number) {
+        return new Float(this._float_val(prec), prec);
+    }
+
+    _float_val(prec: number): any {
+        return undefined;
     }
 };
 
 // eslint-disable-next-line new-cap
-const _Number_ = _Number(Object);
 ManagedProperties.register(_Number_);
+Global.register("_Number_", _Number_.new);
 
-const _Rational = (superclass: any) => class _Rational extends mix(base).with(_Number) {
+class Float extends _Number_ {
+    __slots__: any[] = ["_mpf_", "_prec"];
+    _mpf_: [number, number, number, number];
+    static is_rational: any = undefined;
+    static is_irrational: any = undefined;
+    static is_number = true;
+    static is_real = true;
+    static is_extended_real = true;
+    static is_Float = true;
+    decimal: Decimal;
+    prec: number;
+
+    constructor(num: any, prec: any = 15) {
+        super();
+        this.prec = prec;
+        if (typeof num !== "undefined") {
+            if (num instanceof Float) {
+                this.decimal = num.decimal;
+            } else if (num instanceof Decimal) {
+                this.decimal = num;
+            } else {
+                this.decimal = new Decimal(num);
+            }
+        }
+    }
+
+    __add__(other: any) {
+        if (global_parameters.evaluate && other instanceof _Number_) {
+            const val = other._float_val(this.prec);
+            return new Float(Decimal.set({precision: this.prec}).add(this.decimal, val.decimal), this.prec);
+        }
+        return super.__add__(other);
+    }
+
+    __sub__(other: any) {
+        if (global_parameters.evaluate && other instanceof _Number_) {
+            const val = other._float_val(this.prec);
+            return new Float(Decimal.set({precision: this.prec}).sub(this.decimal, val.decimal), this.prec);
+        }
+        return super.__sub__(other);
+    }
+
+    __mul__(other: any) {
+        if (global_parameters.evaluate && other instanceof _Number_) {
+            const val = other._float_val(this.prec);
+            return new Float(Decimal.set({precision: this.prec}).mul(this.decimal, val.decimal), this.prec);
+        }
+        return super.__mul__(other);
+    }
+
+    __truediv__(other: any) {
+        if (global_parameters.evaluate && other instanceof _Number_) {
+            const val = other._float_val(this.prec);
+            return new Float(Decimal.set({precision: this.prec}).div(this.decimal, val.decimal), this.prec);
+        }
+        return super.__div__(other);
+    }
+
+    _eval_is_negative() {
+        return this.decimal.lessThan(0);
+    }
+
+    // return new Float(Decimal.set({precision: this.prec}).pow(this.decimal, other.eval_evalf(this.prec).decimal), this.prec);
+
+    _eval_power(expt: any) {
+        if (this === S.Zero) {
+            if (expt.is_extended_positive) {
+                return this;
+            } if (expt.is_extended_negative) {
+                return S.ComplexInfinity;
+            }
+        }
+        if (expt instanceof _Number_) {
+            if (expt instanceof Integer) {
+                const prec = this.prec;
+                return new Float(Decimal.set({precision: this.prec}).pow(this.decimal, expt.p), prec);
+            } else if (expt instanceof Rational &&
+                expt.p === 1 && expt.q % 2 !== 0 && this.is_negative()) {
+                const negpart = (this.__mul__(S.NegativeOne))._eval_power(expt);
+                return new Mul(true, true, negpart, new Pow(S.NegativeOne, expt, false));
+            }
+            const val = expt._float_val(this.prec).decimal;
+            const res = Decimal.set({precision: this.prec}).pow(this.decimal, val);
+            if (res.isNaN()) {
+                throw new Error("complex and imaginary numbers not yet implemented");
+            }
+            return new Float(res);
+        }
+    }
+
+    _float_val(prec: number): any {
+        return this;
+    }
+
+    inverse() {
+        return new Float(1/(this.decimal as any));
+    }
+
+    _eval_is_finite() {
+        return this.decimal.isFinite();
+    }
+}
+
+ManagedProperties.register(Float);
+
+
+class Rational extends _Number_ {
     static is_real = true;
     static is_integer = false;
     static is_rational = true;
     static is_number = true;
-    p: Number;
-    q: Number;
-
+    p: number;
+    q: number;
     __slots__: any[] = ["p", "q"];
 
     static is_Rational = true;
 
-    constructor(...args: any[]) {
+
+    constructor(p: any, q: any = undefined, gcd: number = undefined, simplify: boolean = true) {
         super();
-        this.p = args[0];
-        this.q = args[1];
+        if (typeof q === "undefined") {
+            if (p instanceof Rational) {
+                return p;
+            } else {
+                if (typeof p === "number" && p % 1 !== 0) {
+                    return new Rational(toRatio(p, 0.0001));
+                } else {}
+            }
+            q = 1;
+            gcd = 1;
+        }
+        if (!Number.isInteger(p)) {
+            p = new Rational(p);
+            q *= p.q;
+            p = p.p;
+        }
+        if (!Number.isInteger(q)) {
+            q = new Rational(q);
+            p *= q.q;
+            q = q.p;
+        }
+        if (q === 0) {
+            if (p === 0) {
+                return S.Nan;
+            }
+            return S.ComplexInfinity;
+        }
+        if (q < 0) {
+            q = -q;
+            p = -p;
+        }
+        if (typeof gcd === "undefined") {
+            gcd = igcd(Math.abs(p), q);
+        }
+        if (gcd > 1) {
+            p = p/gcd;
+            q = q/gcd;
+        }
+        if (q === 1 && simplify) {
+            return new Integer(p);
+        }
+        this.p = p;
+        this.q = q;
     }
 
     hashKey() {
         return this.constructor.name + this.p + this.q;
     }
-};
-
-// eslint-disable-next-line new-cap
-const Rational = _Rational(Object);
-ManagedProperties.register(Rational);
-
-const _Integer = (superclass: any) => class _Integer extends mix(base).with(_Rational) {
-    static is_integer = true;
-    q = 1;
-    static is_Integer = true;
-    __slots__: any[] = [];
-
-    constructor(p: any) {
-        super();
-        this.p = p;
-    }
 
     __add__(other: any) {
         if (global_parameters.evaluate) {
-            if (typeof other === "number") {
-                return new Integer(this.p + other);
-            } else if (other instanceof Integer || other instanceof One || other instanceof Zero) {
-                return new Integer(this.p + other.p);
+            if (other instanceof Integer) {
+                return new Rational(this.p + this.q * other.p, this.q, 1);
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.q + this.q * other.p, this.q * other.q);
+            } else if (other instanceof Float) {
+                return other.__add__(this);
             } else {
-                return new Add(true, true, this, other);
+                return super.__add__(other);
             }
         }
+        return super.__add__(other);
     }
 
-    _eval_power(expt: any) {
-        return new Integer(this.p ** expt.p);
+    __radd__(other: any) {
+        return this.__add__(other);
+    }
+
+    __sub__(other: any) {
+        if (global_parameters.evaluate) {
+            if (other instanceof Integer) {
+                return new Rational(this.q * other.p - this.p, this.q, 1);
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.q - this.q * other.p, this.q * other.q);
+            } else if (other instanceof Float) {
+                return this.__mul__(S.NegativeOne).__add__(other);
+            } else {
+                return super.__sub__(other);
+            }
+        }
+        return super.__sub__(other);
+    }
+
+    __rsub__(other: any) {
+        if (global_parameters.evaluate) {
+            if (other instanceof Integer) {
+                return new Rational(this.p - this.q * other.p, this.q, 1);
+            } else if (other instanceof Rational) {
+                return new Rational(this.q * other.p - this.p * other.q, this.q * other.q);
+            } else if (other instanceof Float) {
+                return other.__mul__(S.NegativeOne).__add__(this);
+            } else {
+                return super.__rsub__(other);
+            }
+        }
+        return super.__rsub__(other);
     }
 
     __mul__(other: any) {
         if (global_parameters.evaluate) {
-            if (typeof other === "number") {
-                return new Integer(this.p * other);
-            } else if (other instanceof _Integer) {
-                return new Integer(this.p * other.p);
+            if (other instanceof Integer) {
+                return new Rational(this.p * other.p, this.q, igcd(other.p, this.q));
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.p, this.q * other.q, igcd(this.p, other.q) * igcd(this.q, other.p));
+            } else if (other instanceof Float) {
+                return other.__mul__(this);
             } else {
-                return new Mul(true, true, this, other);
+                return super.__mul__(other);
             }
         }
+        return super.__mul__(other);
+    }
+
+    __rmul__(other: any) {
+        return this.__mul__(other);
+    }
+
+    __truediv__(other: any) {
+        if (global_parameters.evaluate) {
+            if (other instanceof Integer) {
+                return new Rational(this.p, this.q * other.p, igcd(this.p, other.p));
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.q, this.q * other.p, igcd(this.p, other.p) * igcd(this.q, other.q));
+            } else if (other instanceof Float) {
+                return this.__mul__(other.inverse());
+            } else {
+                return super.__truediv__(other);
+            }
+        }
+        return super.__truediv__(other);
+    }
+
+    __rtruediv__(other: any) {
+        if (global_parameters.evaluate) {
+            if (other instanceof Integer) {
+                return new Rational(other.p * this.q, this.p, igcd(this.p, other.p));
+            } else if (other instanceof Rational) {
+                return new Rational(other.p * this.q, other.q * this.p, igcd(this.p, other.p) * igcd(this.q, other.q));
+            } else if (other instanceof Float) {
+                return other.__mul__(S.One.__truediv__(this));
+            } else {
+                return super.__rtruediv__(other);
+            }
+        }
+        return super.__rtruediv__(other);
+    }
+
+
+    _eval_power(expt: any) {
+        if (expt instanceof _Number_) {
+            if (expt instanceof Float) {
+                return this.eval_evalf(expt.prec)._eval_power(expt);
+            } else if (expt instanceof Integer) {
+                return new Rational(this.p ** expt.p, this.q ** expt.p, 1);
+            } else if (expt instanceof Rational) {
+                let intpart = Math.floor(expt.p / expt.q);
+                if (intpart) {
+                    intpart++;
+                    const remfracpart = intpart * expt.q - expt.p;
+                    const ratfracpart = new Rational(remfracpart, expt.q);
+                    if (this.p !== 1) {
+                        // eslint-disable-next-line max-len
+                        return new Integer(this.p)._eval_power(expt).__mul__(new Integer(this.q))._eval_power(ratfracpart).__mul__(new Rational(1, this.q ** intpart, 1));
+                    }
+                    return new Integer(this.q)._eval_power(ratfracpart).__mul__(new Rational(1, this.q ** intpart, 1));
+                } else {
+                    const remfracpart = expt.q - expt.p;
+                    const ratfracpart = new Rational(remfracpart, expt.q);
+                    if (this.p !== 1) {
+                        // eslint-disable-next-line max-len
+                        const p1 = new Integer(this.p)._eval_power(expt);
+                        const p2 = new Integer(this.q)._eval_power(ratfracpart);
+                        return p1.__mul__(p2).__mul__(new Rational(1, this.q, 1));
+                    }
+                    return new Integer(this.q)._eval_power(ratfracpart).__mul__(new Rational(1, this.q, 1));
+                }
+            }
+        }
+    }
+
+    as_coeff_Add() {
+        return [this, S.Zero];
+    }
+
+    _float_val(prec: number): any {
+        const a = new Decimal(this.p);
+        const b = new Decimal(this.q);
+        return new Float(Decimal.set({precision: prec}).div(a, b));
+    }
+    _as_numer_denom() {
+        return [new Integer(this.p), new Integer(this.q)];
+    }
+
+    factors(limit: any = undefined) {
+        return factorrat(this, limit);
+    }
+
+    _eval_is_negative() {
+        if (this.p < 0 && this.q > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    _eval_is_odd() {
+        return this.p % 2 !== 0;
+    }
+
+    _eval_is_even() {
+        return this.p % 2 === 0;
+    }
+
+    _eval_is_finite() {
+        return this.p === S.Infinity || this.p === S.NegativeInfinity;
+    }
+
+    eq(other: Rational) {
+        return this.p === other.p && this.q === other.q;
     }
 };
 
 // eslint-disable-next-line new-cap
-const Integer = _Integer(Object);
+ManagedProperties.register(Rational);
+
+class Integer extends Rational {
+    static is_integer = true;
+    static is_Integer = true;
+    __slots__: any[] = [];
+    constructor(p: number) {
+        super(p, undefined, undefined, false);
+        if (p === 1) {
+            return S.One;
+        } else if (p === 0) {
+            return S.Zero;
+        } else if (p === -1) {
+            return S.NegativeOne;
+        }
+        this.p = p;
+    }
+
+    factors(limit: any = undefined) {
+        return factorint(this.p, limit);
+    }
+
+    __add__(other: any): any {
+        if (global_parameters.evaluate) {
+            if (Number.isInteger(other)) {
+                return new Integer(this.p + other);
+            } else if (other instanceof Integer) {
+                return new Integer(this.p + other.p);
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.q + other.p, other.q, 1);
+            } else {
+                return super.__add__(other);
+            }
+        } else {
+            return new Add(true, true, this, other);
+        }
+    }
+
+    __radd__(other: any): any {
+        if (global_parameters.evaluate) {
+            if (Number.isInteger(other)) {
+                return new Integer(other + this.p);
+            } else if (other instanceof Rational) {
+                return new Rational(other.p + this.p * other.q, other.q, 1);
+            } else {
+                return super.__radd__(other);
+            }
+        } else {
+            return super.__radd__(other);
+        }
+    }
+
+    __sub__(other: any): any {
+        if (global_parameters.evaluate) {
+            if (Number.isInteger(other)) {
+                return new Integer(this.p - other);
+            } else if (other instanceof Integer) {
+                return new Integer(this.p - other.p);
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.q - other.p, other.q, 1);
+            } else {
+                return super.__sub__(other);
+            }
+        } else {
+            return super.__sub__(other);
+        }
+    }
+
+    __rsub__(other: any): any {
+        if (global_parameters.evaluate) {
+            if (Number.isInteger(other)) {
+                return new Integer(this.p - other);
+            } else if (other instanceof Rational) {
+                return new Rational(other.p - this.p * other.q, other.q, 1);
+            } else {
+                return super.__rsub__(other);
+            }
+        } else {
+            return super.__rsub__(other);
+        }
+    }
+
+    __mul__(other: any): any {
+        if (global_parameters.evaluate) {
+            if (Number.isInteger(other) ) {
+                return new Integer(this.p * other);
+            } else if (other instanceof Integer) {
+                return new Integer(this.p * other.p);
+            } else if (other instanceof Rational) {
+                return new Rational(this.p * other.p, other.q, igcd(this.p, other.q));
+            } else {
+                return super.__mul__(other);
+            }
+        } else {
+            return super.__mul__(other);
+        }
+    }
+
+    __rmul__(other: any): any {
+        if (global_parameters.evaluate) {
+            if (Number.isInteger(other) ) {
+                return new Integer(other * this.p);
+            } else if (other instanceof Rational) {
+                return new Rational(other.p * this.p, other.q, igcd(this.p, other.q));
+            } else {
+                return super.__rmul__(other);
+            }
+        } else {
+            return super.__rmul__(other);
+        }
+    }
+
+    _eval_is_negative() {
+        return this.p < 0;
+    }
+
+    _eval_is_odd() {
+        return this.p % 2 === 1;
+    }
+
+    _eval_power(expt: any): any {
+        if (expt === S.Infinity) {
+            if (this.p > 1) {
+                return S.Infinity;
+            }
+        }
+        if (expt === S.NegativeInfinity) {
+            return new Rational(1, this, 1)._eval_power(S.Infinity);
+        }
+        if (!(expt instanceof _Number_)) {
+            if (this.is_negative && expt.is_even) {
+                return this.__mul__(S.NegativeOne)._eval_power(expt);
+            }
+        }
+        if (expt instanceof Float) {
+            return super._eval_power(expt);
+        }
+        if (!(expt instanceof Rational)) {
+            return undefined;
+        }
+        if (expt.is_negative()) {
+            const ne = expt.__mul__(S.NegativeOne);
+            if (this.is_negative()) {
+                return S.NegativeOne._eval_power(expt).__mul__(new Rational(1, this.__mul__(S.NegativeOne), 1))._eval_power(ne);
+            } else {
+                return new Rational(1, this.p, 1)._eval_power(ne);
+            }
+        }
+        const [x, xexact] = int_nthroot(Math.abs(this.p), expt.q);
+        if (xexact) {
+            let result = new Integer((x as number)**Math.abs(expt.p));
+            if (this.is_negative()) {
+                result = result.__mul__(S.NegativeOne._eval_power(expt));
+            }
+            return result;
+        }
+        const b_pos = Math.abs(this.p);
+        const p = perfect_power(b_pos);
+        let dict = new HashDict();
+        if (p !== false) {
+            dict.add(p[0], p[1]);
+        } else {
+            dict = new Integer(b_pos).factors(2**15);
+        }
+
+        let out_int = 1;
+        let out_rad: Integer = S.One;
+        let sqr_int = 1;
+        let sqr_gcd = 0;
+        const sqr_dict = new HashDict();
+        let prime; let exponent;
+        for ([prime, exponent] of dict.entries()) {
+            exponent *= expt.p;
+            const [div_e, div_m] = divmod(exponent, expt.q);
+            if (div_e > 0) {
+                out_int *= prime**div_e;
+            }
+            if (div_m > 0) {
+                const g = igcd(div_m, expt.q);
+                if (g !== 1) {
+                    out_rad = out_rad.__mul__(new Pow(prime, new Rational(Math.floor(div_m/g), Math.floor(expt.q/g), 1)));
+                } else {
+                    sqr_dict.add(prime, div_m);
+                }
+            }
+        }
+        for (const [, ex] of sqr_dict.entries()) {
+            if (sqr_gcd === 0) {
+                sqr_gcd = ex;
+            } else {
+                sqr_gcd = igcd(sqr_gcd, ex);
+                if (sqr_gcd === 1) {
+                    break;
+                }
+            }
+        }
+        for (const [k, v] of sqr_dict.entries()) {
+            sqr_int *= k**(Math.floor(v/sqr_gcd));
+        }
+        let result: any;
+        if (sqr_int === b_pos && out_int === 1 && out_rad === S.One) {
+            result = undefined;
+        } else {
+            const p1 = out_rad.__mul__(new Integer(out_int));
+            const p2 = new Pow(new Integer(sqr_int), new Rational(sqr_gcd, expt.q));
+            result = new Mul(true, true, p1, p2);
+            if (this.is_negative()) {
+                result = result.__mul__(new Pow(S.NegativeOne, expt));
+            }
+        }
+        return result;
+    }
+};
+
 ManagedProperties.register(Integer);
 
-const _IntegerConstant = (superclass: any) => class _IntegerConstant extends mix(base).with(_Integer) {
+
+class IntegerConstant extends Integer {
     __slots__: any[] = [];
 };
 
-// eslint-disable-next-line new-cap
-// eslint-disable-next-line new-cap
-const IntegerConstant = _IntegerConstant(Object);
 ManagedProperties.register(IntegerConstant);
 
-const _Zero = (superclass: any) => class _Zero extends mix(base).with(_IntegerConstant) {
+class Zero extends IntegerConstant {
     __slots__: any[] = [];
-    p = 0;
-    q = 1;
     static is_positive = false;
-    static is_negative = false;
+    static static = false;
     static is_zero = true;
     static is_number = true;
     static is_comparable = true;
+    constructor() {
+        super(0);
+    }
 };
 
-// eslint-disable-next-line new-cap
-const Zero = _Zero(Object);
 ManagedProperties.register(Zero);
 
 
-const _One = (superclass: any) => class _One extends mix(base).with(_IntegerConstant) {
+class One extends IntegerConstant {
     static is_number = true;
     static is_positive = true;
-    p = 1;
-    q = 1;
+    static is_zero = false;
     __slots__: any[] = [];
+    constructor() {
+        super(1);
+    }
 };
 
-// eslint-disable-next-line new-cap
-const One = _One(Object);
 ManagedProperties.register(One);
+
+
+class NegativeOne extends IntegerConstant {
+    static is_number = true;
+    __slots__: any[] = [];
+    constructor() {
+        super(-1);
+    }
+
+    _eval_power(expt: any) {
+        if (expt.is_odd) {
+            return S.NegativeOne;
+        } else if (expt.is_even) {
+            return S.One;
+        }
+        if (expt instanceof _Number_) {
+            if (expt instanceof Float) {
+                return new Float(-1.0)._eval_power(expt);
+            }
+            if (expt === S.NaN) {
+                return S.NaN;
+            }
+            if (expt === S.Infinity || expt === S.NegativeInfinity) {
+                return S.NaN;
+            }
+        }
+        return;
+    }
+
+    /*
+    def _eval_power(self, expt):
+        if expt.is_odd:
+            return S.NegativeOne
+        if expt.is_even:
+            return S.One
+        if isinstance(expt, Number):
+            if isinstance(expt, Float):
+                return Float(-1.0)**expt
+            if expt is S.NaN:
+                return S.NaN
+            if expt in (S.Infinity, S.NegativeInfinity):
+                return S.NaN
+            if expt is S.Half:
+                return S.ImaginaryUnit
+            if isinstance(expt, Rational):
+                if expt.q == 2:
+                    return S.ImaginaryUnit**Integer(expt.p)
+                i, r = divmod(expt.p, expt.q)
+                if i:
+                    return self**i*self**Rational(r, expt.q)
+        return
+    */
+};
+
+ManagedProperties.register(NegativeOne);
+
+class NaN extends Number {
+    static is_commutative = true;
+    static is_extended_real: any = undefined;
+    static is_real: any = undefined;
+    static is_rationa: any = undefined;
+    static is_algebraic: any = undefined;
+    static is_transcendental: any = undefined;
+    static is_integer: any = undefined;
+    static is_comparable = false;
+    static is_finite: any = undefined;
+    static is_zero: any = undefined;
+    static is_prime: any = undefined;
+    static is_positive: any = undefined;
+    static is_negative: any = undefined;
+    static is_number = true;
+    __slots__: any = [];
+}
+
+ManagedProperties.register(NaN);
+
+// eslint-disable-next-line new-cap
+class ComplexInfinity extends _AtomicExpr {
+    static is_commutative = true;
+    static is_infinite = true;
+    static is_number = true;
+    static is_prime = false;
+    static is_complex = false;
+    static is_extended_real = false;
+    kind = NumberKind;
+    __slots__: any = [];
+
+    constructor() {
+        super();
+    }
+}
+
+ManagedProperties.register(ComplexInfinity);
+
+class Infinity extends _Number_ {
+    static is_commutative = true;
+    static is_number = true;
+    static is_complex = false;
+    static is_extended_real = true;
+    static is_infinite = true;
+    static is_comparable = true;
+    static is_extended_positive = true;
+    static is_prime = false;
+    __slots__: any = [];
+
+    constructor() {
+        super();
+    }
+}
+
+class NegativeInfinity extends _Number_ {
+    static is_extended_real = true;
+    static is_complex = false;
+    static is_commutative = true;
+    static is_infinite = true;
+    static is_comparable = true;
+    static is_extended_negative = true;
+    static is_number = true;
+    static is_prime = false;
+    __slots__: any = [];
+
+    constructor() {
+        super();
+    }
+}
 
 
 Singleton.register("Zero", Zero);
@@ -161,5 +947,19 @@ S.Zero = Singleton.registry["Zero"];
 Singleton.register("One", One);
 S.One = Singleton.registry["One"];
 
+Singleton.register("NegativeOne", NegativeOne);
+S.NegativeOne = Singleton.registry["NegativeOne"];
 
-export {Rational, _Number_, Integer, _Integer, Zero, One, _One};
+Singleton.register("NaN", NaN);
+S.NaN = Singleton.registry["NaN"];
+
+Singleton.register("ComplexInfinity", ComplexInfinity);
+S.ComplexInfinity = Singleton.registry["ComplexInfinity"];
+
+Singleton.register("Infinity", Infinity);
+S.Infinity = Singleton.registry["Infinity"];
+
+Singleton.register("NegativeInfinity", NegativeInfinity);
+S.NegativeInfinity = Singleton.registry["NegativeInfinity"];
+
+export {Rational, _Number_, Float, Integer, Zero, One};

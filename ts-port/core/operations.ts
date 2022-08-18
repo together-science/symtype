@@ -5,13 +5,14 @@ Notable changes made and notes:
 */
 
 import {_Basic} from "./basic.js";
-import {mix, base} from "./utility.js";
+import {mix} from "./utility.js";
 import {global_parameters} from "./parameters.js";
 import {fuzzy_and_v2} from "./logic.js";
 import {ManagedProperties} from "./assumptions.js";
+import {S} from "./singleton.js";
 
 
-const AssocOp = (superclass: any) => class AssocOp extends mix(base).with(_Basic) {
+const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(_Basic) {
     /* Associative operations, can separate noncommutative and
     commutative parts.
     (a op b) op c == a op (b op c) == a op b op c.
@@ -37,6 +38,12 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(base).with(_Basic
     static _args_type: any = undefined;
 
     constructor(cls: any, evaluate: any, simplify: boolean, ...args: any) { // !!! sympify aspect not implemented
+        // identity wasn't working for some reason, so here is a bandaid fix
+        if (cls.name === "Mul") {
+            cls.identity = S.One;
+        } else if (cls.name === "Add") {
+            cls.identity = S.Zero;
+        }
         super(...args);
         if (simplify) {
             if (typeof evaluate === "undefined") {
@@ -79,16 +86,34 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(base).with(_Basic
             return args[0];
         }
         // eslint-disable-next-line new-cap
-        const obj: any = new cls(undefined, false, ...args);
+        const obj: any = new cls(true, false, ...args);
         if (typeof is_commutative === "undefined") {
             const input: any[] = [];
             for (const a of args) {
-                input.push(a.constructor.is_commutative);
+                input.push(a.is_commutative);
             }
             is_commutative = fuzzy_and_v2(input);
         }
         obj.is_commutative = is_commutative;
         return obj;
+    }
+
+    _new_rawargs(reeval: boolean, ...args: any) {
+        let is_commutative;
+        if (reeval && this.is_commutative === false) {
+            is_commutative = undefined;
+        } else {
+            is_commutative = this.is_commutative;
+        }
+        return this._from_args(this.constructor, is_commutative, ...args);
+    }
+
+    make_args(cls: any, expr: any) {
+        if (expr instanceof cls) {
+            return expr._args;
+        } else {
+            return [expr];
+        }
     }
 };
 

@@ -70,7 +70,7 @@ const _assume_rules = new FactRules([
 ]);
 
 
-const _assume_defined = _assume_rules.defined_facts.clone();
+export const _assume_defined = _assume_rules.defined_facts.clone();
 
 class StdFactKB extends FactKB {
     /* A FactKB specialized for the built-in rules
@@ -94,8 +94,8 @@ class StdFactKB extends FactKB {
         }
     }
 
-    copy() {
-        return this.constructor();
+    stdclone() {
+        return new StdFactKB(this);
     }
 
     generator() {
@@ -103,38 +103,20 @@ class StdFactKB extends FactKB {
     }
 }
 
-function as_property(fact: any) {
+export function as_property(fact: any) {
     return "is_" + fact;
 }
 
-function make_property(cls: any, fact: any) {
-    cls[as_property(fact)] = () => {
-        try {
-            return cls._assumptions[fact];
-        } catch (Error) {
-            if (cls._assumptions === cls.default_assumptions) {
-                cls._assumptions = cls.default_assumptions.copy();
-            }
-            return _ask(fact, cls);
+export function make_property(obj: any, fact: any) {
+    obj[as_property(fact)] = getit;
+    function getit() {
+        if (typeof obj._assumptions[fact] !== "undefined") {
+            return obj._assumptions[fact];
+        } else {
+            return _ask(fact, obj);
         }
-    };
+    }
 }
-
-/*
-def make_property(fact):
-    """Create the automagic property corresponding to a fact."""
-
-    def getit(self):
-        try:
-            return self._assumptions[fact]
-        except KeyError:
-            if self._assumptions is self.default_assumptions:
-                self._assumptions = self.default_assumptions.copy()
-            return _ask(fact, self)
-
-    getit.func_name = as_property(fact)
-    return property(getit)
-*/
 
 // eslint-disable-next-line no-unused-vars
 function _ask(fact: any, obj: any) {
@@ -155,38 +137,52 @@ function _ask(fact: any, obj: any) {
     */
 
     // FactKB which is dict-like and maps facts to their known values:
-    const assumptions: FactKB = obj.default_assumptions;
+    const assumptions: FactKB = obj._assumptions;
 
     // A dict that maps facts to their handlers:
     const handler_map: HashDict = obj._prop_handler;
 
     // This is our queue of facts to check:
     const facts_to_check = new Array(fact);
-    const facts_queued = new HashSet(fact);
+    const facts_queued = new HashSet([fact]);
+
+    const cls = obj.constructor;
 
     for (const fact_i of facts_to_check) {
-        if (assumptions.has(fact_i)) {
+        if (typeof assumptions.get(fact_i) !== "undefined") {
             continue;
+        } else if (cls[as_property(fact)]) {
+            return (cls[as_property(fact)]);
         }
         let fact_i_value = undefined;
-        const handler_i = handler_map.get(fact_i);
+        let handler_i = handler_map.get(fact_i);
         if (typeof handler_i !== "undefined") {
-            fact_i_value = handler_i(obj);
+            handler_i = handler_i.name;
+            if (obj[handler_i]) {
+                fact_i_value = obj[handler_i]();
+            } else {
+                fact_i_value = undefined;
+            }
         }
 
         if (typeof fact_i_value !== "undefined") {
-            assumptions.deduce_all_facts;
+            assumptions.deduce_all_facts([[fact_i, fact_i_value]]);
         }
 
         const fact_value = assumptions.get(fact);
         if (typeof fact_value !== "undefined") {
             return fact_value;
         }
-        const new_facts_to_check = new Array(_assume_rules.prereq.get(fact_i).difference(facts_queued));
-        Util.shuffleArray(new_facts_to_check);
-        facts_to_check.push(new_facts_to_check);
-        facts_to_check.flat();
-        facts_queued.addArr(new_facts_to_check);
+        const factset = _assume_rules.prereq.get(fact_i).difference(facts_queued);
+        if (factset.size !== 0) {
+            const new_facts_to_check = new Array(_assume_rules.prereq.get(fact_i).difference(facts_queued));
+            Util.shuffleArray(new_facts_to_check);
+            facts_to_check.push(new_facts_to_check);
+            facts_to_check.flat();
+            facts_queued.addArr(new_facts_to_check);
+        } else {
+            continue;
+        }
     }
 
     if (assumptions.has(fact)) {
@@ -199,26 +195,6 @@ function _ask(fact: any, obj: any) {
 
 
 class ManagedProperties {
-    // static __dict__: Record<any, any>;
-    // static __bases__: any[];
-    // static _explicit_class_assumptions: HashDict;
-    // static _prop_handler: Record<any, any>;
-    // static default_assumptions: StdFactKB;
-
-
-    // Metaclass for classes with old-style assumptions
-
-    // get(fact: any) {
-    //     let cls: any = this.constructor;
-    //     let dict: FactKB = cls._assumptions;
-    //     if (dict.has(fact)) {
-    //         return dict.get(fact);
-    //     } else {
-    //         cls._assumptions.dict = cls.default_assumptions.dict.copy();
-    //         return _ask(fact, cls);
-    //     }
-    // }
-
     static all_explicit_assumptions: HashDict = new HashDict();
     static all_default_assumptions: HashSet = new HashSet();
 
@@ -233,12 +209,14 @@ class ManagedProperties {
         const local_defs = new HashDict();
         for (const k of _assume_defined.toArray()) {
             const attrname = as_property(k);
-            let v = cls[attrname];
-            if ((typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean" || typeof v === "undefined") {
-                if (typeof v !== "undefined") {
-                    v = !!v;
+            if (attrname in cls) {
+                let v = cls[attrname];
+                if ((typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean" || typeof v === "undefined") {
+                    if (typeof v !== "undefined") {
+                        v = !!v;
+                    }
+                    local_defs.add(k, v);
                 }
-                local_defs.add(k, v);
             }
         }
 
@@ -250,19 +228,6 @@ class ManagedProperties {
         // Set class properties
         cls._explicit_class_assumptions = this.all_explicit_assumptions;
         cls.default_assumptions = new StdFactKB(this.all_explicit_assumptions);
-
-        // Create a dictionary to handle the current properties of the class
-        cls._prop_handler = new HashDict();
-        for (const k of _assume_defined.toArray()) {
-            // note: most of the _eval_is_ methods are not yet implemented
-            const meth1 = "_eval_is_" + k;
-            const meth2 = "_eval_is_";
-            if (cls.meth1) {
-                cls._prop_handler.add(k, meth1);
-            } else if (cls.meth2) {
-                cls._prop_handler.add(k, meth2);
-            }
-        }
 
         // Add default assumptions as class properties
         for (const item of cls.default_assumptions.entries()) {
@@ -280,18 +245,15 @@ class ManagedProperties {
         for (const fact of this.all_default_assumptions.difference(s).toArray()) {
             const pname = as_property(fact);
             if (!(pname in cls)) {
-                make_property(cls, fact); // need to debug !!!!!!!
+                make_property(cls, fact);
             }
         }
 
-        // Make sure we're not missing anything (add all properties left over)
-        for (const fact of _assume_defined.toArray()) {
-            const pname = as_property(fact);
-            if (!(pname in cls)) {
-                make_property(cls, fact); // need to debug !!!!!!!!
-            }
+        const alldefs = new HashSet(Object.keys(cls));
+        for (const fact of alldefs.difference(cls.default_assumptions).toArray()) {
+            cls.default_assumptions.add(fact, cls[fact]);
         }
     }
 }
 
-export {StdFactKB, ManagedProperties, make_property};
+export {StdFactKB, ManagedProperties};

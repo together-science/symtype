@@ -136,10 +136,16 @@ class Util {
         }
     }
 
-    static zip(arr1: any[], arr2: any[]) {
-        return arr1.map(function(e, i) {
+    static zip(arr1: any[], arr2: any[], fillvalue: string = "-") {
+        const res = arr1.map(function(e, i) {
             return [e, arr2[i]];
         });
+        res.forEach((zip: any) => {
+            if (zip.includes(undefined)) {
+                zip.splice(1, 1, fillvalue);
+            }
+        });
+        return res;
     }
 
     static range(n: number) {
@@ -159,7 +165,7 @@ class Util {
         const res: any[] = [];
         let s = Object.getPrototypeOf(Object.getPrototypeOf(obj));
         while (s.constructor.name !== "Object") {
-            res.push(s.constructor.name);
+            res.push(s.name);
             s = Object.getPrototypeOf(s);
         }
         return res;
@@ -171,6 +177,22 @@ class Util {
             const temp = arr[i];
             arr[i] = arr[j];
             arr[j] = temp;
+        }
+    }
+
+    static arrMul(arr: any[], n: number) {
+        const res = [];
+        for (let i = 0; i < n; i++) {
+            res.push(arr);
+        }
+        return res;
+    }
+
+    static assignElements(arr: any[], newvals: any[], start: number, step: number) {
+        let count = 0;
+        for (let i = start; i < arr.length; i+=step) {
+            arr[i] = newvals[count];
+            count++;
         }
     }
 }
@@ -295,6 +317,24 @@ class HashDict {
         }
     }
 
+    clone() {
+        return new HashDict(this.dict);
+    }
+
+    remove(item: any) {
+        this.size--;
+        delete this.dict[Util.hashKey(item)];
+    }
+
+    setdefault(key: any, value: any) {
+        if (this.has(key)) {
+            return this.get(key);
+        } else {
+            this.add(key, value);
+            return this.get(key);
+        }
+    }
+
     get(key: any, def: any = undefined): any {
         const hash = Util.hashKey(key);
         if (hash in this.dict) {
@@ -350,7 +390,7 @@ class HashDict {
     }
 
     copy() {
-        const res: HashDict = new HashDict;
+        const res: HashDict = new HashDict();
         for (const item of this.entries()) {
             res.add(item[0], item[1]);
         }

@@ -96,6 +96,16 @@ function _fuzzy_group(args: any[], quick_exit = Logic.False): Logic | null {
     return Logic.True;
 }
 
+export function _fuzzy_groupv2(args: any[]) {
+    const res = _fuzzy_group(args);
+    if (res === Logic.True) {
+        return true;
+    } else if (res === Logic.False) {
+        return false;
+    }
+    return undefined;
+}
+
 
 function fuzzy_bool(x: Logic): Logic | null {
     /* Return True, False or None according to x.
@@ -209,6 +219,28 @@ function fuzzy_not(v: any): Logic | null {
         return Logic.False;
     }
     return Logic.True;
+}
+
+
+export function fuzzy_notv2(v: any) {
+    /*
+    Not in fuzzy logic
+        Return None if `v` is None else `not v`.
+        Examples
+        ========
+        >>> from sympy.core.logic import fuzzy_not
+        >>> fuzzy_not(True)
+    False
+        >>> fuzzy_not(None)
+        >>> fuzzy_not(False)
+    True
+    */
+    if (v == undefined) {
+        return undefined;
+    } else if (v === true) {
+        return false;
+    }
+    return true;
 }
 
 

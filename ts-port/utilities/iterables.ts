@@ -1,120 +1,120 @@
-/*
-Notable changes made (WB and GM):
-- iterable and is_sequence are reworked but have the same functionality
-- Current progress: some things are not yet ported, and some things are ported
-  but still buggy - revisit this whenever those become necessary
-*/
+// /* eslint-disable no-unused-vars */
+// /*
+// Notable changes made (WB and GM):
+// - iterable and is_sequence are reworked but have the same functionality
+// - Current progress: some things are not yet ported, and some things are ported
+//   but still buggy - revisit this whenever those become necessary
+// */
 
-import {HashDict} from "../core/utility.js";
+import {ArrDefaultDict} from "../core/utility.js";
 
-class NotIterable {
-    /*
-    Use this as mixin when creating a class which is not supposed to
-    return true when iterable() is called on its instances because
-    calling list() on the instance, for example, would result in
-    an infinite loop.
-    */
-}
+// import {HashDict} from "../core/utility.js";
 
-
-function iterable(i: any, exclude: any = undefined): boolean {
-    /*
-    Return a boolean indicating whether ``i`` is SymPy iterable.
-    True also indicates that the iterator is finite, e.g. you can
-    call list(...) on the instance.
-    When SymPy is working with iterables, it is almost always assuming
-    that the iterable is not a string or a mapping, so those are excluded
-    by default. If you want a pure Python definition, make exclude=None. To
-    exclude multiple items, pass them as a tuple.
-    You can also set the _iterable attribute to True or False on your class,
-    which will override the checks here, including the exclude test.
-    As a rule of thumb, some SymPy functions use this to check if they should
-    recursively map over an object. If an object is technically iterable in
-    the Python sense but does not desire this behavior (e.g., because its
-    iteration is not finite, or because iteration might induce an unwanted
-    computation), it should disable it by setting the _iterable attribute to False.
-    See also: is_sequence
-    Examples
-    ========
-    >>> from sympy.utilities.iterables import iterable
-    >>> from sympy import Tuple
-    >>> things = [[1], (1,), set([1]), Tuple(1), (j for j in [1, 2]), {1:2}, '1', 1]
-    >>> for i in things:
-    ...     print('%s %s' % (iterable(i), type(i)))
-    True <... 'list'>
-    True <... 'tuple'>
-    True <... 'set'>
-    True <class 'sympy.core.containers.Tuple'>
-    True <... 'generator'>
-    False <... 'dict'>
-    False <... 'str'>
-    False <... 'int'>
-    >>> iterable({}, exclude=None)
-    True
-    >>> iterable({}, exclude=str)
-    True
-    >>> iterable("no", exclude=str)
-    False
-    */
-    if (typeof exclude === "undefined") {
-        if (i.constructor.name === "String" || i instanceof HashDict || i instanceof NotIterable) {
-            return false;
-        }
-    } else if (typeof exclude !== "undefined") {
-        if (i.constructor.name === exclude) {
-            return false;
-        }
-    }
-    if (Symbol.iterator in Object(i)) {
-        return true;
-    }
-    try {
-        Object.values(i);
-    } catch (Error) {
-        return false;
-    }
-    return true;
-}
-
-function is_sequence(i: any, include: any = undefined): boolean {
-    /*
-    Return a boolean indicating whether ``i`` is a sequence in the SymPy
-    sense. If anything that fails the test below should be included as
-    being a sequence for your application, set 'include' to that object's
-    type; multiple types should be passed as a tuple of types.
-    Note: although generators can generate a sequence, they often need special
-    handling to make sure their elements are captured before the generator is
-    exhausted, so these are not included by default in the definition of a
-    sequence.
-    See also: iterable
-    Examples
-    ========
-    >>> from sympy.utilities.iterables import is_sequence
-    >>> from types import GeneratorType
-    >>> is_sequence([])
-    True
-    >>> is_sequence(set())
-    False
-    >>> is_sequence('abc')
-    False
-    >>> is_sequence('abc', include=str)
-    True
-    >>> generator = (c for c in 'abc')
-    >>> is_sequence(generator)
-    False
-    >>> is_sequence(generator, include=(str, GeneratorType))
-    True
-    */
-    return (i.__getitem__ &&
-    iterable(i) ||
-    typeof include !== "undefined" &&
-    i instanceof include);
-}
-
-export {is_sequence, iterable};
+// class NotIterable {
+//     /*
+//     Use this as mixin when creating a class which is not supposed to
+//     return true when iterable() is called on its instances because
+//     calling list() on the instance, for example, would result in
+//     an infinite loop.
+//     */
+// }
 
 
-// other stuff which has been ported but is not being used
+// function iterable(i: any, exclude: any = undefined): boolean {
+//     /*
+//     Return a boolean indicating whether ``i`` is SymPy iterable.
+//     True also indicates that the iterator is finite, e.g. you can
+//     call list(...) on the instance.
+//     When SymPy is working with iterables, it is almost always assuming
+//     that the iterable is not a string or a mapping, so those are excluded
+//     by default. If you want a pure Python definition, make exclude=None. To
+//     exclude multiple items, pass them as a tuple.
+//     You can also set the _iterable attribute to True or False on your class,
+//     which will override the checks here, including the exclude test.
+//     As a rule of thumb, some SymPy functions use this to check if they should
+//     recursively map over an object. If an object is technically iterable in
+//     the Python sense but does not desire this behavior (e.g., because its
+//     iteration is not finite, or because iteration might induce an unwanted
+//     computation), it should disable it by setting the _iterable attribute to False.
+//     See also: is_sequence
+//     Examples
+//     ========
+//     >>> from sympy.utilities.iterables import iterable
+//     >>> from sympy import Tuple
+//     >>> things = [[1], (1,), set([1]), Tuple(1), (j for j in [1, 2]), {1:2}, '1', 1]
+//     >>> for i in things:
+//     ...     print('%s %s' % (iterable(i), type(i)))
+//     True <... 'list'>
+//     True <... 'tuple'>
+//     True <... 'set'>
+//     True <class 'sympy.core.containers.Tuple'>
+//     True <... 'generator'>
+//     False <... 'dict'>
+//     False <... 'str'>
+//     False <... 'int'>
+//     >>> iterable({}, exclude=None)
+//     True
+//     >>> iterable({}, exclude=str)
+//     True
+//     >>> iterable("no", exclude=str)
+//     False
+//     */
+//     if (typeof exclude === "undefined") {
+//         if (i.constructor.name === "String" || i instanceof HashDict || i instanceof NotIterable) {
+//             return false;
+//         }
+//     } else if (typeof exclude !== "undefined") {
+//         if (i.constructor.name === exclude) {
+//             return false;
+//         }
+//     }
+//     if (Symbol.iterator in Object(i)) {
+//         return true;
+//     }
+//     try {
+//         Object.values(i);
+//     } catch (Error) {
+//         return false;
+//     }
+//     return true;
+// }
+
+// function is_sequence(i: any, include: any = undefined): boolean {
+//     /*
+//     Return a boolean indicating whether ``i`` is a sequence in the SymPy
+//     sense. If anything that fails the test below should be included as
+//     being a sequence for your application, set 'include' to that object's
+//     type; multiple types should be passed as a tuple of types.
+//     Note: although generators can generate a sequence, they often need special
+//     handling to make sure their elements are captured before the generator is
+//     exhausted, so these are not included by default in the definition of a
+//     sequence.
+//     See also: iterable
+//     Examples
+//     ========
+//     >>> from sympy.utilities.iterables import is_sequence
+//     >>> from types import GeneratorType
+//     >>> is_sequence([])
+//     True
+//     >>> is_sequence(set())
+//     False
+//     >>> is_sequence('abc')
+//     False
+//     >>> is_sequence('abc', include=str)
+//     True
+//     >>> generator = (c for c in 'abc')
+//     >>> is_sequence(generator)
+//     False
+//     >>> is_sequence(generator, include=(str, GeneratorType))
+//     True
+//     */
+//     return (i.__getitem__ &&
+//     iterable(i) ||
+//     typeof include !== "undefined" &&
+//     i instanceof include);
+// }
+
+// export {is_sequence, iterable};
 
 // function is_palindromic(s: any, i: any = 0, j: any = undefined) {
 //     /*
@@ -141,7 +141,7 @@ export {is_sequence, iterable};
 //     sympy.ntheory.digits.is_palindromic: tests integers
 //     */
 
-//     let copy = [...s];
+//     const copy = [...s];
 //     for (let i = 0; i < s.length; i++) {
 //         if (!(copy[i] === s[i])) {
 //             return false;
@@ -151,16 +151,16 @@ export {is_sequence, iterable};
 // }
 
 // function flatten(arr: any[], level: number = 1): any {
-//     return arr.flat(level)
+//     return arr.flat(level);
 // }
 
 // function unflatten(arr: any[], n: number = 2) {
 //     if (arr.length % n !== 0) {
 //         throw new Error("array length is not a multiple of n");
 //     }
-//     let res: any[] = [];
+//     const res: any[] = [];
 //     for (let i = 0; i < arr.length; i += n) {
-//         res.push(arr.slice(i, i + n))
+//         res.push(arr.slice(i, i + n));
 //     }
 //     return res;
 // }
@@ -192,15 +192,15 @@ export {is_sequence, iterable};
 //     */
 //     let m: number = 0;
 //     flatten(shape).forEach((e: any) => m += e);
-//     let [n, rem] = [arr.length / m, arr.length % m];
+//     const [n, rem] = [arr.length / m, arr.length % m];
 //     if (m < 0 || rem) {
-//         throw new Error("template must sum to positive number that divides the length of the sequence")
+//         throw new Error("template must sum to positive number that divides the length of the sequence");
 //     }
 //     let i = 0;
-//     let rv = new Array(n).fill(undefined);
+//     const rv = new Array(n).fill(undefined);
 //     for (let k = 0; k < rv.length; k++) {
 //         rv[k] = [];
-//         for (let hi of shape) {
+//         for (const hi of shape) {
 //             if (Number.isInteger(hi)) {
 //                 rv[k].push(arr.slice(i, i + hi));
 //                 i += hi;
@@ -235,9 +235,9 @@ export {is_sequence, iterable};
 //         return [];
 //     }
 //     let current: any[] = [arr[0]];
-//     let groups: any[] = [];
+//     const groups: any[] = [];
 
-//     for (let elem of arr.slice(1, arr.length)) {
+//     for (const elem of arr.slice(1, arr.length)) {
 //         if (elem === current[current.length - 1]) {
 //             current.push(elem);
 //         } else {
@@ -253,7 +253,7 @@ export {is_sequence, iterable};
 //     }
 
 //     for (let i = 0; i < groups.length; i++) {
-//         let current = groups[i];
+//         const current = groups[i];
 //         groups[i] = [current[0], current.length];
 //     }
 
@@ -262,14 +262,14 @@ export {is_sequence, iterable};
 
 // function* _iproduct2(arr1: any[], arr2: any[]) {
 //     // Cartesian product of two possibly infinite iterables
-//     let a1 = new Iterator(arr1);
-//     let a2 = new Iterator(arr2);
+//     const a1 = new Iterator(arr1);
+//     const a2 = new Iterator(arr2);
 
-//     let elems1: any[] = [];
-//     let elems2: any[] = [];
+//     const elems1: any[] = [];
+//     const elems2: any[] = [];
 
 //     function append(a: Iterator, elems: any[]) {
-//         let e = a.next();
+//         const e = a.next();
 //         if (typeof e !== "undefined") {
 //             elems.push(e);
 //         }
@@ -287,7 +287,6 @@ export {is_sequence, iterable};
 //         append(a1, elems1);
 //         append(a2, elems2);
 //     }
-
 // }
 
 
@@ -315,17 +314,17 @@ export {is_sequence, iterable};
 //         yield [];
 //         return;
 //     } else if (iterables.length === 1) {
-//         for (let e of iterables[0]) {
+//         for (const e of iterables[0]) {
 //             yield [e];
 //         }
 //     } else if (iterables.length === 2) {
-//         for (let e of _iproduct2(iterables[0], iterables[1])) {
+//         for (const e of _iproduct2(iterables[0], iterables[1])) {
 //             yield e;
 //         }
 //     } else {
-//         let first = iterables[0];
-//         let others = iterables.slice(1, iterables.length);
-//         for (let e of _iproduct2(first, iproduct(...others))) {
+//         const first = iterables[0];
+//         const others = iterables.slice(1, iterables.length);
+//         for (const e of _iproduct2(first, iproduct(...others))) {
 //             yield [e[0]] + e[1];
 //         }
 //     }
@@ -345,8 +344,8 @@ export {is_sequence, iterable};
 //     group
 //     */
 
-//     let rv = new IntDefaultDict();
-//     for (let s of seq) {
+//     const rv = new IntDefaultDict();
+//     for (const s of seq) {
 //         rv.increment(s, 1);
 //     }
 //     return rv.dict;
@@ -402,13 +401,13 @@ export {is_sequence, iterable};
 //             bits = -1;
 //         }
 //         if (bits !== -1) {
-//             throw new Error("improper format for bits")
+//             throw new Error("improper format for bits");
 //         }
 //     } if (!str) {
 //         if (bits >= 0) {
-//             let res: any[] = [];
-//             let bin = Util.bin(n);
-//             for (let i of bin.padStart(bits, "0")) {
+//             const res: any[] = [];
+//             const bin = Util.bin(n);
+//             for (const i of bin.padStart(bits, "0")) {
 //                 if (i === "1") {
 //                     res.push(1);
 //                 } else {
@@ -421,12 +420,12 @@ export {is_sequence, iterable};
 //         }
 //     } else {
 //         if (bits >= 0) {
-//             let bin = Util.bin(n);
+//             const bin = Util.bin(n);
 //             return bin.padStart(bits, "0");
 //         } else {
-//             let res: any[] = [];
+//             const res: any[] = [];
 //             for (let i = 0; i < Math.pow(2, n); i++) {
-//                 let bin = Util.bin(i);
+//                 const bin = Util.bin(i);
 //                 bin.padStart(n, "0");
 //             }
 //             return res;
@@ -470,7 +469,6 @@ export {is_sequence, iterable};
 //             return Util.product(n, seq);
 //         }
 //     }
-
 // }
 
 // function subsets(seq: any[], k: any = undefined, repetition: boolean = false) { // !!! TEST
@@ -504,13 +502,13 @@ export {is_sequence, iterable};
 //     */
 //     if (typeof k === "undefined") {
 //         if (!repetition) {
-//             let arg: any[] = [];
+//             const arg: any[] = [];
 //             for (k = 0; k < seq.length + 1; k++) {
 //                 arg.push(Util.combinations(seq, k));
 //             }
 //             return Util.from_iterable(arg);
 //         } else {
-//             let arg: any[] = [];
+//             const arg: any[] = [];
 //             for (k = 0; k < seq.length + 1; k++) {
 //                 arg.push(Util.combinations_with_replacement(seq, k));
 //             }
@@ -539,17 +537,17 @@ export {is_sequence, iterable};
 //     iterator : iterator
 //         filtered iterator
 //     */
-//     let temp = new HashSet();
+//     const temp = new HashSet();
 //     temp.addArr(exclude);
 //     exclude = temp;
-//     for (let s of iterator) {
+//     for (const s of iterator) {
 //         if (!(exclude.has(s))) {
 //             yield s;
 //         }
 //     }
 // }
 
-// function * numbered_symbols(prefix: any = 'x', cls: any = undefined, start: any = 0, exclude: any = [], ...args: any[]) {
+// function* numbered_symbols(prefix: any = "x", cls: any = undefined, start: any = 0, exclude: any = [], ...args: any[]) {
 //     /*
 //     Generate an infinite stream of Symbols consisting of a prefix and
 //     increasing subscripts provided that they do not occur in ``exclude``.
@@ -567,7 +565,7 @@ export {is_sequence, iterable};
 //     sym : Symbol
 //         The subscripted symbols.
 //     */
-//     let temp = new HashSet();
+//     const temp = new HashSet();
 //     if (exclude) {
 //         temp.addArr(exclude);
 //     }
@@ -576,8 +574,8 @@ export {is_sequence, iterable};
 //         cls = Symbol;
 //     }
 //     while (true) {
-//         let name = prefix + start;
-//         let s = new cls(name, ...args); // !!!
+//         const name = prefix + start;
+//         const s = new cls(name, ...args); // !!!
 //         if (!(exclude.has(s))) {
 //             yield s;
 //         }
@@ -585,93 +583,93 @@ export {is_sequence, iterable};
 //     }
 // }
 
-// function sift(seq: any[], keyfunc: any, binary: boolean = false) {
-//     /*
-//     Sift the sequence, ``seq`` according to ``keyfunc``.
-//     Returns
-//     =======
-//     When ``binary`` is ``False`` (default), the output is a dictionary
-//     where elements of ``seq`` are stored in a list keyed to the value
-//     of keyfunc for that element. If ``binary`` is True then a tuple
-//     with lists ``T`` and ``F`` are returned where ``T`` is a list
-//     containing elements of seq for which ``keyfunc`` was ``True`` and
-//     ``F`` containing those elements for which ``keyfunc`` was ``False``;
-//     a ValueError is raised if the ``keyfunc`` is not binary.
-//     Examples
-//     ========
-//     >>> from sympy.utilities import sift
-//     >>> from sympy.abc import x, y
-//     >>> from sympy import sqrt, exp, pi, Tuple
-//     >>> sift(range(5), lambda x: x % 2)
-//     {0: [0, 2, 4], 1: [1, 3]}
-//     sift() returns a defaultdict() object, so any key that has no matches will
-//     give [].
-//     >>> sift([x], lambda x: x.is_commutative)
-//     {True: [x]}
-//     >>> _[False]
-//     []
-//     Sometimes you will not know how many keys you will get:
-//     >>> sift([sqrt(x), exp(x), (y**x)**2],
-//     ...      lambda x: x.as_base_exp()[0])
-//     {E: [exp(x)], x: [sqrt(x)], y: [y**(2*x)]}
-//     Sometimes you expect the results to be binary; the
-//     results can be unpacked by setting ``binary`` to True:
-//     >>> sift(range(4), lambda x: x % 2, binary=True)
-//     ([1, 3], [0, 2])
-//     >>> sift(Tuple(1, pi), lambda x: x.is_rational, binary=True)
-//     ([1], [pi])
-//     A ValueError is raised if the predicate was not actually binary
-//     (which is a good test for the logic where sifting is used and
-//     binary results were expected):
-//     >>> unknown = exp(1) - pi  # the rationality of this is unknown
-//     >>> args = Tuple(1, pi, unknown)
-//     >>> sift(args, lambda x: x.is_rational, binary=True)
-//     Traceback (most recent call last):
-//     ...
-//     ValueError: keyfunc gave non-binary output
-//     The non-binary sifting shows that there were 3 keys generated:
-//     >>> set(sift(args, lambda x: x.is_rational).keys())
-//     {None, False, True}
-//     If you need to sort the sifted items it might be better to use
-//     ``ordered`` which can economically apply multiple sort keys
-//     to a sequence while sorting.
-//     See Also
-//     ========
-//     ordered
-//     */
-//     if (!binary) {
-//         let m = new ArrDefaultDict();
-//         for  (let i of seq) {
-//             m.get(keyfunc(i)).push(i);
-//         }
-//         return m;
-//     }
-//     let F: any[] = [];
-//     let T: any[] = [];
-//     let sift = [F, T];
-//     for (let i of seq) {
-//         try {
-//             sift[keyfunc(i)].push(i);
-//         } catch (Error) {
-//             throw ('keyfunc gave non-binary output');
-//         }
-//     }
-//     return [T, F];
-// }
+export function sift(seq: any[], keyfunc: any, binary: boolean = false) {
+    /*
+    Sift the sequence, ``seq`` according to ``keyfunc``.
+    Returns
+    =======
+    When ``binary`` is ``False`` (default), the output is a dictionary
+    where elements of ``seq`` are stored in a list keyed to the value
+    of keyfunc for that element. If ``binary`` is True then a tuple
+    with lists ``T`` and ``F`` are returned where ``T`` is a list
+    containing elements of seq for which ``keyfunc`` was ``True`` and
+    ``F`` containing those elements for which ``keyfunc`` was ``False``;
+    a ValueError is raised if the ``keyfunc`` is not binary.
+    Examples
+    ========
+    >>> from sympy.utilities import sift
+    >>> from sympy.abc import x, y
+    >>> from sympy import sqrt, exp, pi, Tuple
+    >>> sift(range(5), lambda x: x % 2)
+    {0: [0, 2, 4], 1: [1, 3]}
+    sift() returns a defaultdict() object, so any key that has no matches will
+    give [].
+    >>> sift([x], lambda x: x.is_commutative)
+    {True: [x]}
+    >>> _[False]
+    []
+    Sometimes you will not know how many keys you will get:
+    >>> sift([sqrt(x), exp(x), (y**x)**2],
+    ...      lambda x: x.as_base_exp()[0])
+    {E: [exp(x)], x: [sqrt(x)], y: [y**(2*x)]}
+    Sometimes you expect the results to be binary; the
+    results can be unpacked by setting ``binary`` to True:
+    >>> sift(range(4), lambda x: x % 2, binary=True)
+    ([1, 3], [0, 2])
+    >>> sift(Tuple(1, pi), lambda x: x.is_rational, binary=True)
+    ([1], [pi])
+    A ValueError is raised if the predicate was not actually binary
+    (which is a good test for the logic where sifting is used and
+    binary results were expected):
+    >>> unknown = exp(1) - pi  # the rationality of this is unknown
+    >>> args = Tuple(1, pi, unknown)
+    >>> sift(args, lambda x: x.is_rational, binary=True)
+    Traceback (most recent call last):
+    ...
+    ValueError: keyfunc gave non-binary output
+    The non-binary sifting shows that there were 3 keys generated:
+    >>> set(sift(args, lambda x: x.is_rational).keys())
+    {None, False, True}
+    If you need to sort the sifted items it might be better to use
+    ``ordered`` which can economically apply multiple sort keys
+    to a sequence while sorting.
+    See Also
+    ========
+    ordered
+    */
+    if (!binary) {
+        const m = new ArrDefaultDict();
+        for (const i of seq) {
+            m.get(keyfunc(i)).push(i);
+        }
+        return m;
+    }
+    const F: any[] = [];
+    const T: any[] = [];
+    const sift = [F, T];
+    for (const i of seq) {
+        try {
+            sift[keyfunc(i)].push(i);
+        } catch (Error) {
+            throw new Error("keyfunc gave non-binary output");
+        }
+    }
+    return [T, F];
+}
 
 // function take(iter: any[], n: any) {
 //     // "Return ``n`` items from ``iter`` iterator
-//     let res = [];
-//     let range = new Array(n).fill(0).map((_, idx) => idx);
-//     for (let item of Util.zip(range, iter)) {
+//     const res = [];
+//     const range = new Array(n).fill(0).map((_, idx) => idx);
+//     for (const item of Util.zip(range, iter)) {
 //         res.push(item[1]);
 //     }
 //     return res;
 // }
 
 // function dict_merge(...dicts: any[]) {
-//     let res = new HashDict();
-//     for (let d of dicts) {
+//     const res = new HashDict();
+//     for (const d of dicts) {
 //         res.merge(d);
 //     }
 //     return res;
@@ -689,7 +687,7 @@ export {is_sequence, iterable};
 //     >>> common_prefix([1, 2, 3], [1, 3, 5])
 //     [1]
 //     */
-//     for (let a of seqs) {
+//     for (const a of seqs) {
 //         if (!a) {
 //             return [];
 //         }
@@ -699,7 +697,7 @@ export {is_sequence, iterable};
 //     }
 //     let i = 0;
 //     let alltr: boolean;
-//     let imax = Math.min(...seqs.map((s: any) => s.length));
+//     const imax = Math.min(...seqs.map((s: any) => s.length));
 //     find: {
 //         for (i = 0; i < imax; i++) {
 //             alltr = true;
@@ -718,7 +716,7 @@ export {is_sequence, iterable};
 // }
 
 // function common_suffix(...seqs: any[]) {
-//     /*Return the subsequence that is a common ending of sequences in ``seqs``.
+//     /* Return the subsequence that is a common ending of sequences in ``seqs``.
 //     >>> from sympy.utilities.iterables import common_suffix
 //     >>> common_suffix(list(range(3)))
 //     [0, 1, 2]
@@ -729,7 +727,7 @@ export {is_sequence, iterable};
 //     >>> common_suffix([1, 2, 3], [9, 7, 3])
 //     [3]
 //     */
-//     for (let a of seqs) {
+//     for (const a of seqs) {
 //         if (!a) {
 //             return [];
 //         }
@@ -739,7 +737,7 @@ export {is_sequence, iterable};
 //     }
 //     let i = 0;
 //     let alltr: boolean;
-//     let imin = -Math.min(...seqs.map((s: any) => s.length)) - 1;
+//     const imin = -Math.min(...seqs.map((s: any) => s.length)) - 1;
 //     find: {
 //         for (i = -1; i > imin; i--) {
 //             alltr = true;
@@ -747,7 +745,7 @@ export {is_sequence, iterable};
 //                 if (seqs[j][seqs[j].length + i] !== seqs[0][seqs[0].length + i]) {
 //                     alltr = false;
 //                 }
-//             })
+//             });
 //             if (!alltr) {
 //                 break find;
 //             }
@@ -757,12 +755,12 @@ export {is_sequence, iterable};
 //     if (i === -1) {
 //         return [];
 //     } else {
-//         console.log(i)
+//         console.log(i);
 //         return seqs[0].slice(i + 1);
 //     }
 // }
 
-// function * prefixes(seq: any[]) {
+// function* prefixes(seq: any[]) {
 //     /*
 //     Generate all prefixes of a sequence.
 //     Examples
@@ -771,14 +769,14 @@ export {is_sequence, iterable};
 //     >>> list(prefixes([1,2,3,4]))
 //     [[1], [1, 2], [1, 2, 3], [1, 2, 3, 4]]
 //     */
-//    let n = seq.length;
+//     const n = seq.length;
 
-//    for (let i of Util.range(n)) {
-//        yield seq.slice(0, i + 1);
-//    }
+//     for (const i of Util.range(n)) {
+//         yield seq.slice(0, i + 1);
+//     }
 // }
 
-// function * postfixes(seq: any[]) {
+// function* postfixes(seq: any[]) {
 //     /*
 //     Generate all postfixes of a sequence.
 //     Examples
@@ -787,14 +785,14 @@ export {is_sequence, iterable};
 //     >>> list(postfixes([1,2,3,4]))
 //     [[4], [3, 4], [2, 3, 4], [1, 2, 3, 4]]
 //     */
-//    let n = seq.length;
+//     const n = seq.length;
 
-//    for (let i of Util.range(n)) {
-//        yield seq.slice(n - i - 1);
-//    }
+//     for (const i of Util.range(n)) {
+//         yield seq.slice(n - i - 1);
+//     }
 // }
 
-// function topological_sort(graph: any[], key: any = undefined) { /// !!! to do: debug
+// function topological_sort(graph: any[], key: any = undefined) { // / !!! to do: debug
 //     /*
 //     Topological sort of graph's vertices.
 //     Parameters
@@ -847,14 +845,14 @@ export {is_sequence, iterable};
 //     ==========
 //     .. [1] https://en.wikipedia.org/wiki/Topological_sorting
 //     */
-//     let [V, E] = graph;
-//     let L = [];
-//     let S = new HashSet();
+//     const [V, E] = graph;
+//     const L = [];
+//     const S = new HashSet();
 //     S.addArr(V);
 
-//     for (let item of E) {
+//     for (const item of E) {
 //         if (S.has(item[1])) {
-//             S.remove(item[1])
+//             S.remove(item[1]);
 //         }
 //     }
 
@@ -865,30 +863,30 @@ export {is_sequence, iterable};
 //     S.sort(key, true);
 
 //     while (S.size > 0) {
-//         let node = S.pop();
+//         const node = S.pop();
 //         L.push(node);
-//         for (let item of E) {
-//             let u = item[0];
-//             let v = item[1];
+//         for (const item of E) {
+//             const u = item[0];
+//             const v = item[1];
 //             if (u === node) {
-//                 let idx = Util.getArrIndex(E, [u, v]);
+//                 const idx = Util.getArrIndex(E, [u, v]);
 //                 E.splice(idx, 1);
 //                 find: {
-//                     for (let elem of E) {
-//                         let _u = elem[0];
-//                         let _v = elem[1];
-//                         //console.log(v, _v)
+//                     for (const elem of E) {
+//                         const _u = elem[0];
+//                         const _v = elem[1];
+//                         // console.log(v, _v)
 //                         if (v === _v) {
 //                             break find;
 //                         }
 //                     }
-//                     let arr = S.sortedArr;
+//                     const arr = S.sortedArr;
 //                     search: {
 //                         for (let i = 0; i < arr.length; i++) {
-//                             let s = arr[i];
+//                             const s = arr[i];
 
 //                             if (key(v, s) > 0) {
-//                                 console.log(i, v)
+//                                 console.log(i, v);
 //                                 S.add([i, v]);
 //                                 break search;
 //                             }

@@ -4,9 +4,12 @@ Notable changes made (and notes):
 - All properties of Basic (and subclasses) are static
 */
 
-import {ManagedProperties} from "./assumptions.js";
-import {Util, HashDict, mix, base} from "./utility.js";
+import {as_property, make_property, ManagedProperties, _assume_defined} from "./assumptions.js";
+import {Util, HashDict, mix, base, HashSet} from "./utility.js";
 import {UndefinedKind} from "./kind.js";
+import {preorder_traversal} from "./traversal.js";
+
+
 const _Basic = (superclass: any) => class _Basic extends superclass {
     /*
     Base class for all SymPy objects.
@@ -39,7 +42,6 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     */
 
     __slots__ = ["_mhash", "_args", "_assumptions"];
-
     _args: any[];
     _mhash: Number | undefined;
     _assumptions;
@@ -79,15 +81,33 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     static is_commutative: boolean | undefined;
 
     static kind = UndefinedKind;
-
+    static all_unique_props: HashSet = new HashSet();
 
     constructor(...args: any) {
         super();
-        console.log(this.constructor.name);
         const cls: any = this.constructor;
-        this._assumptions = cls.default_assumptions;
+        this._assumptions = cls.default_assumptions.stdclone();
         this._mhash = undefined;
         this._args = args;
+        // Create a dictionary to handle the current properties of the class
+        // Only evuated once per class
+        if (typeof cls._prop_handler === "undefined") {
+            cls._prop_handler = new HashDict();
+            for (const k of _assume_defined.toArray()) {
+                const meth1 = "_eval_is_" + k;
+                if (this[meth1]) {
+                    cls._prop_handler.add(k, this[meth1]);
+                }
+            }
+        }
+        // Add all defined properties
+        this._prop_handler = cls._prop_handler.copy();
+        for (const fact of _assume_defined.toArray()) {
+            const pname = as_property(fact);
+            if (typeof cls[pname] === "undefined") {
+                make_property(this, fact);
+            }
+        }
     }
 
     __getnewargs__() {
@@ -103,6 +123,11 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
             return this.constructor.name + this.hashKey();
         }
         return this._mhash;
+    }
+
+    // bandaid solution for instanceof issue - still need to fix
+    instanceofBasic() {
+        return true;
     }
 
     assumptions0() {
@@ -201,6 +226,91 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         }
         return obj;
     }
+
+    _eval_subs(old: any, _new: any): any {
+        // don't need any other utilities until we do more complicated subs
+        return undefined;
+    }
+
+    _aresame(a: any, b: any) {
+        if (a.is_Number && b.is_Number) {
+            return a === b && a.constructor.name === b.constructor.name;
+        }
+        // eslint-disable-next-line new-cap
+        for (const item of Util.zip(new preorder_traversal(a).asIter(), new preorder_traversal(b).asIter())) {
+            const i = item[0];
+            const j = item[1];
+            if (i !== j || typeof i !== typeof j) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    subs(...args: any) {
+        let sequence;
+        if (args.length === 1) {
+            sequence = args[0];
+            if (sequence instanceof HashSet) {
+            } else if (sequence instanceof HashDict) {
+                sequence = sequence.entries();
+            } else if (Symbol.iterator in Object(sequence)) {
+                // eslint-disable-next-line max-len
+                throw new Error("When a single argument is passed to subs it should be a dictionary of old: new pairs or an iterable of (old, new) tuples");
+            }
+        } else if (args.length === 2) {
+            sequence = [args];
+        } else {
+            throw new Error("sub accepts 1 or 2 args");
+        }
+        let rv = this;
+        for (const item of sequence) {
+            const old = item[0];
+            const _new = item[1];
+            rv = rv._subs(old, _new);
+            if (!(rv instanceof Basic)) {
+                break;
+            }
+        }
+        return rv;
+    }
+
+    _subs(old: any, _new: any) {
+        function fallback(cls: any, old: any, _new: any) {
+            let hit = false;
+            const args = cls._args;
+            for (let i = 0; i < args.length; i++) {
+                let arg = args[i];
+                if (!(arg._eval_subs)) {
+                    continue;
+                }
+                arg = arg._subs(old, _new);
+                if (!(cls._aresame(arg, args[i]))) {
+                    hit = true;
+                    args[i] = arg;
+                }
+            }
+            if (hit) {
+                let rv;
+                if (cls.constructor.name === "Mul" || cls.constructor.name === "Add") {
+                    rv = new cls.constructor(true, true, ...args);
+                } else if (cls.constructor.name === "Pow") {
+                    rv = new cls.constructor(...args);
+                }
+                return rv;
+            }
+            return cls;
+        }
+        if (this._aresame(this, old)) {
+            return _new;
+        }
+
+        let rv = this._eval_subs(old, _new);
+        if (typeof rv === "undefined") {
+            rv = fallback(this, old, _new);
+        }
+        return rv;
+    }
 };
 
 // eslint-disable-next-line new-cap
@@ -239,5 +349,7 @@ const Atom = (superclass: any) => class Atom extends mix(base).with(_Basic) {
 };
 
 // eslint-disable-next-line new-cap
-ManagedProperties.register(Atom(Object));
-export {_Basic, Basic, Atom};
+const _AtomicExpr = Atom(Object);
+ManagedProperties.register(_AtomicExpr);
+
+export {_Basic, Basic, Atom, _AtomicExpr};

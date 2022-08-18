@@ -53,6 +53,10 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         return true;
     }
 
+    hashKey() {
+        return this.name + this.args;
+    }
+
     constructor(name: any, properties: Record<any, any> = undefined) {
         super();
         const assumptions = new HashDict(properties);
