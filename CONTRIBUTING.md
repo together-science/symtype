@@ -64,4 +64,4 @@ sure that your pull request fits in with
 Once your pull request has been accepted, it will be merged into the master
 branch.
 
-Congratulations, you've become a symtype contributor! Thanks for your help!
+Congratulations, you've become a symtype and together.science contributor! Thanks for your help!
