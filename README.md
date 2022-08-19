@@ -11,7 +11,7 @@ Contributions are welcome by PR.
 
 ## Contact Us
 
-- Contact us at symtypeinfo@together.science if you are interested in the project
+- Contact us at symtypeinfo@together.science if you have questions
 - Test out our product or learn more at https://www.together.science/
 
 ## License
