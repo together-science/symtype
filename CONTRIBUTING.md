@@ -34,7 +34,7 @@ for it!
 
 ## Contributing Test Cases
 
-The `test/` folder contains test cases that are used to make sure that bugs are
+The `/core/testing.ts` file contains test cases that are used to make sure that bugs are
 not introduced as new features are added (regression).
 
 Adding or updating test cases can be very helpful to improve symtype's quality.
