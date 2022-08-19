@@ -16,5 +16,5 @@ Contributions are welcome by PR.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE.txt).
+This project is licensed under the [MIT License](https://github.com/together-science/symtype/blob/main/LICENSE).
 
