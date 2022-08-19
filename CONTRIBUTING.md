@@ -1,12 +1,12 @@
 # Contributing to SymType
 
-There are many ways you can get involved with symtype. Contributing to an open
+There are many ways you can get involved with SymType. Contributing to an open
 source project is fun and rewarding.
 
 ## Funding
 
 If you are using together.science in your education or project, please consider
-giving financial support of open source projects, including symtype. 
+giving financial support of open source projects, including SymType. 
 Contact [us](symtypeinfo@together.science) to discuss possible arrangments which can run 
 from short-term contracts for specific features or integration support, 
 to one-time or recurring donation to support the work in general.
@@ -37,7 +37,7 @@ for it!
 The `/core/testing.ts` file contains test cases that are used to make sure that bugs are
 not introduced as new features are added (regression).
 
-Adding or updating test cases can be very helpful to improve symtype's quality.
+Adding or updating test cases can be very helpful to improve SymType's quality.
 Submit an issue indicating what you'd like to work on, and a pull request when
 you have it ready. Test cases should follow the TAP (Test Anything Protocol)
 format.
@@ -57,11 +57,11 @@ feature, we welcome contributions in the form of pull requests. Once submitted,
 your pull request will be reviewed and you will receive some feedback to make
 sure that your pull request fits in with
 
--   the roadmap for together.science and symtype
+-   the roadmap for together.science and SymType
 -   the architecture of the project
 -   the coding guidelines of the project
 
 Once your pull request has been accepted, it will be merged into the master
 branch.
 
-Congratulations, you've become a symtype and together.science contributor! Thanks for your help!
+Congratulations, you've become a SymType and together.science contributor! Thanks for your help!
