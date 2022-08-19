@@ -7,7 +7,7 @@ source project is fun and rewarding.
 
 If you are using together.science in your education or project, please consider
 giving financial support of open source projects, including symtype. 
-Contact [us](info@together.science) to discuss possible arrangments which can run 
+Contact [us](symtypeinfo@together.science) to discuss possible arrangments which can run 
 from short-term contracts for specific features or integration support, 
 to one-time or recurring donation to support the work in general.
 
