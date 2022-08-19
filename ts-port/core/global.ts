@@ -1,3 +1,12 @@
+/*
+New class global
+Helps to avoid cyclical imports by storing constructors and functions which
+can be accessed anywhere
+
+Note: static new methods are created in the classes to be registered, and those
+methods are added here
+*/
+
 export class Global {
     static constructors: Record<string, any> = {};
     static functions: Record<string, any> = {};

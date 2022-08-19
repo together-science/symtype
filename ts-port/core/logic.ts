@@ -17,6 +17,8 @@ Notable chnages made (WB & GM):
 - Added static New methods to Not, And, and Or which function as constructors
 - Replacemd normal booleans with Logic.True and Logic.False since it is sometimes
 necesary to find if a given argumenet is a boolean
+- Added some v2 methods which return true, false, and undefined, which works
+  with the rest of the code
 
 */
 

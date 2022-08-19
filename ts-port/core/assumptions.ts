@@ -4,6 +4,10 @@ Notable changes made (and notes):
   after defined
 - ManagedProperties tracks properties of base classes by tracking all properties
   (see comments within class)
+- Class properties from _eval_is methods are assigned to each object itself in
+  the Basic constructor
+- To-do: make accessing properties more consistent (i.e., same syntax for
+  acessing static and non-static properties)
 */
 
 import {FactKB, FactRules} from "./facts.js";

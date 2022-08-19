@@ -5,13 +5,17 @@ import {Basic} from "./basic.js";
 import {Expr} from "./expr.js";
 import {Global} from "./global.js";
 import {fuzzy_notv2, _fuzzy_groupv2} from "./logic.js";
-import {Rational} from "./numbers.js";
+import {Integer, Rational} from "./numbers.js";
 import {AssocOp} from "./operations.js";
 import {global_parameters} from "./parameters.js";
 import {Pow} from "./power.js";
 import {S} from "./singleton.js";
 import {mix, base, HashDict, HashSet, ArrDefaultDict} from "./utility.js";
 
+// # internal marker to indicate:
+// "there are still non-commutative objects -- don't forget to process them"
+
+// not currently being used
 class NC_Marker {
     is_Order = false;
     is_Mul = false;
@@ -27,6 +31,56 @@ function _mulsort(args: any[]) {
 }
 
 export class Mul extends mix(base).with(Expr, AssocOp) {
+    /*
+    Expression representing multiplication operation for algebraic field.
+    .. deprecated:: 1.7
+       Using arguments that aren't subclasses of :class:`~.Expr` in core
+       operators (:class:`~.Mul`, :class:`~.Add`, and :class:`~.Pow`) is
+       deprecated. See :ref:`non-expr-args-deprecated` for details.
+    Every argument of ``Mul()`` must be ``Expr``. Infix operator ``*``
+    on most scalar objects in SymPy calls this class.
+    Another use of ``Mul()`` is to represent the structure of abstract
+    multiplication so that its arguments can be substituted to return
+    different class. Refer to examples section for this.
+    ``Mul()`` evaluates the argument unless ``evaluate=False`` is passed.
+    The evaluation logic includes:
+    1. Flattening
+        ``Mul(x, Mul(y, z))`` -> ``Mul(x, y, z)``
+    2. Identity removing
+        ``Mul(x, 1, y)`` -> ``Mul(x, y)``
+    3. Exponent collecting by ``.as_base_exp()``
+        ``Mul(x, x**2)`` -> ``Pow(x, 3)``
+    4. Term sorting
+        ``Mul(y, x, 2)`` -> ``Mul(2, x, y)``
+    Since multiplication can be vector space operation, arguments may
+    have the different :obj:`sympy.core.kind.Kind()`. Kind of the
+    resulting object is automatically inferred.
+    Examples
+    ========
+    >>> from sympy import Mul
+    >>> from sympy.abc import x, y
+    >>> Mul(x, 1)
+    x
+    >>> Mul(x, x)
+    x**2
+    If ``evaluate=False`` is passed, result is not evaluated.
+    >>> Mul(1, 2, evaluate=False)
+    1*2
+    >>> Mul(x, x, evaluate=False)
+    x*x
+    ``Mul()`` also represents the general structure of multiplication
+    operation.
+    >>> from sympy import MatrixSymbol
+    >>> A = MatrixSymbol('A', 2,2)
+    >>> expr = Mul(x,y).subs({y:A})
+    >>> expr
+    x*A
+    >>> type(expr)
+    <class 'sympy.matrices.expressions.matmul.MatMul'>
+    See Also
+    ========
+    MatMul
+    */
     __slots__: any[] = [];
     args: any[];
     static is_Mul = true;
@@ -417,10 +471,10 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             function _handle_for_oo(c_part: any[], coeff_sign: number) {
                 const new_c_part = [];
                 for (const t of c_part) {
-                    if (t.is_extended_negative()) {
+                    if (t.is_extended_negative) {
                         continue;
                     }
-                    if (t.is_extended_negative()) {
+                    if (t.is_extended_negative) {
                         coeff_sign *= -1;
                         continue;
                     }
@@ -431,7 +485,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             let coeff_sign: any;
             [c_part, coeff_sign] = _handle_for_oo(c_part, 1);
             [nc_part, coeff_sign] = _handle_for_oo(nc_part, coeff_sign);
-            coeff = coeff.__mul__(coeff_sign);
+            coeff = coeff.__mul__(new Integer(coeff_sign));
         }
 
         if (coeff === S.ComplexInfinity) {

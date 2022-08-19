@@ -29,35 +29,6 @@ if (settings.debug) {
 }
 
 
-// class _cache extends Array {
-//     /* List of cached functions */
-
-//     print_cache() {
-//         for (let item of this) {
-//             let name = item.constructor.name;
-//             if (item.hasAttribute('cache_info')) {
-//                 console.log(item + " is wrapped"); // !!!
-//             }
-//         }
-//     }
-
-//     clear_cache() {
-//         /* clear cache content */
-//         for (let item of this) {
-//             if (item.hasAttribute('__wrapped__')) {
-//                 item.clearCache(); // !!!
-//             }
-//         }
-//     }
-// }
-
-
-// // global cache registry:
-// let CACHE = new _cache()
-// // make clear and print methods available
-// let print_cache = CACHE.print_cache
-// let clear_cache = CACHE.clear_cache // !!!
-
 function _cacheit(func: any, maxsize: number = 10): (x: any) => any {
     const cache = new LRUCache(maxsize);
     return ((...x) => {

@@ -1,8 +1,9 @@
 /*
 Notable changes made (and notes):
 - Number classes registered after they are defined
-- Most methods are not yet implemented
-- (As with other subclasses of basic) all properties are static
+- Float is handeled entirely by decimal.js, and now only takes precision in
+  # of decimal points
+- Note: only methods necessary for add, mul, and pow have been implemented
 */
 
 // basic implementations only - no utility added yet
@@ -20,6 +21,13 @@ import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_.js
 import {HashDict} from "./utility.js";
 import {Mul} from "./mul.js";
 
+/*
+utility functions
+
+These are somewhat written differently than in sympy (which depends on mpmath)
+but they provide the same functionality
+*/
+
 function igcd(x: number, y: number) {
     while (y) {
         const t = y;
@@ -35,6 +43,8 @@ export function int_nthroot(y: number, n: number) {
     return [x, isexact];
 }
 
+// turn a float to a rational -> repliacates mpmath functionality but we should
+// probably find a library to do this eventually
 function toRatio(n: any, eps: number) {
     const gcde = (e: number, x: number, y: number) => {
         const _gcd: any = (a: number, b: number) => (b < e ? a : _gcd(b, a % b));
@@ -96,6 +106,28 @@ function mod_inverse(a: any, m: any) {
 Global.registerfunc("mod_inverse", mod_inverse);
 
 class _Number_ extends _AtomicExpr {
+    /*
+    Represents atomic numbers in SymPy.
+    Explanation
+    ===========
+    Floating point numbers are represented by the Float class.
+    Rational numbers (of any size) are represented by the Rational class.
+    Integer numbers (of any size) are represented by the Integer class.
+    Float and Rational are subclasses of Number; Integer is a subclass
+    of Rational.
+    For example, ``2/3`` is represented as ``Rational(2, 3)`` which is
+    a different object from the floating point number obtained with
+    Python division ``2/3``. Even for numbers that are exactly
+    represented in binary, there is a difference between how two forms,
+    such as ``Rational(1, 2)`` and ``Float(0.5)``, are used in SymPy.
+    The rational form is to be preferred in symbolic computations.
+    Other kinds of numbers, such as algebraic numbers ``sqrt(2)`` or
+    complex numbers ``3 + 4*I``, are not instances of Number class as
+    they are not atomic.
+    See Also
+    ========
+    Float, Integer, Rational
+    */
     static is_commutative = true;
     static is_number = true;
     static is_Number = true;
@@ -148,7 +180,7 @@ class _Number_ extends _AtomicExpr {
     // NOTE: THESE METHODS ARE NOT YET IMPLEMENTED IN THE SUPERCLASS
 
     __add__(other: any) {
-        if (other instanceof Number && global_parameters.evaluate) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.NaN) {
                 return S.NaN;
             } else if (other === S.Infinity) {
@@ -161,7 +193,7 @@ class _Number_ extends _AtomicExpr {
     }
 
     __sub__(other: any) {
-        if (other instanceof Number && global_parameters.evaluate) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.NaN) {
                 return S.NaN;
             } else if (other === S.Infinity) {
@@ -174,7 +206,7 @@ class _Number_ extends _AtomicExpr {
     }
 
     __mul__(other: any) {
-        if (other instanceof Number && global_parameters.evaluate) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
             const cls: any = this.constructor;
             if (other === S.Nan) {
                 return S.Nan;
@@ -199,7 +231,7 @@ class _Number_ extends _AtomicExpr {
         return super.__mul__(other);
     }
     __truediv__(other: any) {
-        if (other instanceof Number && global_parameters.evaluate) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.NaN) {
                 return S.NaN;
             } else if (other === S.Infinity || other === S.NegativeInfinity) {
@@ -223,6 +255,10 @@ ManagedProperties.register(_Number_);
 Global.register("_Number_", _Number_.new);
 
 class Float extends _Number_ {
+    /*
+    (not copying sympy comment because this implementation is very different)
+    see header comment for changes
+    */
     __slots__: any[] = ["_mpf_", "_prec"];
     _mpf_: [number, number, number, number];
     static is_rational: any = undefined;
@@ -282,6 +318,10 @@ class Float extends _Number_ {
 
     _eval_is_negative() {
         return this.decimal.lessThan(0);
+    }
+
+    _eval_is_positive() {
+        return this.decimal.greaterThan(0);
     }
 
     // return new Float(Decimal.set({precision: this.prec}).pow(this.decimal, other.eval_evalf(this.prec).decimal), this.prec);
@@ -547,6 +587,10 @@ class Rational extends _Number_ {
         }
     }
 
+    _eval_is_positive() {
+        return !this._eval_is_negative;
+    }
+
     _eval_is_odd() {
         return this.p % 2 !== 0;
     }
@@ -568,6 +612,27 @@ class Rational extends _Number_ {
 ManagedProperties.register(Rational);
 
 class Integer extends Rational {
+    /*
+    Represents integer numbers of any size.
+    Examples
+    ========
+    >>> from sympy import Integer
+    >>> Integer(3)
+    3
+    If a float or a rational is passed to Integer, the fractional part
+    will be discarded; the effect is of rounding toward zero.
+    >>> Integer(3.8)
+    3
+    >>> Integer(-3.8)
+    -3
+    A string is acceptable input if it can be parsed as an integer:
+    >>> Integer("9" * 20)
+    99999999999999999999
+    It is rarely needed to explicitly instantiate an Integer, because
+    Python integers are automatically converted to Integer when they
+    are used in SymPy expressions.
+    """
+    */
     static is_integer = true;
     static is_Integer = true;
     __slots__: any[] = [];
@@ -681,6 +746,10 @@ class Integer extends Rational {
         return this.p < 0;
     }
 
+    _eval_is_positive() {
+        return this.p > 0;
+    }
+
     _eval_is_odd() {
         return this.p % 2 === 1;
     }
@@ -789,6 +858,20 @@ class IntegerConstant extends Integer {
 ManagedProperties.register(IntegerConstant);
 
 class Zero extends IntegerConstant {
+    /*
+    The number zero.
+    Zero is a singleton, and can be accessed by ``S.Zero``
+    Examples
+    ========
+    >>> from sympy import S, Integer
+    >>> Integer(0) is S.Zero
+    True
+    >>> 1/S.Zero
+    zoo
+    References
+    ==========
+    .. [1] https://en.wikipedia.org/wiki/Zero
+    */
     __slots__: any[] = [];
     static is_positive = false;
     static static = false;
@@ -804,6 +887,18 @@ ManagedProperties.register(Zero);
 
 
 class One extends IntegerConstant {
+    /*
+    The number one.
+    One is a singleton, and can be accessed by ``S.One``.
+    Examples
+    ========
+    >>> from sympy import S, Integer
+    >>> Integer(1) is S.One
+    True
+    References
+    ==========
+    .. [1] https://en.wikipedia.org/wiki/1_%28number%29
+    */
     static is_number = true;
     static is_positive = true;
     static is_zero = false;
@@ -817,6 +912,21 @@ ManagedProperties.register(One);
 
 
 class NegativeOne extends IntegerConstant {
+    /*
+    The number negative one.
+    NegativeOne is a singleton, and can be accessed by ``S.NegativeOne``.
+    Examples
+    ========
+    >>> from sympy import S, Integer
+    >>> Integer(-1) is S.NegativeOne
+    True
+    See Also
+    ========
+    One
+    References
+    ==========
+    .. [1] https://en.wikipedia.org/wiki/%E2%88%921_%28number%29
+    */
     static is_number = true;
     __slots__: any[] = [];
     constructor() {
@@ -842,35 +952,47 @@ class NegativeOne extends IntegerConstant {
         }
         return;
     }
-
-    /*
-    def _eval_power(self, expt):
-        if expt.is_odd:
-            return S.NegativeOne
-        if expt.is_even:
-            return S.One
-        if isinstance(expt, Number):
-            if isinstance(expt, Float):
-                return Float(-1.0)**expt
-            if expt is S.NaN:
-                return S.NaN
-            if expt in (S.Infinity, S.NegativeInfinity):
-                return S.NaN
-            if expt is S.Half:
-                return S.ImaginaryUnit
-            if isinstance(expt, Rational):
-                if expt.q == 2:
-                    return S.ImaginaryUnit**Integer(expt.p)
-                i, r = divmod(expt.p, expt.q)
-                if i:
-                    return self**i*self**Rational(r, expt.q)
-        return
-    */
 };
 
 ManagedProperties.register(NegativeOne);
 
-class NaN extends Number {
+class NaN extends _Number_ {
+    /*
+    Not a Number.
+    Explanation
+    ===========
+    This serves as a place holder for numeric values that are indeterminate.
+    Most operations on NaN, produce another NaN.  Most indeterminate forms,
+    such as ``0/0`` or ``oo - oo` produce NaN.  Two exceptions are ``0**0``
+    and ``oo**0``, which all produce ``1`` (this is consistent with Python's
+    float).
+    NaN is loosely related to floating point nan, which is defined in the
+    IEEE 754 floating point standard, and corresponds to the Python
+    ``float('nan')``.  Differences are noted below.
+    NaN is mathematically not equal to anything else, even NaN itself.  This
+    explains the initially counter-intuitive results with ``Eq`` and ``==`` in
+    the examples below.
+    NaN is not comparable so inequalities raise a TypeError.  This is in
+    contrast with floating point nan where all inequalities are false.
+    NaN is a singleton, and can be accessed by ``S.NaN``, or can be imported
+    as ``nan``.
+    Examples
+    ========
+    >>> from sympy import nan, S, oo, Eq
+    >>> nan is S.NaN
+    True
+    >>> oo - oo
+    nan
+    >>> nan + 1
+    nan
+    >>> Eq(nan, nan)   # mathematical equality
+    False
+    >>> nan == nan     # structural equality
+    True
+    References
+    ==========
+    .. [1] https://en.wikipedia.org/wiki/NaN
+    */
     static is_commutative = true;
     static is_extended_real: any = undefined;
     static is_real: any = undefined;
@@ -892,6 +1014,30 @@ ManagedProperties.register(NaN);
 
 // eslint-disable-next-line new-cap
 class ComplexInfinity extends _AtomicExpr {
+    /*
+    Complex infinity.
+    Explanation
+    ===========
+    In complex analysis the symbol `\tilde\infty`, called "complex
+    infinity", represents a quantity with infinite magnitude, but
+    undetermined complex phase.
+    ComplexInfinity is a singleton, and can be accessed by
+    ``S.ComplexInfinity``, or can be imported as ``zoo``.
+    Examples
+    ========
+    >>> from sympy import zoo
+    >>> zoo + 42
+    zoo
+    >>> 42/zoo
+    0
+    >>> zoo + zoo
+    nan
+    >>> zoo*zoo
+    zoo
+    See Also
+    ========
+    Infinity
+    */
     static is_commutative = true;
     static is_infinite = true;
     static is_number = true;
@@ -909,6 +1055,36 @@ class ComplexInfinity extends _AtomicExpr {
 ManagedProperties.register(ComplexInfinity);
 
 class Infinity extends _Number_ {
+    /*
+    Positive infinite quantity.
+    Explanation
+    ===========
+    In real analysis the symbol `\infty` denotes an unbounded
+    limit: `x\to\infty` means that `x` grows without bound.
+    Infinity is often used not only to define a limit but as a value
+    in the affinely extended real number system.  Points labeled `+\infty`
+    and `-\infty` can be added to the topological space of the real numbers,
+    producing the two-point compactification of the real numbers.  Adding
+    algebraic properties to this gives us the extended real numbers.
+    Infinity is a singleton, and can be accessed by ``S.Infinity``,
+    or can be imported as ``oo``.
+    Examples
+    ========
+    >>> from sympy import oo, exp, limit, Symbol
+    >>> 1 + oo
+    oo
+    >>> 42/oo
+    0
+    >>> x = Symbol('x')
+    >>> limit(exp(x), x, oo)
+    oo
+    See Also
+    ========
+    NegativeInfinity, NaN
+    References
+    ==========
+    .. [1] https://en.wikipedia.org/wiki/Infinity
+    */
     static is_commutative = true;
     static is_number = true;
     static is_complex = false;
@@ -922,9 +1098,41 @@ class Infinity extends _Number_ {
     constructor() {
         super();
     }
+
+    // NOTE: more arithmetic methods should be implemented but I have only
+    // done enough such that add and mul can handle infinity as an argument
+    __add__(other: any) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
+            if (other === S.Infinity || other === S.NaN) {
+                return S.NaN;
+            }
+            return this;
+        }
+        return super.__add__(other);
+    }
+
+    __mul__(other: any) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
+            if (other === S.Zero || other === S.NaN) {
+                return S.NaN;
+            } else if (other.is_extended_positive) {
+                return this;
+            }
+            return S.NegativeInfinity;
+        }
+        return super.__mul__(other);
+    }
 }
 
 class NegativeInfinity extends _Number_ {
+    /*
+    "Negative infinite quantity.
+    NegativeInfinity is a singleton, and can be accessed
+    by ``S.NegativeInfinity``.
+    See Also
+    ========
+    Infinity
+    */
     static is_extended_real = true;
     static is_complex = false;
     static is_commutative = true;
@@ -938,9 +1146,33 @@ class NegativeInfinity extends _Number_ {
     constructor() {
         super();
     }
+
+    // NOTE: more arithmetic methods should be implemented but I have only
+    // done enough such that add and mul can handle negativeinfinity as an argument
+    __add__(other: any) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
+            if (other === S.NegativeInfinity || other === S.NaN) {
+                return S.NaN;
+            }
+            return this;
+        }
+        return super.__add__(other);
+    }
+
+    __mul__(other: any) {
+        if (other instanceof _Number_ && global_parameters.evaluate) {
+            if (other === S.Zero || other === S.NaN) {
+                return S.NaN;
+            } else if (other.is_extended_positive) {
+                return this;
+            }
+            return S.Infinity;
+        }
+        return super.__mul__(other);
+    }
 }
 
-
+// Registering singletons (see singleton class)
 Singleton.register("Zero", Zero);
 S.Zero = Singleton.registry["Zero"];
 

@@ -3,9 +3,10 @@ import {Add} from "./add.js";
 import {Mul} from "./mul.js";
 import {_Number_} from "./numbers.js";
 import {Pow} from "./power.js";
+import {S} from "./singleton.js";
 import {Symbol} from "./symbol.js";
 
-// Define integers, rationals, and symbols
+// Define integers, rationals, floats, and symbols
 const n = _Number_.new(4);
 const n2 = _Number_.new(4, 9);
 const n3 = _Number_.new(-1.5);
@@ -60,7 +61,7 @@ console.log(new Pow(n, x).subs(x, n4));
 console.log(new Mul(false, true, n, n2, x).subs(x, n2));
 console.log(new Add(false, true, n, n2, x).subs(x, n));
 
-// Factoring!!
+// Factoring
 
 // Factor a big integer
 const bigint = _Number_.new(285);
@@ -68,3 +69,12 @@ console.log(factorint(bigint));
 // Factor a complicated rational
 const bigrat = _Number_.new(271, 932);
 console.log(factorrat(bigrat));
+
+// Testing weird inputs
+
+// NOTE: Pow(n, S.NegativeInfinity) is not currently supported - _eval_power needs
+// to be added and debugged for S.Infinity, S.NegativeInfinity, and S.NegativeOne
+
+console.log(new Mul(true, true, S.ComplexInfinity, S.NegativeInfinity, x));
+console.log(new Mul(true, true, S.Infinity, n2, x));
+console.log(new Pow(n, S.NaN));

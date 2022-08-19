@@ -45,18 +45,6 @@ class Kind { // !!! metaclass situation
         }
         return inst;
     }
-
-    // constructor(...args: any) {
-    //     let inst;
-    //     let cls: any = this.constructor;
-    //     if (args in KindRegistry.registry) {
-    //         inst = KindRegistry.registry[args];
-    //     } else {
-    //         inst = new Object(args);
-    //         KindRegistry.register(this.constructor.name, inst);
-    //     }
-    //     return inst;
-    // }
 }
 
 class _UndefinedKind extends Kind {

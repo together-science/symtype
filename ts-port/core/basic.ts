@@ -1,7 +1,8 @@
 /*
 Notable changes made (and notes):
 - Basic reworked with constructor system
-- All properties of Basic (and subclasses) are static
+- _eval_is properties (dependent on object) are now assigned in Basic
+- Some properties of Basic (and subclasses) are static
 */
 
 import {as_property, make_property, ManagedProperties, _assume_defined} from "./assumptions.js";

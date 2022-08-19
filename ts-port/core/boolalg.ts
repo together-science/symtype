@@ -12,8 +12,6 @@ const Boolean = (superclass: any) => class Boolean extends mix(base).with(_Basic
     __slots__: any[] = [];
 
     static kind = BooleanKind;
-
-    // !!!  methods not yet implemented
 };
 
 ManagedProperties.register(Boolean(Object));

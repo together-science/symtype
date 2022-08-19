@@ -1,7 +1,10 @@
 /*
 Notable changes made (and notes):
 - Very barebones versions of Expr implemented so far - very few util methods
+- Note that expression uses global.ts to construct add and mul objects, which
+  avoids cyclical imports
 */
+
 import {_Basic, Atom} from "./basic.js";
 import {HashSet, mix} from "./utility.js";
 import {ManagedProperties} from "./assumptions.js";

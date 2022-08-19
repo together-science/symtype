@@ -2,6 +2,7 @@
 Notable changes made and notes:
 - Order-symbols and related componented not yet implemented
 - Most methods not yet implemented (but enough to evaluate add in theory)
+- Simplify argument added to constructor to prevent infinite recursion
 */
 
 import {_Basic} from "./basic.js";
@@ -37,7 +38,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
     __slots__: any[] = ["is_commutative"];
     static _args_type: any = undefined;
 
-    constructor(cls: any, evaluate: any, simplify: boolean, ...args: any) { // !!! sympify aspect not implemented
+    constructor(cls: any, evaluate: any, simplify: boolean, ...args: any) {
         // identity wasn't working for some reason, so here is a bandaid fix
         if (cls.name === "Mul") {
             cls.identity = S.One;
