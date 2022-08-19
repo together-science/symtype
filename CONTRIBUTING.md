@@ -1,4 +1,4 @@
-# Contributing to MathLive
+# Contributing to symtype
 
 There are many ways you can get involved with symtype. Contributing to an open
 source project is fun and rewarding.
