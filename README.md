@@ -2,10 +2,14 @@
 
 SymType is a port of SymPy essentials to TypeScript.
 The goal of this project is to provide better essential symbolic math functionality to
-the together.math web application. We do not intend to replicate the syntax of 
-SymPy in any form, and neither do we intend to replicate all of its functionality. 
+the together.math web application, but many JavaScript programmers have wished for a SymPy port.
+We do not intend to replicate the syntax of SymPy in any form, and neither do we intend to
+replicate all of its functionality, although all reasonable additions will be considered.
+
 Initial work was done by William Bowers during his summer internship at together.science.
 You can see the current state of capabilities in the [test cases](https://github.com/together-science/symtype/blob/main/ts-port/core/testing.ts).
+William's notes about meta classes, mulitple inheritance and other topics are at the end of 
+the [contributing guidelines](https://github.com/together-science/symtype/blob/main/CONTRIBUTING.md)
 
 Contributions are welcome by PR. 
 
