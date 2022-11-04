@@ -97,6 +97,8 @@ For classes which are not extended but extend multiple classes, there is no need
 
 myclass extends mix(base).with(*supers*)
 
+![classes](https://user-images.githubusercontent.com/86687645/200050339-3e2129b2-daff-483b-b6f8-9d97ecba80b8.png)
+
 ## Imports
 
 Sympy has a habit of using cyclical imports, which they deal with by delaying the imports. As a solution, there is a global.ts file where you can register methods and constructors. This is mostly clearly implemented in the __add__(), __sub__(), __mul__(), and __truediv__() methods of the Expr class, so these those an example (also reference the add and mul classes where the constructors are registered). 
@@ -108,6 +110,8 @@ Add and Mul have been reworked such that the first two arguments are Booleans de
 ## Next steps
 
 As mentioned previously, some further thought should be given to assigning properties to objects and classes, and how to make that more consistent/efficient. Functionalities/utilities (including derivatives, matrix stuff, equation solving, etc.) can start being built out using Add, Mul, Pow, integer/rational factoring, and symbol for number substitution, which are all implemented. Eventually, we should also go through all of the comments (those copied from Sympy) and modify the descriptions and examples so that everything is consistent.
+
+
 
 
 
