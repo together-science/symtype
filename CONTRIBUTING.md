@@ -4,16 +4,6 @@ There are many ways you can get involved with SymType. Contributing to an open
 source project is fun and rewarding. See guidelines for specific techniques at 
 the end of this document
 
-## Funding
-
-If you are using together.science in your education or project, please consider
-giving financial support of open source projects, including SymType. 
-Contact [us](symtypeinfo@together.science) to discuss possible arrangments which can run 
-from short-term contracts for specific features or integration support, 
-to one-time or recurring donation to support the work in general.
-
-Funds go to general development, support, and infrastructure costs.
-
 ## Contributing Issues
 
 If you're running into some problems using together.science/symtype or something doesn't behave
