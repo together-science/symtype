@@ -3,7 +3,7 @@
 SymType is a port of SymPy essentials to TypeScript.
 The goal of this project is to provide better essential symbolic math functionality to
 the together.math web application. We do not intend to replicate the syntax of 
-SymPy in any form, and nor do we intend to replicate all of its functionality. 
+SymPy in any form, and neither do we intend to replicate all of its functionality. 
 Initial work was done by William Bowers during his summer internship at together.science.
 
 Contributions are welcome by PR. 
