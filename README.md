@@ -13,11 +13,13 @@ the [contributing guidelines](https://github.com/together-science/symtype/blob/m
 
 Contributions are welcome by PR. 
 
+If you are looking for a fully functional, in-browser or node.js symbolic algebra system you can use TODAY, consider
+[Nerdamer prime](https://github.com/together-science/nerdamer-prime), also maintained by us.
 
 ## Contact Us
 
-- Contact us at symtypeinfo@together.science if you have questions
-- Test out our product or learn more at https://www.together.science/
+- [Contact us](mailto:symtypeinfo@together.science) if you have questions
+- Test out our product [together.math](https://www.together.science/) or learn more about it.
 
 ## License
 
