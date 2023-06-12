@@ -16,7 +16,7 @@
         "build-prod": "sh build.sh",
         "build": "sh build.sh --dev --no_tsc",
         "lint": "eslint . --ext .js --ext .ts",
-        "test": ""
+        "test": "node ts-port/testing.js"
     },
     "dependencies": {
         "decimal.js": "^10.4.3",
