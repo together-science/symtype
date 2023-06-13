@@ -25,3 +25,25 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: npm ci
+
+      - name: Audit fix
+        shell: bash
+        run: npm audit fix --audit-level=high
+  
+      - name: Run esbuild
+        shell: bash
+        run: npm run build
+
+      - name: TSC build
+        shell: bash
+        run: |
+          tsc --version
+          tsc --build --verbose
+        
+      - name: Lint
+        shell: bash
+        run: npm run lint
+
+      - name: Run tests
+        shell: bash
+        run: npm run test
