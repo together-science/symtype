@@ -14,8 +14,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Install node
-        run: npm install -g node
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16.x
+          cache: 'npm'
+          cache-dependency-path: |
+              ./package-lock.json
 
       - name: Install dependencies
         shell: bash
