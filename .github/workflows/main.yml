@@ -34,12 +34,16 @@ jobs:
         shell: bash
         run: npm run build
 
-      - name: TSC build
+      - name: Run TSC build
         shell: bash
         run: |
           tsc --version
           tsc --build --verbose
-          
+
+      - name: Run lint
+        shell: bash
+        run: npm run lint
+
       - name: Run tests
         shell: bash
         run: npm run test
