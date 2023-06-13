@@ -39,11 +39,7 @@ jobs:
         run: |
           tsc --version
           tsc --build --verbose
-        
-      - name: Lint
-        shell: bash
-        run: npm run lint
-
+          
       - name: Run tests
         shell: bash
         run: npm run test

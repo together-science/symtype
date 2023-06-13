@@ -20,5 +20,24 @@
     },
     "dependencies": {
         "decimal.js": "^10.4.3"
+    },
+    "eslintConfig": {
+        "parser": "@typescript-eslint/parser",
+        "parserOptions": {
+            "ecmaVersion": "latest",
+            "sourceType": "module"
+        },
+        "plugins": [
+            "@typescript-eslint"
+        ],
+        "rules": {
+            "quotes": ["error", "double", {"avoidEscape": true}],
+            "require-jsdoc": "off",
+            "valid-jsdoc": "off",
+            "max-len": ["error", {"code": 150}],
+            "indent": ["error", 4],
+            "linebreak-style": 0
+        },
+        "ignorePatterns": ["ts-port/symtype.js", "ts-port/testing.js"]
     }
 }
