@@ -15,8 +15,8 @@
         "tsc": "tsc --build --verbose",
         "build-prod": "sh build.sh",
         "build": "sh build.sh --dev --no_tsc",
-        "lint": "eslint . --ext .js --ext .ts",
-        "test": "node ts-port/testing.js"
+        "lint": "eslint . --ext .ts",
+        "test": "node ts-port/dest/testing.js"
     },
     "dependencies": {
         "decimal.js": "^10.4.3"
@@ -37,7 +37,6 @@
             "max-len": ["error", {"code": 150}],
             "indent": ["error", 4],
             "linebreak-style": 0
-        },
-        "ignorePatterns": ["ts-port/symtype.js", "ts-port/testing.js"]
+        }
     }
 }
