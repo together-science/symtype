@@ -19,7 +19,6 @@
         "test": "node ts-port/testing.js"
     },
     "dependencies": {
-        "decimal.js": "^10.4.3",
-        "dedent": "^0.7.0"
+        "decimal.js": "^10.4.3"
     }
 }
