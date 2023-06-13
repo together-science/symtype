@@ -8,6 +8,15 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-staging:
+  build-and-test:
     runs-on: [ubuntu-22.04]
     name: Build and test
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install node
+        run: npm install -g node
+
+      - name: Install dependencies
+        shell: bash
+        run: npm ci
