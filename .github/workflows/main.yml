@@ -1,0 +1,13 @@
+name: symtype CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  build-staging:
+    runs-on: [ubuntu-22.04]
+    name: Build and test
