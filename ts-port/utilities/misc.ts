@@ -13,28 +13,13 @@ Notable changes made (WB and GM):
 */
 
 
-import dedent from "dedent";
-
-
 class Undecidable extends Error {
     // an error to be raised when a decision cannot be made definitively
     // where a definitive answer is needed
 }
 
+/*
 function filldedent(s: string, w: number = 70): string {
-    /*
-    Strips leading and trailing empty lines from a copy of ``s``, then dedents,
-    fills and returns it.
-
-    Empty line stripping serves to deal with docstrings like this one that
-    start with a newline after the initial triple quote, inserting an empty
-    line at the beginning of the string.
-
-    See Also
-    ========
-    strlines, rawlines
-
-    */
 
     // remove empty blank lines
     let str = s.replace(/^\s*\n/gm, "");
@@ -55,6 +40,7 @@ function filldedent(s: string, w: number = 70): string {
     }
     return res;
 }
+*/
 
 
 function strlines(s: string, c: number = 64, short=false) {
@@ -104,4 +90,4 @@ function as_int(n: any) {
     return n;
 }
 
-export {as_int, filldedent};
+export {as_int};

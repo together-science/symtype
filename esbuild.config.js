@@ -9,7 +9,7 @@ require("esbuild").build({
     // the entry point file described above
     entryPoints: ["ts-port/" + entryPoint + ".ts"],
     // the build folder location described above
-    outfile: "ts-port/" + entryPoint + ".js",
+    outfile: "ts-port/dest/" + entryPoint + ".js",
     bundle: true,
     minify: !isDev,
     watch: false,

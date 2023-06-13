@@ -15,11 +15,28 @@
         "tsc": "tsc --build --verbose",
         "build-prod": "sh build.sh",
         "build": "sh build.sh --dev --no_tsc",
-        "lint": "eslint . --ext .js --ext .ts",
-        "test": "node ts-port/testing.js"
+        "lint": "eslint . --ext .ts",
+        "test": "node ts-port/dest/testing.js"
     },
     "dependencies": {
-        "decimal.js": "^10.4.3",
-        "dedent": "^0.7.0"
+        "decimal.js": "^10.4.3"
+    },
+    "eslintConfig": {
+        "parser": "@typescript-eslint/parser",
+        "parserOptions": {
+            "ecmaVersion": "latest",
+            "sourceType": "module"
+        },
+        "plugins": [
+            "@typescript-eslint"
+        ],
+        "rules": {
+            "quotes": ["error", "double", {"avoidEscape": true}],
+            "require-jsdoc": "off",
+            "valid-jsdoc": "off",
+            "max-len": ["error", {"code": 150}],
+            "indent": ["error", 4],
+            "linebreak-style": 0
+        }
     }
 }

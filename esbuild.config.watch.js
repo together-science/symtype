@@ -4,8 +4,8 @@ require("esbuild").build({
     // the entry point file described above
     entryPoints: ["ts-port/" + entryPoint + ".ts"],
     // the build folder location described above
-    outfile: "ts-port/" + entryPoint + ".js",
-     bundle: true,
+    outfile: "ts-port/dest/" + entryPoint + ".js",
+    bundle: true,
     minify: false,
     watch: {
         onRebuild(error, result) {

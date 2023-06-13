@@ -8,6 +8,6 @@
       "sourceMap": true,
       "allowSyntheticDefaultImports": true,
       "target": "es2019",
-      "outDir": "out",
+      "outDir": "ts-port/tsc-dest",
     },
   }
