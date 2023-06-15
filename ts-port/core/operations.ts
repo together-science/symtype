@@ -91,11 +91,11 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
         if (typeof is_commutative === "undefined") {
             const input: any[] = [];
             for (const a of args) {
-                input.push(a.is_commutative);
+                input.push(a.is_commutative());
             }
             is_commutative = fuzzy_and_v2(input);
         }
-        obj.is_commutative = is_commutative;
+        obj.is_commutative = () => is_commutative;
         return obj;
     }
 

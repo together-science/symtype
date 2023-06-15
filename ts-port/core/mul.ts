@@ -427,7 +427,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                             coeff = coeff.__mul__(obj);
                         } else {
                             [bi, ei] = item._args;
-                            pnew.add(ei, pnew.get(ei).push(bi));
+                            pnew.add(ei, pnew.get(ei).concat(bi));
                         }
                     }
                 }
@@ -462,7 +462,10 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
 
         const c_part_argv2 = [];
-        for (const [b, e] of pnew.entries()) {
+        for (let [b, e] of pnew.entries()) {
+            if (Array.isArray(e)) {
+                e = e[0];
+            }
             c_part_argv2.push(new Pow(b, e));
         }
         c_part.push(...c_part_argv2);

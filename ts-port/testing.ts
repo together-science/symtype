@@ -10,26 +10,13 @@ import {Symbol} from "./core/symbol.js";
 
 // Define integers, rationals, floats, and symbols
 const n = _Number_.new(4);
-console.log(n.is_Rational())
-console.log(n.is_zero())
-console.log(n.is_Add())
-console.log(n.is_complex())
-console.log(n.is_Float())
-
-const n3 = _Number_.new(-1.5);
-
-console.log(n3.is_Float())
-console.log(n3.is_Rational())
-
-
-/*
-
-
 const n2 = _Number_.new(4, 9);
 const n3 = _Number_.new(-1.5);
 const n4 = _Number_.new(1, 3);
 const x = new Symbol("x");
 
+console.log(new Pow(n, n2));
+/*
 // Addition
 
 // Basic evaluated add
