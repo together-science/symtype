@@ -15,8 +15,6 @@ const n3 = _Number_.new(-1.5);
 const n4 = _Number_.new(1, 3);
 const x = new Symbol("x");
 
-console.log(new Pow(n, n2));
-/*
 // Addition
 
 // Basic evaluated add
@@ -79,4 +77,3 @@ console.log(factorrat(bigrat));
 console.log(new Mul(true, true, S.ComplexInfinity, S.NegativeInfinity, x));
 console.log(new Mul(true, true, S.Infinity, n2, x));
 console.log(new Pow(n, S.NaN));
-*/
