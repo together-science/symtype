@@ -1,19 +1,34 @@
 import {factorint, factorrat} from "./ntheory/factor_.js";
 import {Add} from "./core/add.js";
 import {Mul} from "./core/mul.js";
-import {_Number_} from "./core/numbers.js";
+import {_Number_, Integer} from "./core/numbers.js";
+import {Util} from "./core/utility.js";
 import {Pow} from "./core/power.js";
 import {S} from "./core/singleton.js";
 import {Symbol} from "./core/symbol.js";
 
+
 // Define integers, rationals, floats, and symbols
 const n = _Number_.new(4);
+console.log(n.is_Rational())
+console.log(n.is_zero())
+console.log(n.is_Add())
+console.log(n.is_complex())
+console.log(n.is_Float())
+
+const n3 = _Number_.new(-1.5);
+
+console.log(n3.is_Float())
+console.log(n3.is_Rational())
+
+
+/*
+
+
 const n2 = _Number_.new(4, 9);
 const n3 = _Number_.new(-1.5);
 const n4 = _Number_.new(1, 3);
 const x = new Symbol("x");
-
-// Arithmetic and simplifications:
 
 // Addition
 
@@ -27,7 +42,6 @@ console.log(new Add(true, true, x, x, x));
 console.log(new Add(true, true, x, x, new Add(true, true, n, n2, x)));
 // Add with nested mul
 console.log(new Add(true, true, x, new Mul(true, true, n, x)));
-
 
 // Multiplication
 
@@ -78,3 +92,4 @@ console.log(factorrat(bigrat));
 console.log(new Mul(true, true, S.ComplexInfinity, S.NegativeInfinity, x));
 console.log(new Mul(true, true, S.Infinity, n2, x));
 console.log(new Pow(n, S.NaN));
+*/

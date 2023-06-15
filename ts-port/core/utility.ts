@@ -161,9 +161,19 @@ class Util {
         return undefined;
     }
 
-    static getSupers(obj: any) {
+    // static getSupers(obj: any) {
+    //     const res: any[] = [];
+    //     let s = Object.getPrototypeOf(Object.getPrototypeOf(obj));
+    //     while (s.constructor.name !== "Object") {
+    //         res.push(s.name);
+    //         s = Object.getPrototypeOf(s);
+    //     }
+    //     return res;
+    // }
+
+    static getSupers(cls: any) {
         const res: any[] = [];
-        let s = Object.getPrototypeOf(Object.getPrototypeOf(obj));
+        let s = Object.getPrototypeOf(cls);
         while (s.constructor.name !== "Object") {
             res.push(s.name);
             s = Object.getPrototypeOf(s);

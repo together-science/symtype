@@ -1,6 +1,7 @@
 /*
 Notable changes made (and notes):
 - Basic reworked with constructor system
+- Basic handles OBJECT properties, ManagedProperties handles CLASS properties
 - _eval_is properties (dependent on object) are now assigned in Basic
 - Some properties of Basic (and subclasses) are static
 */
@@ -107,6 +108,41 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
             const pname = as_property(fact);
             if (typeof cls[pname] === "undefined") {
                 make_property(this, fact);
+            }
+        }
+
+        // SYMTYPE ADDITION: add static variables as object properties
+
+
+        // helper function to get super classes of our current class
+        function getSupers(cls: any): any[] {
+            const superclasses = [];
+            const superclass = Object.getPrototypeOf(cls);
+          
+            if (superclass !== null && superclass !== Object.prototype) {
+                superclasses.push(superclass);
+                const parentSuperclasses = getSupers(superclass);
+                superclasses.push(...parentSuperclasses);
+            }
+          
+            return superclasses;
+        }
+    
+        // get the static variables of this class and assign to object
+        const currentStaticVars = Object.getOwnPropertyNames(cls).filter(prop => prop.includes("is_"));
+        for (const prop of currentStaticVars) {
+            this[prop] = () => cls[prop];
+        }
+        
+        // get the static variables of all superclasses and assign to object
+        // note that we only assign the properties if they are undefined 
+        const supers: any[] = getSupers(cls);
+        for (const supercls of supers) {
+            const superclassStaticVars = Object.getOwnPropertyNames(supercls).filter(prop => prop.includes("is_"));
+            for (const prop of superclassStaticVars) {
+                if (typeof this[prop] == "undefined") {
+                    this[prop] = () => cls[prop];
+                }
             }
         }
     }

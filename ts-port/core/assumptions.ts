@@ -6,6 +6,7 @@ Notable changes made (and notes):
   (see comments within class)
 - Class properties from _eval_is methods are assigned to each object itself in
   the Basic constructor
+- Choosing to run getit() on make_property to add consistency in accessing
 - To-do: make accessing properties more consistent (i.e., same syntax for
   acessing static and non-static properties)
 */
@@ -112,6 +113,8 @@ export function as_property(fact: any) {
 }
 
 export function make_property(obj: any, fact: any) {
+    // choosing to run getit() on make_property to add consistency in accessing
+    // propoerties of symtype objects. this may slow down symtype slightly
     obj[as_property(fact)] = getit;
     function getit() {
         if (typeof obj._assumptions[fact] !== "undefined") {
@@ -121,6 +124,7 @@ export function make_property(obj: any, fact: any) {
         }
     }
 }
+
 
 // eslint-disable-next-line no-unused-vars
 function _ask(fact: any, obj: any) {
@@ -161,12 +165,7 @@ function _ask(fact: any, obj: any) {
         let fact_i_value = undefined;
         let handler_i = handler_map.get(fact_i);
         if (typeof handler_i !== "undefined") {
-            handler_i = handler_i.name;
-            if (obj[handler_i]) {
-                fact_i_value = obj[handler_i]();
-            } else {
-                fact_i_value = undefined;
-            }
+            fact_i_value = obj[handler_i.name]();
         }
 
         if (typeof fact_i_value !== "undefined") {

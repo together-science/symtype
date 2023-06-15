@@ -88,7 +88,7 @@ export class Add extends mix(base).with(Expr, AssocOp) {
 
     __slots__: any[] = [];
     args: any[];
-    static is_Add: any = true;
+    static is_Add: any = true; 
     // eslint-disable-next-line new-cap
     static _args_type = Expr(Object);
     static identity = S.Zero; // !!! unsure abt this
@@ -111,18 +111,18 @@ export class Add extends mix(base).with(Expr, AssocOp) {
         let rv = undefined;
         if (seq.length === 2) {
             let [a, b] = seq;
-            if (b.constructor.is_Rational) {
+            if (b.is_Rational()) {
                 [a, b] = [b, a];
             }
-            if (a.constructor.is_Rational) {
-                if (b.constructor.is_Mul) {
+            if (a.is_Rational()) {
+                if (b.is_Mul()) {
                     rv = [[a, b], [], undefined];
                 }
             }
             if (rv) {
                 let allc = true;
                 for (const s of rv[0]) {
-                    if (s.constructor.is_commutative === false) {
+                    if (s.is_commutative() === false) {
                         allc = false;
                     }
                 }
@@ -139,11 +139,11 @@ export class Add extends mix(base).with(Expr, AssocOp) {
         for (const o of seq) {
             let c;
             let s;
-            if (o.constructor.is_Number) {
+            if (o.is_Number()) {
                 if ((o === S.NaN || (coeff === S.ComplexInfinity && o.is_finite() === false))) {
                     return [[S.NaN], [], undefined];
                 }
-                if (coeff.constructor.is_Number) {
+                if (coeff.is_Number()) {
                     coeff = coeff.__add__(o);
                     if (coeff === S.NaN || !extra) {
                         return [[S.NaN], [], undefined];
@@ -156,16 +156,16 @@ export class Add extends mix(base).with(Expr, AssocOp) {
                 }
                 coeff = S.ComplexInfinity;
                 continue;
-            } else if (o.constructor.is_Add) {
+            } else if (o.is_Add()) {
                 seq.push(...o._args);
                 continue;
-            } else if (o.constructor.is_Mul) {
+            } else if (o.is_Mul()) {
                 [c, s] = o.as_coeff_Mul();
             } else if (o.is_Pow) {
                 const pair = o.as_base_exp();
                 const b = pair[0];
                 const e = pair[1];
-                if (b.constructor.is_Number && (e.constructor.is_Integer || (e.constructor.is_Rational && e.is_negative()))) {
+                if (b.is_Number() && (e.is_Integer() || (e.is_Rational() && e.is_negative()))) {
                     seq.push(b._eval_power(e));
                     continue;
                 }
@@ -188,21 +188,21 @@ export class Add extends mix(base).with(Expr, AssocOp) {
         for (const item of terms.entries()) {
             const s: any = item[0];
             const c: any = item[1];
-            if (c.constructor.is_zero) {
+            if (c.is_zero()) {
                 continue;
             } else if (c === S.One) {
                 newseq.push(s);
             } else {
-                if (s.constructor.is_Mul) {
+                if (s.is_Mul()) {
                     const cs = s._new_rawargs(true, ...[c].concat(s._args));
                     newseq.push(cs);
-                } else if (s.constructor.is_Add) {
+                } else if (s.is_Add()) {
                     newseq.push(new Mul(false, true, c, s));
                 } else {
                     newseq.push(new Mul(true, true, c, s));
                 }
             }
-            noncommutative = noncommutative || !(s.constructor.is_commutative);
+            noncommutative = noncommutative || !(s.is_commutative());
         }
         const temp = [];
         if (coeff === S.Infinity) {
@@ -243,14 +243,14 @@ export class Add extends mix(base).with(Expr, AssocOp) {
     _eval_is_commutative() {
         const fuzzyarg = [];
         for (const a of this._args) {
-            fuzzyarg.push(a.constructor.is_commutative);
+            fuzzyarg.push(a.is_commutative());
         }
         return _fuzzy_groupv2(fuzzyarg);
     }
 
     as_coeff_Add() {
         const [coeff, args] = [this.args[0], this.args.slice(1)];
-        if (coeff.constructor.is_Number && coeff.constructor.is_Rational) {
+        if (coeff.is_Number() && coeff.is_Rational()) {
             return [coeff, this._new_rawargs(true, ...args)];
         }
         return [S.Zero, this];

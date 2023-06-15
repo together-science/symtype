@@ -592,10 +592,13 @@ class Rational extends _Number_ {
     }
 
     _eval_is_odd() {
+        console.log("hello");
+        console.log(this);
         return this.p % 2 !== 0;
     }
 
     _eval_is_even() {
+        console.log("eval even")
         return this.p % 2 === 0;
     }
 
@@ -638,6 +641,7 @@ class Integer extends Rational {
     __slots__: any[] = [];
     constructor(p: number) {
         super(p, undefined, undefined, false);
+        this.p = p;
         if (p === 1) {
             return S.One;
         } else if (p === 0) {
@@ -645,7 +649,6 @@ class Integer extends Rational {
         } else if (p === -1) {
             return S.NegativeOne;
         }
-        this.p = p;
     }
 
     factors(limit: any = undefined) {
@@ -743,10 +746,12 @@ class Integer extends Rational {
     }
 
     _eval_is_negative() {
+        console.log("eval negative")
         return this.p < 0;
     }
 
     _eval_is_positive() {
+        console.log("eval positive")
         return this.p > 0;
     }
 

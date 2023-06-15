@@ -103,12 +103,12 @@ export class Pow extends _Expr {
                 if (e === S.Infinity) {
                     // this part is not fully done
                     // should be updated to use relational
-                    if (b.constructor.is_positive || b.is_positive()) {
+                    if (b.is_positive()) {
                         return S.Infinity;
-                    } else if (b.constructor.is_zero) {
+                    } else if (b.is_zero()) {
                         return S.Zero;
                     } else {
-                        if (b.is_finite() || b.constructor.is_finite) {
+                        if (b.is_finite()) {
                             return S.ComplexInfinity;
                         } else {
                             return S.NaN;
@@ -121,10 +121,10 @@ export class Pow extends _Expr {
                     return b;
                 } else if (e === S.NegativeOne && !b) {
                     return S.ComplexInfinity;
-                } else if ((e.constructor.is_Symbol && e.constructor.is_integer ||
-                    e.constructor.is_Integer && (b.constructor.is_Number &&
-                    b.constructor.is_Mul || b.constructor.is_Number)) && (e.is_extended_negative === true)) {
-                    if (e.is_even() || e.constructor.is_even) {
+                } else if ((e.is_Symbol() && e.is_integer() ||
+                    e.is_Integer() && (b.is_Number() &&
+                    b.is_Mul() || b.is_Number())) && (e.is_extended_negative === true)) {
+                    if (e.is_even() || e.is_even()) {
                         b = b.__mul__(S.NegativeOne);
                     } else {
                         return new Pow(b.__mul__(S.NegativeOne), e).__mul__(S.NegativeOne);
@@ -137,17 +137,17 @@ export class Pow extends _Expr {
                         return S.NaN;
                     }
                     return S.One;
-                } else if (e.constructor.is_Number && b.constructor.is_Number ) {
+                } else if (e.is_Number() && b.is_Number()) {
                     // base E stuff not yet implemented
                     const obj = b._eval_power(e);
                     if (typeof obj !== "undefined") {
-                        obj.is_commutative = (b.constructor.is_commutative && e.constructor.is_commutative);
+                        obj.is_commutative = () => (b.is_commutative() && e.is_commutative());
                         return obj;
                     }
                 }
             }
         }
-        this.is_commutative = (b.constructor.is_commutative && e.constructor.is_commutative);
+        this.is_commutative = () => (b.is_commutative() && e.is_commutative());
     }
 
     as_base_exp() {
