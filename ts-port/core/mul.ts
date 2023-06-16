@@ -474,11 +474,11 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             function _handle_for_oo(c_part: any[], coeff_sign: number) {
                 const new_c_part = [];
                 for (const t of c_part) {
-                    if (t.is_extended_negative) {
+                    if (t.is_extended_positive()) {
                         continue;
                     }
-                    if (t.is_extended_negative) {
-                        coeff_sign *= -1;
+                    if (t.is_extended_negative()) {
+                        coeff_sign = -1;
                         continue;
                     }
                     new_c_part.push(t);
@@ -615,7 +615,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             return factors;
         } else if (coeff === S.NegativeOne && !sign) {
             return factors.__mul__(S.NegativeOne);
-        } else if (factors.isAdd()) {
+        } else if (factors.is_Add()) {
             if (!clear && coeff.is_Rational() && coeff.q !== 1) {
                 let args = [];
                 for (const i of factors._args) {
@@ -643,7 +643,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 }
             }
             return new Mul(false, true, coeff, factors);
-        } else if (factors.isMul()) {
+        } else if (factors.is_Mul()) {
             const margs: any[] = factors._args;
             if (margs[0].is_Number()) {
                 margs[0] = margs[0].__mul__(coeff);

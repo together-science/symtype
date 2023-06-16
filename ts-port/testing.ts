@@ -15,10 +15,17 @@ const n3 = _Number_.new(-1.5);
 const n4 = _Number_.new(1, 3);
 const x = new Symbol("x");
 
+console.log(new Add(true, true, S.ComplexInfinity, n3, x)); // DOESNT WORK
+
+/*
+
+
 // Addition
 
 // Basic evaluated add
 console.log(new Add(true, true, n, n2, x));
+// Basic evaluated add with subtraction
+console.log(new Add(true, true, n, n3, x));
 // Add without eval
 console.log(new Add(false, true, n, n2, x));
 // Combine coeffs and convert to mul
@@ -27,21 +34,28 @@ console.log(new Add(true, true, x, x, x));
 console.log(new Add(true, true, x, x, new Add(true, true, n, n2, x)));
 // Add with nested mul
 console.log(new Add(true, true, x, new Mul(true, true, n, x)));
+// Add with nested pow
+console.log(new Add(true, true, x, new Pow(n, x)));
+
 
 // Multiplication
 
 // Basic evaluated mul
 console.log(new Mul(true, true, n, n2, x));
+// Basic division
+console.log(new Mul(true, true, n, _Number_.new(1, 2)));
 // Mul without eval
 console.log(new Mul(false, true, n, n2, x));
 // Combine coeffs and convert to pow
 console.log(new Mul(true, true, x, x, x));
 // Nested muls
 console.log(new Mul(true, true, x, x, new Mul(true, true, n, n2, x)));
-// Nested mul with pow
+// Mul with pow
 console.log(new Mul(true, true, x, new Pow(n, x)));
-// Mul pow expressions (combine exponents)
+// Multiply pow expressions (combine exponents)
 console.log(new Mul(true, true, new Pow(n, x), new Pow(n, x)));
+// distributive property
+console.log(new Mul(true, true, n, new Add(true, true, x, n)))
 
 // Exponentials
 
@@ -75,5 +89,8 @@ console.log(factorrat(bigrat));
 // to be added and debugged for S.Infinity, S.NegativeInfinity, and S.NegativeOne
 
 console.log(new Mul(true, true, S.ComplexInfinity, S.NegativeInfinity, x));
-console.log(new Mul(true, true, S.Infinity, n2, x));
+console.log(new Mul(true, true, S.Infinity, n2, x)); 
+console.log(new Add(true, true, S.Infinity, n2, x)); 
+console.log(new Add(true, true, S.ComplexInfinity, n3, x)); // DOESNT WORK
 console.log(new Pow(n, S.NaN));
+*/

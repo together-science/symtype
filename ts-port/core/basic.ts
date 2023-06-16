@@ -6,7 +6,7 @@ Notable changes made (and notes):
 - Some properties of Basic (and subclasses) are static
 */
 
-import {as_property, make_property, ManagedProperties, _assume_defined} from "./assumptions.js";
+import {as_property, make_property, ManagedProperties, _assume_defined, StdFactKB} from "./assumptions.js";
 import {Util, HashDict, mix, base, HashSet} from "./utility.js";
 import {UndefinedKind} from "./kind.js";
 import {preorder_traversal} from "./traversal.js";
@@ -46,7 +46,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     __slots__ = ["_mhash", "_args", "_assumptions"];
     _args: any[];
     _mhash: Number | undefined;
-    _assumptions;
+    _assumptions: StdFactKB;
 
     // To be overridden with True in the appropriate subclasses
     static is_number = false;
@@ -91,6 +91,11 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         this._assumptions = cls.default_assumptions.stdclone();
         this._mhash = undefined;
         this._args = args;
+        this.assignProps();
+    }
+
+    assignProps() {
+        const cls: any = this.constructor;
         // Create a dictionary to handle the current properties of the class
         // Only evuated once per class
         if (typeof cls._prop_handler === "undefined") {
@@ -102,47 +107,20 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
                 }
             }
         }
-        // Add all defined properties
+        // Add all defined properties from assume defined
         this._prop_handler = cls._prop_handler.copy();
         for (const fact of _assume_defined.toArray()) {
             const pname = as_property(fact);
-            if (typeof cls[pname] === "undefined") {
+            if (this._assumptions.has(pname)) {
+                this[pname] = () => this._assumptions.get(pname);
+            } else {
                 make_property(this, fact);
             }
         }
-
-        // SYMTYPE ADDITION: add static variables as object properties
-
-
-        // helper function to get super classes of our current class
-        function getSupers(cls: any): any[] {
-            const superclasses = [];
-            const superclass = Object.getPrototypeOf(cls);
-          
-            if (superclass !== null && superclass !== Object.prototype) {
-                superclasses.push(superclass);
-                const parentSuperclasses = getSupers(superclass);
-                superclasses.push(...parentSuperclasses);
-            }
-          
-            return superclasses;
-        }
-    
-        // get the static variables of this class and assign to object
-        const currentStaticVars = Object.getOwnPropertyNames(cls).filter(prop => prop.includes("is_"));
-        for (const prop of currentStaticVars) {
-            this[prop] = () => cls[prop];
-        }
-        
-        // get the static variables of all superclasses and assign to object
-        // note that we only assign the properties if they are undefined 
-        const supers: any[] = getSupers(cls);
-        for (const supercls of supers) {
-            const superclassStaticVars = Object.getOwnPropertyNames(supercls).filter(prop => prop.includes("is_"));
-            for (const prop of superclassStaticVars) {
-                if (typeof this[prop] == "undefined") {
-                    this[prop] = () => cls[prop];
-                }
+        // Add remaining properties from default assumptions
+        for (const fact of this._assumptions.entries()) {
+            if (typeof this[fact[0]] === "undefined") {
+                this[fact[0]] = () => fact[1];
             }
         }
     }

@@ -161,7 +161,7 @@ export class Add extends mix(base).with(Expr, AssocOp) {
                 continue;
             } else if (o.is_Mul()) {
                 [c, s] = o.as_coeff_Mul();
-            } else if (o.is_Pow) {
+            } else if (o.is_Pow()) {
                 const pair = o.as_base_exp();
                 const b = pair[0];
                 const e = pair[1];

@@ -59,14 +59,21 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
 
     constructor(name: any, properties: Record<any, any> = undefined) {
         super();
-        const assumptions = new HashDict(properties);
-        Symbol._sanitize(assumptions);
         this.name = name;
+
+        // add user assumptions
+        const assumptions: HashDict = new HashDict(properties);
+        Symbol._sanitize(assumptions);
         const tmp_asm_copy = assumptions.copy();
+
+        // strict commutativity
         const is_commutative = fuzzy_bool_v2(assumptions.get("commutative", true));
-        assumptions.add("commutative", is_commutative);
-        this._assumptions = new StdFactKB(assumptions);
+        assumptions.add("is_commutative", is_commutative);
+
+        // Merge with object assumptions and reassign object properties
+        this._assumptions.merge(assumptions);
         this._assumptions._generator = tmp_asm_copy;
+        super.assignProps();
     }
 
     equals(other: Symbol) {

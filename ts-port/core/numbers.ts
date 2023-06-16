@@ -603,7 +603,7 @@ class Rational extends _Number_ {
     }
 
     _eval_is_finite() {
-        return this.p === S.Infinity || this.p === S.NegativeInfinity;
+        return !(this.p === S.Infinity || this.p === S.NegativeInfinity);
     }
 
     eq(other: Rational) {
@@ -1001,7 +1001,7 @@ class NaN extends _Number_ {
     static is_commutative = true;
     static is_extended_real: any = undefined;
     static is_real: any = undefined;
-    static is_rationa: any = undefined;
+    static is_rational: any = undefined;
     static is_algebraic: any = undefined;
     static is_transcendental: any = undefined;
     static is_integer: any = undefined;

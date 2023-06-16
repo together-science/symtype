@@ -161,24 +161,17 @@ class Util {
         return undefined;
     }
 
-    // static getSupers(obj: any) {
-    //     const res: any[] = [];
-    //     let s = Object.getPrototypeOf(Object.getPrototypeOf(obj));
-    //     while (s.constructor.name !== "Object") {
-    //         res.push(s.name);
-    //         s = Object.getPrototypeOf(s);
-    //     }
-    //     return res;
-    // }
-
-    static getSupers(cls: any) {
-        const res: any[] = [];
-        let s = Object.getPrototypeOf(cls);
-        while (s.constructor.name !== "Object") {
-            res.push(s.name);
-            s = Object.getPrototypeOf(s);
+    static getSupers(cls: any): any[] {
+        const superclasses = [];
+        const superclass = Object.getPrototypeOf(cls);
+      
+        if (superclass !== null && superclass !== Object.prototype) {
+            superclasses.push(superclass);
+            const parentSuperclasses = Util.getSupers(superclass);
+            superclasses.push(...parentSuperclasses);
         }
-        return res;
+      
+        return superclasses;
     }
 
     static shuffleArray(arr: any[]) {

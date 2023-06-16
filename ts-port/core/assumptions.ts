@@ -118,7 +118,7 @@ export function make_property(obj: any, fact: any) {
     obj[as_property(fact)] = getit;
     function getit() {
         if (typeof obj._assumptions[fact] !== "undefined") {
-            return obj._assumptions[fact];
+            return obj._assumptions.get(fact);
         } else {
             return _ask(fact, obj);
         }
@@ -218,43 +218,54 @@ class ManagedProperties {
                     if (typeof v !== "undefined") {
                         v = !!v;
                     }
-                    local_defs.add(k, v);
+                    local_defs.add(attrname, v);
                 }
             }
         }
 
-        // Keep track of the explicit assumptions for all registered classes.
-        // For a given class, this looks like the assumptions for all of its
-        // superclasses since we register classes top-down.
-        this.all_explicit_assumptions.merge(local_defs);
+        const all_defs = new HashDict()
+        for (const base of Util.getSupers(cls).reverse()) {
+            const assumptions = base._explicit_class_assumptions;
+            if (typeof assumptions !== "undefined") {
+                all_defs.merge(assumptions)
+            }
+        }
+
+        all_defs.merge(local_defs);
 
         // Set class properties
-        cls._explicit_class_assumptions = this.all_explicit_assumptions;
-        cls.default_assumptions = new StdFactKB(this.all_explicit_assumptions);
+        cls._explicit_class_assumptions = all_defs
+        cls.default_assumptions = new StdFactKB(all_defs);
 
         // Add default assumptions as class properties
         for (const item of cls.default_assumptions.entries()) {
-            cls[as_property(item[0])] = item[1];
+            if (item[0].includes("is")) {
+                cls[item[0]] = item[1];
+            } else {
+                cls[as_property(item[0])] = item[1];
+            }
         }
 
         // Create two sets: one of the default assumption keys for this class
         // another for the base classes
         const s = new HashSet();
         s.addArr(cls.default_assumptions.keys());
-        this.all_default_assumptions.addArr(cls.default_assumptions.keys());
 
 
-        // Add only the properties from base classes that we don't already have
-        for (const fact of this.all_default_assumptions.difference(s).toArray()) {
-            const pname = as_property(fact);
-            if (!(pname in cls)) {
-                make_property(cls, fact);
-            }
-        }
-
-        const alldefs = new HashSet(Object.keys(cls));
+        const alldefs = new HashSet(Object.getOwnPropertyNames(cls).filter(prop => prop.includes("is_")));
         for (const fact of alldefs.difference(cls.default_assumptions).toArray()) {
             cls.default_assumptions.add(fact, cls[fact]);
+        }
+
+        // get the static variables of all superclasses and assign to class
+        // note that we only assign the properties if they are undefined 
+        const supers: any[] = Util.getSupers(cls);
+        for (const supercls of supers) {
+            const allProps = new HashSet(Object.getOwnPropertyNames(supercls).filter(prop => prop.includes("is_")));
+            const uniqueProps = allProps.difference(cls.default_assumptions).toArray()
+            for (const fact of uniqueProps) {
+                cls.default_assumptions.add(fact, supercls[fact]);
+            }
         }
     }
 }
