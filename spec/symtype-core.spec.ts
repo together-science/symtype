@@ -84,37 +84,33 @@ describe("Core", function () {
         expect(new Mul(true, true, n, new Add(true, true, x, n)).toString()).toBe("16 + 4*x")
     });
 
-    // it("should compute exponents with symtype objects correctly and handle weird cases", function () {
-    //     const n = _Number_.new(4);
-    //     const n2 = _Number_.new(4, 9);
-    //     const n3 = _Number_.new(-1.5);
-    //     const n4 = _Number_.new(1, 3);
-    //     const x = new Symbol("x");
-    //     expect(new Add(true, true, n, n2).toString()).toBe("40/9");
-    //     expect(new Add(true, true, n, n2, x).toString()).toBe("40/9 + x");
-    //     expect(new Add(true, true, n, n3, x).toString()).toBe("2.5 + x");
-    //     expect(new Add(false, true, n, n2, x).toString()).toBe("4 + 4/9 + x");
-    //     expect(new Add(true, true, x, x, x).toString()).toBe("3*x");
-    //     expect(new Add(true, true, x, x, new Add(true, true, n, n3, x)).toString()).toBe("2.5 + 3*x");
-    //     expect(new Add(true, true, x, n3, new Mul(true, true, n3, x)).toString()).toBe("-1.5 + -0.5*x");
-    //     expect(new Add(true, true, x, n2, new Pow(n, x)).toString()).toBe("4/9 + 4^x + x");
-    // });
+    it("should compute exponents with symtype objects correctly and handle weird cases", function () {
+        // NOTE: POW HAS LIMITED FUNCTIONALITY COMPARED TO ADD AND MUL (ATM)
+        const n = _Number_.new(4);
+        const n2 = _Number_.new(4, 9);
+        const n3 = _Number_.new(-1.5);
+        const x = new Symbol("x");
+        expect(new Pow(n, n).toString()).toBe("256");
+        expect(new Pow(n, n2).toString()).toBe("2^8/9");
+        expect(new Pow(n, n3).toString()).toBe("0.125");
+        expect(new Pow(n2, n3).toString()).toBe("3.37500000000001");
+        expect(new Pow(n, x).toString()).toBe("4^x");
+        expect(new Pow(n, new Mul(true, true, n2, n3)).toString()).toBe("0.39685026299205");
+        expect(new Pow(new Mul(true, true, n2, n), new Mul(true, true, n, n, x)).toString()).toBe("16/9^16*x");
+        expect(new Pow(n, new Add(true, true, n, x)).toString()).toBe("4^4 + x");
+        expect(new Pow(n, new Mul(true, true, n, x)).toString()).toBe("4^4*x");
+    });
 
-    // it("should substitute values for symbols and evaluate the expressions correctly", function () {
-    //     const n = _Number_.new(4);
-    //     const n2 = _Number_.new(4, 9);
-    //     const n3 = _Number_.new(-1.5);
-    //     const n4 = _Number_.new(1, 3);
-    //     const x = new Symbol("x");
-    //     expect(new Add(true, true, n, n2).toString()).toBe("40/9");
-    //     expect(new Add(true, true, n, n2, x).toString()).toBe("40/9 + x");
-    //     expect(new Add(true, true, n, n3, x).toString()).toBe("2.5 + x");
-    //     expect(new Add(false, true, n, n2, x).toString()).toBe("4 + 4/9 + x");
-    //     expect(new Add(true, true, x, x, x).toString()).toBe("3*x");
-    //     expect(new Add(true, true, x, x, new Add(true, true, n, n3, x)).toString()).toBe("2.5 + 3*x");
-    //     expect(new Add(true, true, x, n3, new Mul(true, true, n3, x)).toString()).toBe("-1.5 + -0.5*x");
-    //     expect(new Add(true, true, x, n2, new Pow(n, x)).toString()).toBe("4/9 + 4^x + x");
-    // });
+    it("should substitute values for symbols and evaluate the expressions correctly", function () {
+        const n = _Number_.new(4);
+        const n2 = _Number_.new(4, 9);
+        const n3 = _Number_.new(-1.5);
+        const n4 = _Number_.new(1, 3);
+        const x = new Symbol("x");
+        expect(new Pow(n, x).subs(x, n3).toString()).toBe("0.125");
+        expect(new Mul(false, true, n, n2, x).subs(x, n2).toString()).toBe("4/9");
+        expect(new Add(false, true, n, n2, x).subs(x, n).toString()).toBe("4");
+    });
 
     // it("should factor large ints and rationals correctly", function () {
     //     const n = _Number_.new(4);
@@ -134,60 +130,3 @@ describe("Core", function () {
 });
 
 
-// // Define integers, rationals, floats, and symbols
-// const n = _Number_.new(4);
-// const n2 = _Number_.new(4, 9);
-// const n3 = _Number_.new(-1.5);
-// const n4 = _Number_.new(1, 3);
-// const x = new Symbol("x");
-
-// console.log(new Pow(n, n2).toString());
-
-
-// // Addition
-
-// // Basic evaluated add
-// console.log(new Add(true, true, n, n2).toString());
-// // Basic evaluated add with variable
-// console.log(new Add(true, true, n, n2, x).toString());
-// // Basic evaluated add with subtraction
-// console.log(new Add(true, true, n, n3, x).toString());
-// // Add without eval
-// console.log(new Add(false, true, n, n2, x).toString());
-// // Combine coeffs and convert to mul
-// console.log(new Add(true, true, x, x, x).toString());
-// // Add with nested add
-// console.log(new Add(true, true, x, x, new Add(true, true, n, n2, x)).toString());
-// // Add with nested mul
-// console.log(new Add(true, true, x, new Mul(true, true, n, x)).toString());
-// // Add with nested pow
-// console.log(new Add(true, true, x, new Pow(n, x)).toString());
-
-
-// // Multiplication
-
-// // Basic evaluated mul
-// console.log(new Mul(true, true, n, n2, x).toString());
-// // Basic division
-// console.log(new Mul(true, true, n, _Number_.new(1, 2)).toString());
-// // Mul without eval
-// console.log(new Mul(false, true, n, n2, x).toString());
-// // Combine coeffs and convert to pow
-// console.log(new Mul(true, true, x, x, x).toString());
-// // Nested muls
-// console.log(new Mul(true, true, x, x, new Mul(true, true, n, n2, x)).toString());
-// // Mul with pow
-// console.log(new Mul(true, true, x, new Pow(n, x)).toString());
-// // Multiply pow expressions (combine exponents)
-// console.log(new Mul(true, true, new Pow(n, x), new Pow(n, x)).toString());
-// // distributive property
-// console.log(new Mul(true, true, n, new Add(true, true, x, n)).toString())
-
-// // Exponentials
-
-// // Basic pow
-// console.log(new Pow(n, n).toString());
-// // Unevaluated pow with symbol
-// console.log(new Pow(n, x).toString());
-// // Simplify int raised to rational
-// console.log(new Pow(n, n2).toString());

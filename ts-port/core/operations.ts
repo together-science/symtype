@@ -26,7 +26,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
        deprecated. See :ref:`non-expr-args-deprecated` for details.
     Parameters
     ==========
-    *args :
+    *args :ƒ
         Arguments which are operated
     evaluate : bool, optional
         Evaluate the operation. If not passed, refer to ``global_parameters.evaluate``.

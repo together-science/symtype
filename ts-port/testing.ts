@@ -15,56 +15,13 @@ const n3 = _Number_.new(-1.5);
 const n4 = _Number_.new(1, 3);
 const x = new Symbol("x");
 
-console.log(new Mul(true, true, n, n2, n3, x).toString());
 
+// Substitution
 
-// // Addition
+console.log(new Pow(n, x).subs(x, n4).toString());
+console.log(new Mul(false, true, n, n2, x).subs(x, n2).toString());
+console.log(new Add(false, true, n, n2, x).subs(x, n).toString());
 
-// // Basic evaluated add
-// console.log(new Add(true, true, n, n2).toString());
-// // Basic evaluated add with variable
-// console.log(new Add(true, true, n, n2, x).toString());
-// // Basic evaluated add with subtraction
-// console.log(new Add(true, true, n, n3, x).toString());
-// // Add without eval
-// console.log(new Add(false, true, n, n2, x).toString());
-// // Combine coeffs and convert to mul
-// console.log(new Add(true, true, x, x, x).toString());
-// // Add with nested add
-// console.log(new Add(true, true, x, x, new Add(true, true, n, n2, x)).toString());
-// // Add with nested mul
-// console.log(new Add(true, true, x, new Mul(true, true, n, x)).toString());
-// // Add with nested pow
-// console.log(new Add(true, true, x, new Pow(n, x)).toString());
-
-
-// // Multiplication
-
-// // Basic evaluated mul
-// console.log(new Mul(true, true, n, n2, x).toString());
-// // Basic division
-// console.log(new Mul(true, true, n, _Number_.new(1, 2)).toString());
-// // Mul without eval
-// console.log(new Mul(false, true, n, n2, x).toString());
-// // Combine coeffs and convert to pow
-// console.log(new Mul(true, true, x, x, x).toString());
-// // Nested muls
-// console.log(new Mul(true, true, x, x, new Mul(true, true, n, n2, x)).toString());
-// // Mul with pow
-// console.log(new Mul(true, true, x, new Pow(n, x)).toString());
-// // Multiply pow expressions (combine exponents)
-// console.log(new Mul(true, true, new Pow(n, x), new Pow(n, x)).toString());
-// // distributive property
-// console.log(new Mul(true, true, n, new Add(true, true, x, n)).toString())
-
-// // Exponentials
-
-// // Basic pow
-// console.log(new Pow(n, n).toString());
-// // Unevaluated pow with symbol
-// console.log(new Pow(n, x).toString());
-// // Simplify int raised to rational
-// console.log(new Pow(n, n2).toString());
 
 
 /*

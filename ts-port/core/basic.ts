@@ -302,7 +302,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
                 let rv;
                 if (cls.constructor.name === "Mul" || cls.constructor.name === "Add") {
                     rv = new cls.constructor(true, true, ...args);
-                } else if (cls.constructor.name === "Pow") {
+                } else {
                     rv = new cls.constructor(...args);
                 }
                 return rv;
