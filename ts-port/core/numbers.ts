@@ -7,19 +7,19 @@ Notable changes made (and notes):
 */
 
 // basic implementations only - no utility added yet
-import {_AtomicExpr} from "./expr.js";
-import {NumberKind} from "./kind.js";
-import {ManagedProperties} from "./assumptions.js";
-import {global_parameters} from "./parameters.js";
-import {Add} from "./add.js";
-import {S, Singleton} from "./singleton.js";
+import {_AtomicExpr} from "./expr";
+import {NumberKind} from "./kind";
+import {ManagedProperties} from "./assumptions";
+import {global_parameters} from "./parameters";
+import {Add} from "./add";
+import {S, Singleton} from "./singleton";
 import Decimal from "decimal.js";
-import {as_int} from "../utilities/misc.js";
-import {Pow} from "./power.js";
-import {Global} from "./global.js";
-import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_.js";
-import {HashDict} from "./utility.js";
-import {Mul} from "./mul.js";
+import {as_int} from "../utilities/misc";
+import {Pow} from "./power";
+import {Global} from "./global";
+import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_";
+import {HashDict} from "./utility";
+import {Mul} from "./mul";
 
 /*
 utility functions
@@ -363,6 +363,10 @@ class Float extends _Number_ {
     _eval_is_finite() {
         return this.decimal.isFinite();
     }
+
+    toString() {
+        return this.decimal.toString()
+    }
 }
 
 ManagedProperties.register(Float);
@@ -588,17 +592,14 @@ class Rational extends _Number_ {
     }
 
     _eval_is_positive() {
-        return !this._eval_is_negative;
+        return !this._eval_is_negative();
     }
 
     _eval_is_odd() {
-        console.log("hello");
-        console.log(this);
         return this.p % 2 !== 0;
     }
 
     _eval_is_even() {
-        console.log("eval even")
         return this.p % 2 === 0;
     }
 
@@ -608,6 +609,10 @@ class Rational extends _Number_ {
 
     eq(other: Rational) {
         return this.p === other.p && this.q === other.q;
+    }
+
+    toString() {
+        return String(this.p) + "/" + String(this.q)
     }
 };
 
@@ -746,12 +751,10 @@ class Integer extends Rational {
     }
 
     _eval_is_negative() {
-        console.log("eval negative")
         return this.p < 0;
     }
 
     _eval_is_positive() {
-        console.log("eval positive")
         return this.p > 0;
     }
 
@@ -790,7 +793,7 @@ class Integer extends Rational {
         const [x, xexact] = int_nthroot(Math.abs(this.p), expt.q);
         if (xexact) {
             let result = new Integer((x as number)**Math.abs(expt.p));
-            if (this.is_negative()) {
+            if (this.is_negative() == true) {
                 result = result.__mul__(S.NegativeOne._eval_power(expt));
             }
             return result;
@@ -850,6 +853,10 @@ class Integer extends Rational {
             }
         }
         return result;
+    }
+
+    toString() {
+        return String(this.p);
     }
 };
 
@@ -1013,6 +1020,9 @@ class NaN extends _Number_ {
     static is_negative: any = undefined;
     static is_number = true;
     __slots__: any = [];
+    toString() {
+        return "NAN";
+    }
 }
 
 ManagedProperties.register(NaN);
@@ -1054,6 +1064,10 @@ class ComplexInfinity extends _AtomicExpr {
 
     constructor() {
         super();
+    }
+
+    toString() {
+        return "ComplexInfinity";
     }
 }
 
@@ -1127,6 +1141,10 @@ class Infinity extends _Number_ {
         }
         return super.__mul__(other);
     }
+
+    toString() {
+        return "Infinity";
+    }
 }
 
 class NegativeInfinity extends _Number_ {
@@ -1174,6 +1192,10 @@ class NegativeInfinity extends _Number_ {
             return S.Infinity;
         }
         return super.__mul__(other);
+    }
+
+    toString() {
+        return "NegInfinity";
     }
 }
 

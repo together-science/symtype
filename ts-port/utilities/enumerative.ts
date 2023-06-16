@@ -96,7 +96,7 @@ Notable changes made (WB and GM):
 
 */
 
-import {HashSet} from "../core/utility.js";
+import {HashSet} from "../core/utility";
 
 class PartComponent {
     /* Internal class used in support of the multiset partitions

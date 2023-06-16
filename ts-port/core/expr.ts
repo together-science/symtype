@@ -5,12 +5,12 @@ Notable changes made (and notes):
   avoids cyclical imports
 */
 
-import {_Basic, Atom} from "./basic.js";
-import {HashSet, mix} from "./utility.js";
-import {ManagedProperties} from "./assumptions.js";
-import {S} from "./singleton.js";
-import {Global} from "./global.js";
-import {as_int} from "../utilities/misc.js";
+import {_Basic, Atom} from "./basic";
+import {HashSet, mix} from "./utility";
+import {ManagedProperties} from "./assumptions";
+import {S} from "./singleton";
+import {Global} from "./global";
+import {as_int} from "../utilities/misc";
 
 
 const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic) {

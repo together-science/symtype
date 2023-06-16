@@ -11,9 +11,9 @@ Notable changes made (and notes):
   acessing static and non-static properties)
 */
 
-import {FactKB, FactRules} from "./facts.js";
-import {BasicMeta} from "./core.js";
-import {HashDict, HashSet, Util} from "./utility.js";
+import {FactKB, FactRules} from "./facts";
+import {BasicMeta} from "./core";
+import {HashDict, HashSet, Util} from "./utility";
 
 
 const _assume_rules = new FactRules([
@@ -115,7 +115,11 @@ export function as_property(fact: any) {
 export function make_property(obj: any, fact: any) {
     // choosing to run getit() on make_property to add consistency in accessing
     // propoerties of symtype objects. this may slow down symtype slightly
-    obj[as_property(fact)] = getit;
+    if (!fact.includes("is_")) {
+        obj[as_property(fact)] = getit
+    } else {
+        obj[fact] = getit;
+    }
     function getit() {
         if (typeof obj._assumptions[fact] !== "undefined") {
             return obj._assumptions.get(fact);
@@ -145,7 +149,7 @@ function _ask(fact: any, obj: any) {
     */
 
     // FactKB which is dict-like and maps facts to their known values:
-    const assumptions: FactKB = obj._assumptions;
+    const assumptions: StdFactKB = obj._assumptions;
 
     // A dict that maps facts to their handlers:
     const handler_map: HashDict = obj._prop_handler;

@@ -45,10 +45,10 @@ Significant changes made (WB and GM):
 */
 
 
-import {StdFactKB} from "./assumptions.js";
-import {Logic, True, False, And, Or, Not} from "./logic.js";
+import {StdFactKB} from "./assumptions";
+import {Logic, True, False, And, Or, Not} from "./logic";
 
-import {Util, HashSet, SetDefaultDict, HashDict, Implication} from "./utility.js";
+import {Util, HashSet, SetDefaultDict, HashDict, Implication} from "./utility";
 
 
 function _base_fact(atom: any) {

@@ -7,7 +7,7 @@ Notable changes made (WB and GM)
 */
 
 
-import {HashSet} from "./utility.js";
+import {HashSet} from "./utility";
 
 // used for canonical ordering of symbolic sequences
 // via __cmp__ method:

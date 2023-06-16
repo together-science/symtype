@@ -5,7 +5,7 @@ Notable changes made (and notes)
 */
 
 /* eslint-disable new-cap */
-import {ManagedProperties} from "./assumptions.js";
+import {ManagedProperties} from "./assumptions";
 
 class Singleton {
     static registry: Record<any, any> = {};

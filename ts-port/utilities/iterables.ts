@@ -6,7 +6,7 @@
 //   but still buggy - revisit this whenever those become necessary
 // */
 
-import {ArrDefaultDict} from "../core/utility.js";
+import {ArrDefaultDict} from "../core/utility";
 
 // import {HashDict} from "../core/utility.js";
 

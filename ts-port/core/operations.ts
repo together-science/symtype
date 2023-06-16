@@ -5,12 +5,12 @@ Notable changes made and notes:
 - Simplify argument added to constructor to prevent infinite recursion
 */
 
-import {_Basic} from "./basic.js";
-import {mix} from "./utility.js";
-import {global_parameters} from "./parameters.js";
-import {fuzzy_and_v2} from "./logic.js";
-import {ManagedProperties} from "./assumptions.js";
-import {S} from "./singleton.js";
+import {_Basic} from "./basic";
+import {mix} from "./utility";
+import {global_parameters} from "./parameters";
+import {fuzzy_and_v2} from "./logic";
+import {ManagedProperties} from "./assumptions";
+import {S} from "./singleton";
 
 
 const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(_Basic) {

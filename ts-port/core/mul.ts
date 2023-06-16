@@ -1,16 +1,16 @@
-import {divmod} from "../ntheory/factor_.js";
-import {Add} from "./add.js";
-import {ManagedProperties} from "./assumptions.js";
-import {Basic} from "./basic.js";
-import {Expr} from "./expr.js";
-import {Global} from "./global.js";
-import {fuzzy_notv2, _fuzzy_groupv2} from "./logic.js";
-import {Integer, Rational} from "./numbers.js";
-import {AssocOp} from "./operations.js";
-import {global_parameters} from "./parameters.js";
-import {Pow} from "./power.js";
-import {S} from "./singleton.js";
-import {mix, base, HashDict, HashSet, ArrDefaultDict} from "./utility.js";
+import {divmod} from "../ntheory/factor_";
+import {Add} from "./add";
+import {ManagedProperties} from "./assumptions";
+import {Basic} from "./basic";
+import {Expr} from "./expr";
+import {Global} from "./global";
+import {fuzzy_notv2, _fuzzy_groupv2} from "./logic";
+import {Integer, Rational} from "./numbers";
+import {AssocOp} from "./operations";
+import {global_parameters} from "./parameters";
+import {Pow} from "./power";
+import {S} from "./singleton";
+import {mix, base, HashDict, HashSet, ArrDefaultDict} from "./utility";
 
 // # internal marker to indicate:
 // "there are still non-commutative objects -- don't forget to process them"
@@ -462,9 +462,9 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
 
         const c_part_argv2 = [];
-        for (let [b, e] of pnew.entries()) {
-            if (Array.isArray(e)) {
-                e = e[0];
+        for (let [e, b] of pnew.entries()) {
+            if (Array.isArray(b)) {
+                b = b[0];
             }
             c_part_argv2.push(new Pow(b, e));
         }
@@ -674,6 +674,24 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             allargs.push(a.is_commutative());
         }
         return _fuzzy_groupv2(allargs);
+    }
+
+    // WB addition for jasmine tests
+    toString() {
+        let result = "";
+        const num_args = this._args.length
+        for (let i = 0; i < num_args; i++) {
+            const arg = this._args[i];
+            let temp;
+            if (i != num_args - 1) {
+                temp = arg.toString() + "*"
+            } else {
+                temp = arg.toString();
+            }
+            result = result.concat(temp)
+        }
+    
+        return result;
     }
 }
 

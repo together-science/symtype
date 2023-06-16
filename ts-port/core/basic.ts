@@ -6,10 +6,10 @@ Notable changes made (and notes):
 - Some properties of Basic (and subclasses) are static
 */
 
-import {as_property, make_property, ManagedProperties, _assume_defined, StdFactKB} from "./assumptions.js";
-import {Util, HashDict, mix, base, HashSet} from "./utility.js";
-import {UndefinedKind} from "./kind.js";
-import {preorder_traversal} from "./traversal.js";
+import {as_property, make_property, ManagedProperties, _assume_defined, StdFactKB} from "./assumptions";
+import {Util, HashDict, mix, base, HashSet} from "./utility";
+import {UndefinedKind} from "./kind";
+import {preorder_traversal} from "./traversal";
 
 
 const _Basic = (superclass: any) => class _Basic extends superclass {
@@ -110,18 +110,11 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         // Add all defined properties from assume defined
         this._prop_handler = cls._prop_handler.copy();
         for (const fact of _assume_defined.toArray()) {
-            const pname = as_property(fact);
-            if (this._assumptions.has(pname)) {
-                this[pname] = () => this._assumptions.get(pname);
-            } else {
-                make_property(this, fact);
-            }
+            make_property(this, fact);
         }
         // Add remaining properties from default assumptions
-        for (const fact of this._assumptions.entries()) {
-            if (typeof this[fact[0]] === "undefined") {
-                this[fact[0]] = () => fact[1];
-            }
+        for (const fact of this._assumptions.keys()) {
+            make_property(this, fact);
         }
     }
 

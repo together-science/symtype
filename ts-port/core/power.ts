@@ -1,10 +1,10 @@
 
-import {ManagedProperties} from "./assumptions.js";
-import {_Expr} from "./expr.js";
-import {Global} from "./global.js";
-import {_Number_} from "./numbers.js";
-import {global_parameters} from "./parameters.js";
-import {S} from "./singleton.js";
+import {ManagedProperties} from "./assumptions";
+import {_Expr} from "./expr";
+import {Global} from "./global";
+import {_Number_} from "./numbers";
+import {global_parameters} from "./parameters";
+import {S} from "./singleton";
 
 export class Pow extends _Expr {
     /*
@@ -130,6 +130,7 @@ export class Pow extends _Expr {
                         return new Pow(b.__mul__(S.NegativeOne), e).__mul__(S.NegativeOne);
                     }
                 }
+                0.
                 if (b === S.NaN || e === S.NaN) {
                     return S.NaN;
                 } else if (b === S.One) {
@@ -163,6 +164,13 @@ export class Pow extends _Expr {
 
     static _new(b: any, e: any) {
         return new Pow(b, e);
+    }
+
+    // WB addition for jasmine tests
+    toString() {
+        const b = this._args[0].toString();
+        const e = this._args[1].toString();
+        return b + "^" + e;
     }
 }
 

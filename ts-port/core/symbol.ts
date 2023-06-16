@@ -4,13 +4,13 @@ Notable changes
 - Class structure reworked based on a constructor system (view source)
 */
 
-import {mix, base, HashDict} from "./utility.js";
-import {AtomicExpr} from "./expr.js";
-import {Boolean} from "./boolalg.js";
-import {NumberKind, UndefinedKind} from "./kind.js";
-import {fuzzy_bool_v2} from "./logic.js";
-import {StdFactKB} from "./assumptions.js";
-import {ManagedProperties} from "./assumptions.js";
+import {mix, base, HashDict} from "./utility";
+import {AtomicExpr} from "./expr";
+import {Boolean} from "./boolalg";
+import {NumberKind, UndefinedKind} from "./kind";
+import {fuzzy_bool_v2} from "./logic";
+import {StdFactKB} from "./assumptions";
+import {ManagedProperties} from "./assumptions";
 
 
 class Symbol extends mix(base).with(Boolean, AtomicExpr) {
@@ -101,6 +101,10 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
             }
             assumptions.add(key, v as boolean);
         }
+    }
+
+    toString() {
+        return this.name;
     }
 }
 

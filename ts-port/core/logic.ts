@@ -22,7 +22,7 @@ necesary to find if a given argumenet is a boolean
 
 */
 
-import {Util} from "./utility.js";
+import {Util} from "./utility";
 
 
 function _torf(args: any[]): Logic | null {

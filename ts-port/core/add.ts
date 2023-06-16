@@ -5,15 +5,15 @@ Changes made (WB and GM):
 - Note: Order objects in Add are not yet implemented
 */
 
-import {Expr} from "./expr.js";
-import {AssocOp} from "./operations.js";
-import {base, mix, HashDict} from "./utility.js";
-import {S} from "./singleton.js";
-import {Basic} from "./basic.js";
-import {ManagedProperties} from "./assumptions.js";
-import {Mul} from "./mul.js";
-import {Global} from "./global.js";
-import {_fuzzy_groupv2} from "./logic.js";
+import {Expr} from "./expr";
+import {AssocOp} from "./operations";
+import {base, mix, HashDict} from "./utility";
+import {S} from "./singleton";
+import {Basic} from "./basic";
+import {ManagedProperties} from "./assumptions";
+import {Mul} from "./mul";
+import {Global} from "./global";
+import {_fuzzy_groupv2} from "./logic";
 
 function _addsort(args: any[]) {
     // eslint-disable-next-line new-cap
@@ -258,6 +258,24 @@ export class Add extends mix(base).with(Expr, AssocOp) {
 
     static _new(evaluate: boolean, simplify: boolean, ...args: any) {
         return new Add(evaluate, simplify, ...args);
+    }
+
+    // WB addition for jasmine tests
+    toString() {
+        let result = "";
+        const num_args = this._args.length
+        for (let i = 0; i < num_args; i++) {
+            const arg = this._args[i];
+            let temp;
+            if (i != num_args - 1) {
+                temp = arg.toString() + " + "
+            } else {
+                temp = arg.toString();
+            }
+            result = result.concat(temp)
+        }
+ 
+        return result;
     }
 }
 
