@@ -410,6 +410,25 @@ class HashDict {
         }
         return true;
     }
+
+    factorsToString() {
+        let numerator = "";
+        let denominator = "";
+        for (const [factor, exp] of this.entries()) {
+            for (let i = 0; i < Math.abs(exp); i++) {
+                if (exp < 0) {
+                    denominator += (factor.toString() + "*")
+                } else {
+                    numerator += (factor.toString() + "*")
+                }
+            }
+        }
+        if (denominator.length == 0) {
+            return numerator.slice(0, -1);
+        } else {
+            return numerator.slice(0, -1) + "/" + denominator.slice(0, -1);
+        }
+    }
 }
 
 

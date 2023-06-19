@@ -7,6 +7,7 @@ import {Mul} from "../ts-port/core/mul";
 import {_Number_} from "../ts-port/core/numbers";
 import {Pow} from "../ts-port/core/power";
 import {Symbol} from "../ts-port/core/symbol";
+import {factorint, factorrat} from "../ts-port/ntheory/factor_";
 
 
 describe("Core", function () {
@@ -20,6 +21,7 @@ describe("Core", function () {
         expect(n.is_Rational()).toBeTrue();
         expect(n.is_real()).toBeTrue();
         expect(n.is_Add()).toBeFalse();
+        // to-do: add _eval_is_nonnegative()
         expect(n.is_extended_nonnegative()).toBeUndefined();
         // test out a rational
         const n2 = _Number_.new(4, 9);
@@ -81,7 +83,7 @@ describe("Core", function () {
         expect(new Mul(true, true, x, x, new Mul(true, true, n, n2, x)).toString()).toBe("16/9*x^3");
         expect(new Mul(true, true, x, new Pow(n, x)).toString()).toBe("4^x*x");
         expect(new Mul(true, true, new Pow(n, x), new Pow(n, x)).toString()).toBe("4^2*x");
-        expect(new Mul(true, true, n, new Add(true, true, x, n)).toString()).toBe("16 + 4*x")
+        expect(new Mul(true, true, n, new Add(true, true, x, n)).toString()).toBe("16 + 4*x");
     });
 
     it("should compute exponents with symtype objects correctly and handle weird cases", function () {
@@ -108,25 +110,21 @@ describe("Core", function () {
         const n4 = _Number_.new(1, 3);
         const x = new Symbol("x");
         expect(new Pow(n, x).subs(x, n3).toString()).toBe("0.125");
-        expect(new Mul(false, true, n, n2, x).subs(x, n2).toString()).toBe("4/9");
-        expect(new Add(false, true, n, n2, x).subs(x, n).toString()).toBe("4");
+        expect(new Mul(false, true, n, n2, n3, x, x).subs(x, n2).toString()).toBe("-0.526748971193417");
+        expect(new Add(false, true, n, n2, x, x).subs(x, n).toString()).toBe("112/9");
+        expect(new Mul(true, true, n, new Add(true, true, x, n)).subs(x, n).toString()).toBe("32")
+        expect(new Pow(n, new Mul(true, true, n, x)).subs(x, n3).toString()).toBe("0.000244140625");
+        expect(new Mul(true, true, n, new Add(true, true, x, n)).subs(x, n3).toString()).toBe("10");
     });
 
-    // it("should factor large ints and rationals correctly", function () {
-    //     const n = _Number_.new(4);
-    //     const n2 = _Number_.new(4, 9);
-    //     const n3 = _Number_.new(-1.5);
-    //     const n4 = _Number_.new(1, 3);
-    //     const x = new Symbol("x");
-    //     expect(new Add(true, true, n, n2).toString()).toBe("40/9");
-    //     expect(new Add(true, true, n, n2, x).toString()).toBe("40/9 + x");
-    //     expect(new Add(true, true, n, n3, x).toString()).toBe("2.5 + x");
-    //     expect(new Add(false, true, n, n2, x).toString()).toBe("4 + 4/9 + x");
-    //     expect(new Add(true, true, x, x, x).toString()).toBe("3*x");
-    //     expect(new Add(true, true, x, x, new Add(true, true, n, n3, x)).toString()).toBe("2.5 + 3*x");
-    //     expect(new Add(true, true, x, n3, new Mul(true, true, n3, x)).toString()).toBe("-1.5 + -0.5*x");
-    //     expect(new Add(true, true, x, n2, new Pow(n, x)).toString()).toBe("4/9 + 4^x + x");
-    // });
+    it("should factor large ints and rationals correctly", function () {
+        expect(factorint(_Number_.new(256)).factorsToString()).toBe("2*2*2*2*2*2*2*2");
+        expect(factorint(_Number_.new(58302)).factorsToString()).toBe("2*3*3*41*79");
+        expect(factorint(_Number_.new(13)).factorsToString()).toBe("13");
+        expect(factorrat(_Number_.new(32, 4634)).factorsToString()).toBe("2*2*2*2/7*331");
+        expect(factorrat(_Number_.new(6877, 123)).factorsToString()).toBe("13*23*23/3*41");
+        expect(factorrat(_Number_.new(3, 13)).factorsToString()).toBe("3/13");
+    });
 });
 
 

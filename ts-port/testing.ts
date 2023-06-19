@@ -16,12 +16,11 @@ const n4 = _Number_.new(1, 3);
 const x = new Symbol("x");
 
 
-// Substitution
-
-console.log(new Pow(n, x).subs(x, n4).toString());
-console.log(new Mul(false, true, n, n2, x).subs(x, n2).toString());
-console.log(new Add(false, true, n, n2, x).subs(x, n).toString());
-
+const bigint = _Number_.new(285);
+console.log(factorint(bigint).factorsToString());
+// Factor a complicated rational
+const bigrat = _Number_.new(271, 932);
+console.log(factorrat(bigrat).factorsToString());
 
 
 /*
@@ -33,12 +32,7 @@ console.log(new Add(false, true, n, n2, x).subs(x, n).toString());
 
 // // Factoring
 
-// // Factor a big integer
-// const bigint = _Number_.new(285);
-// console.log(factorint(bigint));
-// // Factor a complicated rational
-// const bigrat = _Number_.new(271, 932);
-// console.log(factorrat(bigrat));
+
 
 // Testing weird inputs
 
