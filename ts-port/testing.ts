@@ -1,4 +1,5 @@
 import {S} from "./core/singleton.js";
-import {_Number_, Integer} from "./core/numbers.js";
+import {_Number_} from "./core/numbers.js";
 
-console.log(S.Infinity)
+const r = _Number_.new(3, 8)
+console.log(r._assumptions)
