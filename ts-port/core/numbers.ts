@@ -1122,7 +1122,7 @@ class Infinity extends _Number_ {
     // done enough such that add and mul can handle infinity as an argument
     __add__(other: any) {
         if (other instanceof _Number_ && global_parameters.evaluate) {
-            if (other === S.Infinity || other === S.NaN) {
+            if (other === S.NegativeInfinity || other === S.NaN) {
                 return S.NaN;
             }
             return this;
@@ -1217,6 +1217,7 @@ S.ComplexInfinity = Singleton.registry["ComplexInfinity"];
 
 Singleton.register("Infinity", Infinity);
 S.Infinity = Singleton.registry["Infinity"];
+console.log("assinging S.Infinity")
 
 Singleton.register("NegativeInfinity", NegativeInfinity);
 S.NegativeInfinity = Singleton.registry["NegativeInfinity"];

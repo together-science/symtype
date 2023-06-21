@@ -214,15 +214,16 @@ class ManagedProperties {
         // by the class or if we set them as undefined.
         // Add these properties to a dict called local_defs
         const local_defs = new HashDict();
+        const cls_props = Object.getOwnPropertyNames(cls);
         for (const k of _assume_defined.toArray()) {
             const attrname = as_property(k);
-            if (attrname in cls) {
+            if (cls_props.includes(attrname)) {
                 let v = cls[attrname];
                 if ((typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean" || typeof v === "undefined") {
                     if (typeof v !== "undefined") {
                         v = !!v;
                     }
-                    local_defs.add(attrname, v);
+                    local_defs.add(k, v);
                 }
             }
         }
@@ -250,13 +251,12 @@ class ManagedProperties {
             }
         }
 
-        // Create two sets: one of the default assumption keys for this class
-        // another for the base classes
-        const s = new HashSet();
-        s.addArr(cls.default_assumptions.keys());
-
-
-        const alldefs = new HashSet(Object.getOwnPropertyNames(cls).filter(prop => prop.includes("is_")));
+        // add remaining class properties to defaulta assumptions
+        const props_filtered = Object.getOwnPropertyNames(cls).filter(
+            prop => prop.includes("is_")).map((str) => {
+            return str.replace("is_", "");
+        });
+        const alldefs = new HashSet(props_filtered);
         for (const fact of alldefs.difference(cls.default_assumptions).toArray()) {
             cls.default_assumptions.add(fact, cls[fact]);
         }

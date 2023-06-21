@@ -25,8 +25,9 @@ class Util {
 
     // check if arr1 is a subset of arr2
     static isSubset(arr1: any[], arr2: any[]): boolean {
+        const temparr = arr2.map((i: any) => Util.hashKey(i))
         for (const e of arr1) {
-            if (!(arr2.includes(e))) {
+            if (!temparr.includes(Util.hashKey(e))) {
                 return false;
             }
         }
@@ -198,6 +199,22 @@ class Util {
             count++;
         }
     }
+
+    static splitLogicStr(str: string): any[] {
+        const sep = " ";
+        const max_splits = 3;
+        
+        const orig_split = str.split(" ", 10)
+        if (orig_split.length == 3) {
+            return orig_split;
+        } else {
+            let new_item: string = "";
+            for (let i = 2; i < orig_split.length; i++) {
+                new_item += orig_split[i] + " ";
+            }
+            return [orig_split[0], orig_split[1], new_item.slice(0, -1)];
+        }
+    }
 }
 
 // custom version of the Set class
@@ -304,6 +321,15 @@ class HashSet {
             }
         }
         return res;
+    }
+
+    intersects(other: HashSet) {
+        for (const i of this.toArray()) {
+            if (other.has(i)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
