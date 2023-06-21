@@ -25,7 +25,7 @@ describe("Core", function () {
         expect(n.is_extended_nonnegative()).toBeUndefined();
         // test out a rational
         const n2 = _Number_.new(4, 9);
-        expect(n2.is_even()).toBeTrue();
+        expect(n2.is_even()).toBeFalse();
         expect(n2.is_commutative()).toBeTrue();
         expect(n2.is_finite()).toBeTrue();
         expect(n2.is_Rational()).toBeTrue();

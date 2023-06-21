@@ -238,7 +238,7 @@ class ManagedProperties {
 
         all_defs.merge(local_defs);
 
-        // Set class properties
+        // Set class properties for assume_defined
         cls._explicit_class_assumptions = all_defs
         cls.default_assumptions = new StdFactKB(all_defs);
 
@@ -250,25 +250,17 @@ class ManagedProperties {
                 cls[as_property(item[0])] = item[1];
             }
         }
+        // get the misc. properties of the superclasses and assign to class
+        for (const supercls of Util.getSupers(cls)) {
+            const staticDefs = new HashSet(Object.getOwnPropertyNames(cls).filter(
+                prop => prop.includes("is_") && !_assume_defined.has(prop.replace("is_", ""))));
 
-        // add remaining class properties to defaulta assumptions
-        const props_filtered = Object.getOwnPropertyNames(cls).filter(
-            prop => prop.includes("is_")).map((str) => {
-            return str.replace("is_", "");
-        });
-        const alldefs = new HashSet(props_filtered);
-        for (const fact of alldefs.difference(cls.default_assumptions).toArray()) {
-            cls.default_assumptions.add(fact, cls[fact]);
-        }
+            const otherProps = new HashSet(Object.getOwnPropertyNames(supercls).filter(
+                prop => prop.includes("is_") && !_assume_defined.has(prop.replace("is_", ""))));
 
-        // get the static variables of all superclasses and assign to class
-        // note that we only assign the properties if they are undefined 
-        const supers: any[] = Util.getSupers(cls);
-        for (const supercls of supers) {
-            const allProps = new HashSet(Object.getOwnPropertyNames(supercls).filter(prop => prop.includes("is_")));
-            const uniqueProps = allProps.difference(cls.default_assumptions).toArray()
-            for (const fact of uniqueProps) {
-                cls.default_assumptions.add(fact, supercls[fact]);
+            const uniqueProps = otherProps.difference(staticDefs);
+            for (const fact of uniqueProps.toArray()) {
+                cls[fact] = supercls[fact]
             }
         }
     }

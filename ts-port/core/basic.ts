@@ -107,14 +107,15 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
                 }
             }
         }
-        // Add all defined properties from assume defined
         this._prop_handler = cls._prop_handler.copy();
         for (const fact of _assume_defined.toArray()) {
             make_property(this, fact);
         }
-        // Add remaining properties from default assumptions
-        for (const fact of this._assumptions.keys()) {
-            make_property(this, fact);
+        // Add misc. static properties of class as object properties
+        const otherProps = new HashSet(Object.getOwnPropertyNames(cls).filter(
+            prop => prop.includes("is_") && !_assume_defined.has(prop.replace("is_", ""))));
+        for (const miscprop of otherProps.toArray()) {
+            this[miscprop] = () => cls[miscprop];
         }
     }
 

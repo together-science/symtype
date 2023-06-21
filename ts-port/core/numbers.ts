@@ -1217,7 +1217,6 @@ S.ComplexInfinity = Singleton.registry["ComplexInfinity"];
 
 Singleton.register("Infinity", Infinity);
 S.Infinity = Singleton.registry["Infinity"];
-console.log("assinging S.Infinity")
 
 Singleton.register("NegativeInfinity", NegativeInfinity);
 S.NegativeInfinity = Singleton.registry["NegativeInfinity"];
