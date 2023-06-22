@@ -4,6 +4,7 @@ Notable changes made (and notes):
 - Float is handeled entirely by decimal.js, and now only takes precision in
   # of decimal points
 - Note: only methods necessary for add, mul, and pow have been implemented
+- TODO: needs more _eval_is properties and need to debug rational eval power
 */
 
 // basic implementations only - no utility added yet

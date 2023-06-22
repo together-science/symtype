@@ -7,18 +7,19 @@ Notable chnages made (WB & GM):
 - Arrays are being used instead of tuples
 - The methods hashKey() and toString() are added to Logic for hashing. The
   static method hashKey() is also added to Logic and hashes depending on the input.
-- The array args in the AndOr_Base constructor is not sorted or put in a set
-  since we did't see why this would be necesary
 - A constructor is added to the logic class, which is used by Logic and its
   subclasses (AndOr_Base, And, Or, Not)
 - In the flatten method of AndOr_Base we removed the try catch and changed the
   while loop to depend on the legnth of the args array
 - Added expand() and eval_propagate_not as abstract methods to the Logic class
 - Added static New methods to Not, And, and Or which function as constructors
-- Replacemd normal booleans with Logic.True and Logic.False since it is sometimes
-necesary to find if a given argumenet is a boolean
+- Replaced normal booleans with Logic.True and Logic.False since it is sometimes
+  necesary to find if a given argumenet is a boolean
 - Added some v2 methods which return true, false, and undefined, which works
   with the rest of the code
+- TODO: the boolean logic here needs to be consistent with the rest of the code
+    - Logic.True and Logic.False are not used elsewhere
+    - Undefied is usually used as the third boolean, and not null
 
 */
 

@@ -40,8 +40,6 @@ Significant changes made (WB and GM):
 - Created the SetDefaultDict, HashDict and HashSet classes. SetDefaultDict acts
   as a replcacement defaultdict(set), and HashDict and HashSet replace the
   dict and set classes.
-- Added isSubset() to the utility class to help with this program
-
 */
 
 

@@ -2,8 +2,11 @@
 Notable changes made (and notes):
 - Basic reworked with constructor system
 - Basic handles OBJECT properties, ManagedProperties handles CLASS properties
-- _eval_is properties (dependent on object) are now assigned in Basic
-- Some properties of Basic (and subclasses) are static
+- Since _eval_is_properties are not static, Basic is now assigned to create the
+  class property handler (and does so only once per object)
+- Some properties of Basic (and subclasses) are now static
+- Aside from setting object properties from _assume_defined, Basic now also
+  sets the static properties of the class as properties for the object
 */
 
 import {as_property, make_property, ManagedProperties, _assume_defined, StdFactKB} from "./assumptions";

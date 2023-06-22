@@ -2,13 +2,10 @@
 Notable changes made (and notes):
 - ManagedProperties reworked as normal class - each class is registered directly
   after defined
-- ManagedProperties tracks properties of base classes by tracking all properties
-  (see comments within class)
-- Class properties from _eval_is methods are assigned to each object itself in
-  the Basic constructor
-- Choosing to run getit() on make_property to add consistency in accessing
-- To-do: make accessing properties more consistent (i.e., same syntax for
-  acessing static and non-static properties)
+- ManagedProperties loops through superclasses to assign static properties that
+  aren't inherited (thanks TypeScript)
+- Getit acts as a lambda, so properties are now accessed with function notation
+  i.e., myobject.is_property()
 */
 
 import {FactKB, FactRules} from "./facts";

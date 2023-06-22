@@ -1,3 +1,9 @@
+/*
+Notable changes made/notes:
+- No major structural changes
+- Need to add more functionality here, especially with handling Singletons
+*/
+
 
 import {ManagedProperties} from "./assumptions";
 import {_Expr} from "./expr";
