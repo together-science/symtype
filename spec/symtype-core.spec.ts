@@ -5,6 +5,7 @@
 import {Add} from "../ts-port/core/add";
 import {Mul} from "../ts-port/core/mul";
 import {_Number_} from "../ts-port/core/numbers";
+import {S} from "../ts-port/core/singleton";
 import {Pow} from "../ts-port/core/power";
 import {Symbol} from "../ts-port/core/symbol";
 import {factorint, factorrat} from "../ts-port/ntheory/factor_";
@@ -17,19 +18,18 @@ describe("Core", function () {
         const n = _Number_.new(4);
         expect(n.is_even()).toBeTrue();
         expect(n.is_odd()).toBeFalse();
-        expect(n.is_finite()).toBeTrue();
+        expect(n.is_infinite()).toBeFalse();
         expect(n.is_Rational()).toBeTrue();
-        expect(n.is_real()).toBeTrue();
+        expect(n.is_complex()).toBeTrue();
         expect(n.is_Add()).toBeFalse();
-        // to-do: add _eval_is_nonnegative()
-        expect(n.is_extended_nonnegative()).toBeUndefined();
+        expect(n.is_extended_nonnegative()).toBeTrue();
         // test out a rational
         const n2 = _Number_.new(4, 9);
         expect(n2.is_even()).toBeFalse();
         expect(n2.is_commutative()).toBeTrue();
         expect(n2.is_finite()).toBeTrue();
         expect(n2.is_Rational()).toBeTrue();
-        expect(n2.is_real()).toBeTrue();
+        expect(n2.is_hermitian()).toBeTrue();
         expect(n2.is_negative()).toBeFalse();
         // test out a float
         const n3 = _Number_.new(-1.5);
@@ -50,8 +50,8 @@ describe("Core", function () {
         const y = new Symbol("y", {"commutative":false, "real":false});
         expect(y.is_commutative()).toBeFalse();
         expect(y.is_Symbol()).toBeTrue();
-        expect(y.is_even()).toBeUndefined();
-        expect(y.is_real()).toBeFalse();
+        expect(y.is_even()).toBeFalse();
+        expect(y.is_rational()).toBeFalse();
         expect(y.is_Pow()).toBeFalse();
     });
 
@@ -68,6 +68,12 @@ describe("Core", function () {
         expect(new Add(true, true, x, x, new Add(true, true, n, n3, x)).toString()).toBe("2.5 + 3*x");
         expect(new Add(true, true, x, n3, new Mul(true, true, n3, x)).toString()).toBe("-1.5 + -0.5*x");
         expect(new Add(true, true, x, n2, new Pow(n, x)).toString()).toBe("4/9 + 4^x + x");
+        expect(new Add(true, true, n, x, S.ComplexInfinity).toString()).toBe("ComplexInfinity + x")
+        expect(new Add(true, true, n, x, S.Infinity).toString()).toBe("Infinity + x")
+        expect(new Add(true, true, n, x, S.NegativeInfinity).toString()).toBe("NegInfinity + x")
+        expect(new Add(true, true, n, x, S.Infinity, S.NegativeInfinity).toString()).toBe("NAN")
+        expect(new Add(true, true, n, x, S.ComplexInfinity, S.Infinity).toString()).toBe("NAN")
+        expect(new Add(true, true, n, x, S.NaN, S.Infinity).toString()).toBe("NAN")
     });
 
     it("should multiply/divide symtype objects correctly and handle weird cases", function () {
@@ -84,10 +90,17 @@ describe("Core", function () {
         expect(new Mul(true, true, x, new Pow(n, x)).toString()).toBe("4^x*x");
         expect(new Mul(true, true, new Pow(n, x), new Pow(n, x)).toString()).toBe("4^2*x");
         expect(new Mul(true, true, n, new Add(true, true, x, n)).toString()).toBe("16 + 4*x");
+        expect(new Mul(true, true, n, x, S.ComplexInfinity).toString()).toBe("ComplexInfinity*x");
+        expect(new Mul(true, true, n, x, S.Infinity).toString()).toBe("Infinity*x");
+        expect(new Mul(true, true, n, x, S.NegativeInfinity).toString()).toBe("NegInfinity*x");
+        expect(new Mul(true, true, n, x, S.Infinity, S.NegativeInfinity).toString()).toBe("NegInfinity*x");
+        expect(new Mul(true, true, n, x, S.ComplexInfinity, S.Infinity).toString()).toBe("ComplexInfinity*x");
+        expect(new Mul(true, true, n, x, S.NaN, S.Infinity).toString()).toBe("NAN");
     });
 
     it("should compute exponents with symtype objects correctly and handle weird cases", function () {
         // NOTE: POW HAS LIMITED FUNCTIONALITY COMPARED TO ADD AND MUL (ATM)
+        // THIS IS ESPECIALLY TRUE FOR THE WEIRD CASES (SEE BELOW) - more tests coming
         const n = _Number_.new(4);
         const n2 = _Number_.new(4, 9);
         const n3 = _Number_.new(-1.5);
@@ -101,6 +114,11 @@ describe("Core", function () {
         expect(new Pow(new Mul(true, true, n2, n), new Mul(true, true, n, n, x)).toString()).toBe("16/9^16*x");
         expect(new Pow(n, new Add(true, true, n, x)).toString()).toBe("4^4 + x");
         expect(new Pow(n, new Mul(true, true, n, x)).toString()).toBe("4^4*x");
+        expect(new Pow(n, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(n, S.Infinity).toString()).toBe("Infinity");
+        expect(new Pow(n, S.NaN).toString()).toBe("NAN");
+        expect(new Pow(n, S.ComplexInfinity, S.Infinity).toString()).toBe("NAN");
+        expect(new Pow(n, S.NaN, S.Infinity).toString()).toBe("NAN");
     });
 
     it("should substitute values for symbols and evaluate the expressions correctly", function () {

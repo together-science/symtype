@@ -155,12 +155,13 @@ function _ask(fact: any, obj: any) {
     const handler_map: HashDict = obj._prop_handler;
 
     // This is our queue of facts to check:
-    const facts_to_check = new Array(fact);
+    let facts_to_check = new Array(fact);
     const facts_queued = new HashSet([fact]);
 
     const cls = obj.constructor;
 
-    for (const fact_i of facts_to_check) {
+    for (let i = 0; i < facts_to_check.length; i++) {
+        const fact_i = facts_to_check[i];
         if (typeof assumptions.get(fact_i) !== "undefined") {
             continue;
         } else if (cls[as_property(fact)]) {
@@ -180,13 +181,11 @@ function _ask(fact: any, obj: any) {
         if (typeof fact_value !== "undefined") {
             return fact_value;
         }
-        const factset = _assume_rules.prereq.get(fact_i).difference(facts_queued);
+        const factset = _assume_rules.prereq.get(fact_i).difference(facts_queued).toArray();
         if (factset.size !== 0) {
-            const new_facts_to_check = new Array(_assume_rules.prereq.get(fact_i).difference(facts_queued));
-            Util.shuffleArray(new_facts_to_check);
-            facts_to_check.push(new_facts_to_check);
-            facts_to_check.flat();
-            facts_queued.addArr(new_facts_to_check);
+            Util.shuffleArray(factset);
+            facts_to_check = facts_to_check.concat(factset).flat();
+            facts_queued.addArr(facts_to_check);
         } else {
             continue;
         }

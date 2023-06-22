@@ -71,9 +71,8 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         assumptions.add("is_commutative", is_commutative);
 
         // Merge with object assumptions and reassign object properties
-        this._assumptions.merge(assumptions);
+        this._assumptions = new StdFactKB(assumptions)
         this._assumptions._generator = tmp_asm_copy;
-        super.assignProps();
     }
 
     equals(other: Symbol) {

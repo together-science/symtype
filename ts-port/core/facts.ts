@@ -544,7 +544,7 @@ export class FactRules {
             const k = item[0];
             const pitems = item[1];
             const toAdd = prereq.get(k);
-            toAdd.add(pitems);
+            toAdd.addArr(pitems.toArray());
             prereq.add(k, toAdd);
         }
         this.prereq = prereq;

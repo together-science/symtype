@@ -207,21 +207,20 @@ class _Number_ extends _AtomicExpr {
 
     __mul__(other: any) {
         if (other instanceof _Number_ && global_parameters.evaluate) {
-            const cls: any = this.constructor;
             if (other === S.Nan) {
                 return S.Nan;
             } else if (other === S.Infinity) {
-                if (cls.is_zero) {
+                if (this.is_zero()) {
                     return S.NaN;
-                } else if (cls.is_positive) {
+                } else if (this.is_positive()) {
                     return S.Infinity;
                 } else {
                     return S.NegativeInfinity;
                 }
             } else if (other === S.NegativeInfinity) {
-                if (cls.is_zero) {
+                if (this.is_zero()) {
                     return S.NaN;
-                } else if (cls.is_positive) {
+                } else if (this.is_positive()) {
                     return S.NegativeInfinity;
                 } else {
                     return S.Infinity;
@@ -1134,7 +1133,7 @@ class Infinity extends _Number_ {
         if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.Zero || other === S.NaN) {
                 return S.NaN;
-            } else if (other.is_extended_positive) {
+            } else if (other.is_extended_positive()) {
                 return this;
             }
             return S.NegativeInfinity;
@@ -1186,7 +1185,7 @@ class NegativeInfinity extends _Number_ {
         if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.Zero || other === S.NaN) {
                 return S.NaN;
-            } else if (other.is_extended_positive) {
+            } else if (other.is_extended_positive()) {
                 return this;
             }
             return S.Infinity;

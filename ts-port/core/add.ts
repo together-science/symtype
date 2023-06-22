@@ -223,7 +223,7 @@ export class Add extends mix(base).with(Expr, AssocOp) {
         const temp2 = [];
         if (coeff === S.ComplexInfinity) {
             for (const c of newseq) {
-                if (!(c.is_finite() || c.is_extended_real() !== "undefined")) {
+                if (!(c.is_finite() === true || typeof c.is_extended_real() !== "undefined")) {
                     temp2.push(c);
                 }
             }
