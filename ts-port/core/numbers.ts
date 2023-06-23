@@ -38,6 +38,20 @@ function igcd(x: number, y: number) {
     return x;
 }
 
+function ilcm(...args: any[]) {
+    if (args.length < 2) {
+        throw new Error("ilcm needs at least 2 arguments")
+    }
+    if (args.includes(0)) {
+        return 0;
+    }
+    let a = args[0];
+    for (const b of args.slice(1)) {
+        a = Math.floor(a / igcd(a, b)) * b
+    }
+    return a;
+}
+
 export function int_nthroot(y: number, n: number) {
     const x = Math.floor(y**(1/n));
     const isexact = x**n === y;
@@ -546,21 +560,21 @@ class Rational extends _Number_ {
                     intpart++;
                     const remfracpart = intpart * expt.q - expt.p;
                     const ratfracpart = new Rational(remfracpart, expt.q);
+                    const p1 = new Pow(new Integer(this.p), expt)
+                    const p2 = new Pow(new Integer(this.q), ratfracpart)
                     if (this.p !== 1) {
-                        // eslint-disable-next-line max-len
-                        return new Integer(this.p)._eval_power(expt).__mul__(new Integer(this.q))._eval_power(ratfracpart).__mul__(new Rational(1, this.q ** intpart, 1));
-                    }
-                    return new Integer(this.q)._eval_power(ratfracpart).__mul__(new Rational(1, this.q ** intpart, 1));
+                        return new Mul(true, true, p1, p2, new Rational(1, this.q ** intpart));
+                    } // p = 1, so p1 can be eliminated
+                    return new Mul(true, true, p2, new Rational(1, this.q ** intpart))
                 } else {
                     const remfracpart = expt.q - expt.p;
                     const ratfracpart = new Rational(remfracpart, expt.q);
+                    const p1 = new Pow(new Integer(this.p), expt)
+                    const p2 = new Pow(new Integer(this.q), ratfracpart)
                     if (this.p !== 1) {
-                        // eslint-disable-next-line max-len
-                        const p1 = new Integer(this.p)._eval_power(expt);
-                        const p2 = new Integer(this.q)._eval_power(ratfracpart);
-                        return p1.__mul__(p2).__mul__(new Rational(1, this.q, 1));
+                        return new Mul(true, true, p1, p2, new Rational(1, this.q));
                     }
-                    return new Integer(this.q)._eval_power(ratfracpart).__mul__(new Rational(1, this.q, 1));
+                    return new Mul(true, true, p2, new Rational(1, this.q));
                 }
             }
         }
@@ -609,6 +623,17 @@ class Rational extends _Number_ {
 
     eq(other: Rational) {
         return this.p === other.p && this.q === other.q;
+    }
+
+    gcd(other: any) {
+        if (other instanceof Rational) {
+            if (other === S.Zero) {
+                return other;
+            }
+            return new Rational(igcd(this.p, other.p), ilcm(this.q, other.q))
+        } else {
+            throw new Error("gcd not implemented for non rationals")
+        }
     }
 
     toString() {
