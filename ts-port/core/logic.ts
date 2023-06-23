@@ -323,7 +323,7 @@ class Logic {
     args: any[];
 
     constructor(...args: any[]) {
-        this.args = [...args].flat()
+        this.args = args.flat();
     }
 
     _eval_propagate_not(): any {
@@ -524,19 +524,19 @@ class AndOr_Base extends Logic {
 
     static flatten(args: any[]): any[] {
         // quick-n-dirty flattening for And and Or
-        const args_queue: any[] = [...args];
+        const args_queue: any[] = args;
         const res = [];
         while (args_queue.length > 0) {
             const arg: any = args_queue.pop();
             if (arg instanceof Logic) {
                 if (arg instanceof this) {
-                    args_queue.push(arg.args);
+                    args_queue.push(...arg.args);
                     continue;
                 }
             }
             res.push(arg);
         }
-        return res.flat();
+        return res;
     }
 }
 

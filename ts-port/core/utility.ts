@@ -163,16 +163,16 @@ class Util {
     }
 
     static getSupers(cls: any): any[] {
-        const superclasses = [];
-        const superclass = Object.getPrototypeOf(cls);
+        const sprs = [];
+        const supercls = Object.getPrototypeOf(cls);
       
-        if (superclass !== null && superclass !== Object.prototype) {
-            superclasses.push(superclass);
-            const parentSuperclasses = Util.getSupers(superclass);
-            superclasses.push(...parentSuperclasses);
+        if ( supercls !== Object.prototype && supercls !== null) {
+            sprs.push(supercls);
+            const parents = Util.getSupers(supercls);
+            sprs.push(...parents);
         }
       
-        return superclasses;
+        return sprs;
     }
 
     static shuffleArray(arr: any[]) {
@@ -200,20 +200,9 @@ class Util {
         }
     }
 
-    static splitLogicStr(str: string): any[] {
-        const sep = " ";
-        const max_splits = 3;
-        
-        const orig_split = str.split(" ", 10)
-        if (orig_split.length == 3) {
-            return orig_split;
-        } else {
-            let new_item: string = "";
-            for (let i = 2; i < orig_split.length; i++) {
-                new_item += orig_split[i] + " ";
-            }
-            return [orig_split[0], orig_split[1], new_item.slice(0, -1)];
-        }
+    static splitLogicStr(s:string): any[] {
+        const match = s.match(/^(.+?)\s+(.+?)\s+(.*)/);
+        return match?.slice(1);
     }
 }
 

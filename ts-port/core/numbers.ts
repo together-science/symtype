@@ -793,7 +793,7 @@ class Integer extends Rational {
         const [x, xexact] = int_nthroot(Math.abs(this.p), expt.q);
         if (xexact) {
             let result = new Integer((x as number)**Math.abs(expt.p));
-            if (this.is_negative() == true) {
+            if (this.is_negative()) {
                 result = result.__mul__(S.NegativeOne._eval_power(expt));
             }
             return result;

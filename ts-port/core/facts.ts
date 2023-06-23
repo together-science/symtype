@@ -410,8 +410,8 @@ class Prover {
 
             for (let bidx = 0; bidx < b.args.length; bidx++) {
                 const barg = b.args[bidx];
-                const brest = b.args.slice(0, bidx).concat(b.args.slice(bidx + 1));
-                // const brest = [...b.args].splice(bidx, 1);
+                const brest = [...b.args];
+                brest.splice(bidx, 1);
                 this.process_rule(And.New(a, Not.New(barg)), Or.New(...brest));
             }
         } else if (a instanceof And) {
@@ -599,8 +599,7 @@ export class FactKB extends HashDict {
     deduce_all_facts(facts: any) {
         /*
         Update the KB with all the implications of a list of facts.
-        Facts can be specified as a dictionary or as a list of (key, value)
-        pairs.
+        Facts must be an array of implications (fact, fact_value)
         */
         // keep frequently used attributes locally, so we'll avoid extra
         // attribute access overhead
@@ -618,14 +617,9 @@ export class FactKB extends HashDict {
 
             // --- alpha chains ---
             for (const item of facts) {
-                let k, v;
-                if (item instanceof Implication) {
-                    k = item.p;
-                    v = item.q
-                } else {
-                    k = item[0];
-                    v = item[1];
-                }
+                const k = item[0];
+                const v = item[1];
+
                 if (this._tell(k, v) instanceof False || (typeof v === "undefined")) {
                     continue;
                 }
@@ -643,11 +637,9 @@ export class FactKB extends HashDict {
             // --- beta chains ---
             facts = [];
             for (const bidx of beta_maytrigger.toArray()) {
-                const beta_rule = beta_rules[bidx];
-                const bcond = beta_rule.p;
-                const bimpl = beta_rule.q;
+                const {p: bcond, q: bimpl} = beta_rules[bidx];
                 if (bcond.toArray().every((imp: any) => this.get(imp.p) == imp.q)) {
-                    facts.push(bimpl);
+                    facts.push([bimpl.p, bimpl.q]);
                 }
             }
         }

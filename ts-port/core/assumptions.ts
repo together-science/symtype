@@ -10,7 +10,7 @@ Notable changes made (and notes):
 
 import {FactKB, FactRules} from "./facts";
 import {BasicMeta} from "./core";
-import {HashDict, HashSet, Util} from "./utility";
+import {HashDict, HashSet, Implication, Util} from "./utility";
 
 
 const _assume_rules = new FactRules([
@@ -112,11 +112,7 @@ export function as_property(fact: any) {
 export function make_property(obj: any, fact: any) {
     // choosing to run getit() on make_property to add consistency in accessing
     // propoerties of symtype objects. this may slow down symtype slightly
-    if (!fact.includes("is_")) {
-        obj[as_property(fact)] = getit
-    } else {
-        obj[fact] = getit;
-    }
+    obj[as_property(fact)] = getit
     function getit() {
         if (typeof obj._assumptions[fact] !== "undefined") {
             return obj._assumptions.get(fact);
@@ -225,7 +221,9 @@ class ManagedProperties {
         }
 
         const all_defs = new HashDict()
-        for (const base of Util.getSupers(cls).reverse()) {
+        const supers = Util.getSupers(cls);
+        for (let i = supers.length - 1; i >= 0; i--) {
+            const base = supers[i];
             const assumptions = base._explicit_class_assumptions;
             if (typeof assumptions !== "undefined") {
                 all_defs.merge(assumptions)
@@ -240,11 +238,7 @@ class ManagedProperties {
 
         // Add default assumptions as class properties
         for (const item of cls.default_assumptions.entries()) {
-            if (item[0].includes("is")) {
-                cls[item[0]] = item[1];
-            } else {
-                cls[as_property(item[0])] = item[1];
-            }
+            cls[as_property(item[0])] = item[1];
         }
         // get the misc. properties of the superclasses and assign to class
         for (const supercls of Util.getSupers(cls)) {

@@ -478,7 +478,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                         continue;
                     }
                     if (t.is_extended_negative()) {
-                        coeff_sign = -1;
+                        coeff_sign *= -1;
                         continue;
                     }
                     new_c_part.push(t);
