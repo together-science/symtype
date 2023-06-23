@@ -8,7 +8,7 @@ import {mix, base, HashDict} from "./utility";
 import {AtomicExpr} from "./expr";
 import {Boolean} from "./boolalg";
 import {NumberKind, UndefinedKind} from "./kind";
-import {fuzzy_bool_v2} from "./logic";
+import {fuzzy_bool} from "./logic";
 import {StdFactKB} from "./assumptions";
 import {ManagedProperties} from "./assumptions";
 
@@ -67,7 +67,7 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         const tmp_asm_copy = assumptions.copy();
 
         // strict commutativity
-        const is_commutative = fuzzy_bool_v2(assumptions.get("commutative", true));
+        const is_commutative = fuzzy_bool(assumptions.get("commutative", true));
         assumptions.add("is_commutative", is_commutative);
 
         // Merge with object assumptions and reassign object properties
@@ -88,7 +88,7 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         // remove none, convert values to bool, check commutativity *in place*
 
         // be strict about commutativity: cannot be undefined
-        const is_commutative = fuzzy_bool_v2(assumptions.get("commutative", true));
+        const is_commutative = fuzzy_bool(assumptions.get("commutative", true));
         if (typeof is_commutative === "undefined") {
             throw new Error("commutativity must be true or false");
         }

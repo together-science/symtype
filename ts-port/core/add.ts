@@ -13,7 +13,7 @@ import {Basic} from "./basic";
 import {ManagedProperties} from "./assumptions";
 import {Mul} from "./mul";
 import {Global} from "./global";
-import {_fuzzy_groupv2} from "./logic";
+import {_fuzzy_group} from "./logic";
 
 function _addsort(args: any[]) {
     // eslint-disable-next-line new-cap
@@ -245,7 +245,7 @@ export class Add extends mix(base).with(Expr, AssocOp) {
         for (const a of this._args) {
             fuzzyarg.push(a.is_commutative());
         }
-        return _fuzzy_groupv2(fuzzyarg);
+        return _fuzzy_group(fuzzyarg);
     }
 
     as_coeff_Add() {

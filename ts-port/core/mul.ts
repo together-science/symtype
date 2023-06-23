@@ -4,7 +4,7 @@ import {ManagedProperties} from "./assumptions";
 import {Basic} from "./basic";
 import {Expr} from "./expr";
 import {Global} from "./global";
-import {fuzzy_notv2, _fuzzy_groupv2} from "./logic";
+import {fuzzy_not, _fuzzy_group} from "./logic";
 import {Integer, Rational} from "./numbers";
 import {AssocOp} from "./operations";
 import {global_parameters} from "./parameters";
@@ -494,14 +494,14 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         if (coeff === S.ComplexInfinity) {
             const ctemp = [];
             for (const c of c_part) {
-                if (!(fuzzy_notv2(c.is_zero()) && c.is_extended_real() !== "undefined")) {
+                if (!(fuzzy_not(c.is_zero()) && c.is_extended_real() !== "undefined")) {
                     ctemp.push(c);
                 }
             }
             c_part = ctemp;
             const nctemp = [];
             for (const c of nc_part) {
-                if (!(fuzzy_notv2(c.is_zero()) && c.is_extended_real() !== "undefined")) {
+                if (!(fuzzy_not(c.is_zero()) && c.is_extended_real() !== "undefined")) {
                     nctemp.push(c);
                 }
             }
@@ -673,7 +673,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         for (const a of this._args) {
             allargs.push(a.is_commutative());
         }
-        return _fuzzy_groupv2(allargs);
+        return _fuzzy_group(allargs);
     }
 
     // WB addition for jasmine tests
