@@ -8,7 +8,7 @@ Notable changes made and notes:
 import {_Basic} from "./basic";
 import {mix} from "./utility";
 import {global_parameters} from "./parameters";
-import {fuzzy_and_v2} from "./logic";
+import {fuzzy_and} from "./logic";
 import {ManagedProperties} from "./assumptions";
 import {S} from "./singleton";
 
@@ -93,7 +93,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
             for (const a of args) {
                 input.push(a.is_commutative());
             }
-            is_commutative = fuzzy_and_v2(input);
+            is_commutative = fuzzy_and(input);
         }
         obj.is_commutative = () => is_commutative;
         return obj;

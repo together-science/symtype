@@ -1,4 +1,4 @@
 node_modules/*
-ts-port/testing.js
-ts-port/symtype.js
+ts-port/dest/testing.js
+ts-port/dest/symtype.js
 branch.txt

@@ -44,7 +44,7 @@ Significant changes made (WB and GM):
 
 
 import {StdFactKB} from "./assumptions";
-import {Logic, True, False, And, Or, Not} from "./logic";
+import {Logic, And, Or, Not} from "./logic";
 
 import {Util, HashSet, SetDefaultDict, ArrDefaultDict, HashDict, Implication} from "./utility";
 
@@ -62,18 +62,6 @@ function _base_fact(atom: any) {
 
 
 function _as_pair(atom: any) {
-    /*  Return the literal fact of an atom.
-    Effectively, this merely strips the Not around a fact.
-    */
-    if (atom instanceof Not) {
-        return new Implication(atom.arg(), Logic.False);
-    } else {
-        return new Implication(atom, Logic.True);
-    }
-}
-
-
-function _as_pairv2(atom: any) {
     /*  Return the literal fact of an atom.
     Effectively, this merely strips the Not around a fact.
     */
@@ -197,9 +185,9 @@ function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any
     // static extensions to alpha rules:
     // A: x -> a,b   B: &(a,b) -> c  ==>  A: x -> a,b,c
 
-    let seen_static_extension: Logic = Logic.True;
-    while (seen_static_extension instanceof True) {
-        seen_static_extension = Logic.False;
+    let seen_static_extension = true;
+    while (seen_static_extension) {
+        seen_static_extension = false;
 
         for (const impl of beta_rules) {
             const bcond = impl.p;
@@ -225,7 +213,7 @@ function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any
                     if (bimpl_impl != null) {
                         ximpls |= bimpl_impl[0];
                     }
-                    seen_static_extension = Logic.True;
+                    seen_static_extension = true;
                 }
             }
         }
@@ -362,10 +350,10 @@ class Prover {
 
     process_rule(a: any, b: any) {
         // process a -> b rule  ->  TODO write more?
-        if (!a || (b instanceof True || b instanceof False)) {
+        if (!a || (typeof b === "boolean")) {
             return;
         }
-        if (a instanceof True || a instanceof False) {
+        if (typeof a === "boolean") {
             return;
         }
         if (this._rules_seen.has(new Implication(a, b))) {
@@ -495,8 +483,8 @@ export class FactRules {
             const bcond = item.p;
             const bimpl = item.q;
             const pairs: HashSet = new HashSet();
-            bcond.args.forEach((a: any) => pairs.add(_as_pairv2(a)));
-            this.beta_rules.push(new Implication(pairs, _as_pairv2(bimpl)));
+            bcond.args.forEach((a: any) => pairs.add(_as_pair(a)));
+            this.beta_rules.push(new Implication(pairs, _as_pair(bimpl)));
         }
 
         // deduce alpha implications
@@ -527,9 +515,9 @@ export class FactRules {
             const impl: HashSet = val.p;
             const betaidxs = val.q;
             const setToAdd = new HashSet();
-            impl.toArray().forEach((e: any) => setToAdd.add(_as_pairv2(e)));
-            full_implications.add(_as_pairv2(k), setToAdd);
-            beta_triggers.add(_as_pairv2(k), betaidxs);
+            impl.toArray().forEach((e: any) => setToAdd.add(_as_pair(e)));
+            full_implications.add(_as_pair(k), setToAdd);
+            beta_triggers.add(_as_pair(k), betaidxs);
         }
         this.full_implications = full_implications;
 
@@ -582,13 +570,13 @@ export class FactKB extends HashDict {
         */
         if (k in this.dict && typeof this.get(k) !== "undefined") {
             if (this.get(k) === v) {
-                return Logic.False;
+                return false;
             } else {
                 throw new InconsistentAssumptions(this, k, v);
             }
         } else {
             this.add(k, v);
-            return Logic.True;
+            return true;
         }
     }
 
@@ -620,7 +608,7 @@ export class FactKB extends HashDict {
                 const k = item[0];
                 const v = item[1];
 
-                if (this._tell(k, v) instanceof False || (typeof v === "undefined")) {
+                if (!this._tell(k, v) || (typeof v === "undefined")) {
                     continue;
                 }
 
