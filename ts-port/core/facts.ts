@@ -40,15 +40,13 @@ Significant changes made (WB and GM):
 - Created the SetDefaultDict, HashDict and HashSet classes. SetDefaultDict acts
   as a replcacement defaultdict(set), and HashDict and HashSet replace the
   dict and set classes.
-- Added isSubset() to the utility class to help with this program
-
 */
 
 
-import {StdFactKB} from "./assumptions.js";
-import {Logic, True, False, And, Or, Not} from "./logic.js";
+import {StdFactKB} from "./assumptions";
+import {Logic, True, False, And, Or, Not} from "./logic";
 
-import {Util, HashSet, SetDefaultDict, HashDict, Implication} from "./utility.js";
+import {Util, HashSet, SetDefaultDict, ArrDefaultDict, HashDict, Implication} from "./utility";
 
 
 function _base_fact(atom: any) {
@@ -74,6 +72,18 @@ function _as_pair(atom: any) {
     }
 }
 
+
+function _as_pairv2(atom: any) {
+    /*  Return the literal fact of an atom.
+    Effectively, this merely strips the Not around a fact.
+    */
+    if (atom instanceof Not) {
+        return new Implication(atom.arg(), false);
+    } else {
+        return new Implication(atom, true);
+    }
+}
+
 // XXX this prepares forward-chaining rules for alpha-network
 
 function transitive_closure(implications: Implication[]) {
@@ -82,14 +92,19 @@ function transitive_closure(implications: Implication[]) {
     Uses Warshall's algorithm, as described at
     http://www.cs.hope.edu/~cusack/Notes/Notes/DiscreteMath/Warshall.pdf.
     */
-
+    let temp = new Array();
+    for (const impl of implications) {
+        temp.push(impl.p);
+        temp.push(impl.q);
+    }
+    temp = temp.flat();
     const full_implications = new HashSet(implications);
-    const literals = new Set(implications.flat());
-
-    for (const k of literals) {
-        for (const i of literals) {
+    const literals = new HashSet(temp);
+    
+    for (const k of literals.toArray()) {
+        for (const i of literals.toArray()) {
             if (full_implications.has(new Implication(i, k))) {
-                for (const j of literals) {
+                for (const j of literals.toArray()) {
                     if (full_implications.has(new Implication(k, j))) {
                         full_implications.add(new Implication(i, j));
                     }
@@ -165,18 +180,18 @@ function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any
     const x_impl: HashDict = new HashDict();
     for (const x of alpha_implications.keys()) {
         const newset = new HashSet();
-        newset.add(alpha_implications.get(x));
+        newset.addArr(alpha_implications.get(x).toArray());
         const imp = new Implication(newset, []);
         x_impl.add(x, imp);
     }
     for (const item of beta_rules) {
-        const bcond = item[0];
+        const bcond = item.p;
         for (const bk of bcond.args) {
             if (x_impl.has(bk)) {
                 continue;
             }
             const imp = new Implication(new HashSet(), []);
-            x_impl.add(imp.p, imp.q);
+            x_impl.add(bk, imp);
         }
     }
     // static extensions to alpha rules:
@@ -197,9 +212,10 @@ function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any
                 const x = item[0];
                 const impl = item[1];
                 let ximpls = impl.p;
-                const x_all = ximpls.clone().add(x);
+                const x_all = ximpls.clone()
+                x_all.add(x);
                 // A: ... -> a   B: &(...) -> a  is non-informative
-                if (!(x_all.includes(bimpl)) && Util.isSubset(bargs.toArray(), x_all)) {
+                if (!x_all.has(bimpl) && Util.isSubset(bargs.toArray(), x_all.toArray())) {
                     ximpls.add(bimpl);
 
                     // we introduced new implication - now we have to restore
@@ -225,17 +241,15 @@ function apply_beta_to_alpha_route(alpha_implications: HashDict, beta_rules: any
             const value: Implication = item[1];
             const ximpls = value.p;
             const bb = value.q;
-            const x_all = ximpls.clone().add(x);
+            const x_all = ximpls.clone()
+            x_all.add(x);
             if (x_all.has(bimpl)) {
                 continue;
             }
-            // A: x -> a...  B: &(!a,...) -> ... (will never trigger)
-            // A: x -> a...  B: &(...) -> !a     (will never trigger)
-            // eslint-disable-next-line new-cap
-            if (x_all.some((e: any) => (bargs.has(Not.New(e)) || Not.New(e) === bimpl))) {
+            if (x_all.toArray().some((e: any) => (bargs.has(Not.New(e)) || Util.hashKey(Not.New(e)) === Util.hashKey(bimpl)))) {
                 continue;
             }
-            if (bargs && x_all) {
+            if (bargs.intersects(x_all)) {
                 bb.push(bidx);
             }
         }
@@ -273,7 +287,9 @@ function rules_2prereq(rules: SetDefaultDict) {
             if (i instanceof Not) {
                 i = i.args[0];
             }
-            prereq.get(i).add(a);
+            const toAdd = prereq.get(i);
+            toAdd.add(a);
+            prereq.add(i, toAdd);
         }
     }
     return prereq;
@@ -346,7 +362,7 @@ class Prover {
 
     process_rule(a: any, b: any) {
         // process a -> b rule  ->  TODO write more?
-        if (b instanceof True || b instanceof False) {
+        if (!a || (b instanceof True || b instanceof False)) {
             return;
         }
         if (a instanceof True || a instanceof False) {
@@ -394,7 +410,8 @@ class Prover {
 
             for (let bidx = 0; bidx < b.args.length; bidx++) {
                 const barg = b.args[bidx];
-                const brest = [...b.args].splice(bidx, 1);
+                const brest = [...b.args];
+                brest.splice(bidx, 1);
                 this.process_rule(And.New(a, Not.New(barg)), Or.New(...brest));
             }
         } else if (a instanceof And) {
@@ -420,7 +437,7 @@ class Prover {
 
 // ///////////////////////////////////
 
-class FactRules {
+export class FactRules {
     /* Rules that describe how to deduce facts in logic space
     When defined, these rules allow implications to quickly be determined
     for a set of facts. For this precomputed deduction tables are used.
@@ -458,10 +475,9 @@ class FactRules {
 
         for (const rule of rules) {
             // XXX `a` is hardcoded to be always atom
-            let [a, op, b] = rule.split(" ", 3);
+            let [a, op, b] = Util.splitLogicStr(rule); 
             a = Logic.fromstring(a);
             b = Logic.fromstring(b);
-
             if (op === "->") {
                 P.process_rule(a, b);
             } else if (op === "==") {
@@ -471,6 +487,7 @@ class FactRules {
                 throw new Error("unknown op " + op);
             }
         }
+
         // --- build deduction networks ---
 
         this.beta_rules = [];
@@ -478,8 +495,8 @@ class FactRules {
             const bcond = item.p;
             const bimpl = item.q;
             const pairs: HashSet = new HashSet();
-            bcond.args.forEach((a: any) => pairs.add(_as_pair(a)));
-            this.beta_rules.push(new Implication(pairs, _as_pair(bimpl)));
+            bcond.args.forEach((a: any) => pairs.add(_as_pairv2(a)));
+            this.beta_rules.push(new Implication(pairs, _as_pairv2(bimpl)));
         }
 
         // deduce alpha implications
@@ -503,16 +520,16 @@ class FactRules {
         // build rels (forward chains)
 
         const full_implications = new SetDefaultDict();
-        const beta_triggers = new SetDefaultDict();
+        const beta_triggers = new ArrDefaultDict();
         for (const item of impl_ab.entries()) {
-            const k = item[0];
+            const k =item[0];
             const val = item[1];
             const impl: HashSet = val.p;
             const betaidxs = val.q;
             const setToAdd = new HashSet();
-            impl.toArray().forEach((e: any) => setToAdd.add(_as_pair(e)));
-            full_implications.add(_as_pair(k), setToAdd);
-            beta_triggers.add(_as_pair(k), betaidxs);
+            impl.toArray().forEach((e: any) => setToAdd.add(_as_pairv2(e)));
+            full_implications.add(_as_pairv2(k), setToAdd);
+            beta_triggers.add(_as_pairv2(k), betaidxs);
         }
         this.full_implications = full_implications;
 
@@ -524,7 +541,9 @@ class FactRules {
         for (const item of rel_prereq.entries()) {
             const k = item[0];
             const pitems = item[1];
-            prereq.get(k).add(pitems);
+            const toAdd = prereq.get(k);
+            toAdd.addArr(pitems.toArray());
+            prereq.add(k, toAdd);
         }
         this.prereq = prereq;
     }
@@ -545,7 +564,7 @@ class InconsistentAssumptions extends Error {
     }
 }
 
-class FactKB extends HashDict {
+export class FactKB extends HashDict {
     /*
     A simple propositional knowledge base relying on compiled inference rules.
     */
@@ -580,14 +599,13 @@ class FactKB extends HashDict {
     deduce_all_facts(facts: any) {
         /*
         Update the KB with all the implications of a list of facts.
-        Facts can be specified as a dictionary or as a list of (key, value)
-        pairs.
+        Facts must be an array of implications (fact, fact_value)
         */
         // keep frequently used attributes locally, so we'll avoid extra
         // attribute access overhead
 
         const full_implications: SetDefaultDict = this.rules.full_implications;
-        const beta_triggers: SetDefaultDict = this.rules.beta_triggers;
+        const beta_triggers: ArrDefaultDict = this.rules.beta_triggers;
         const beta_rules: any[] = this.rules.beta_rules;
 
         if (facts instanceof HashDict || facts instanceof StdFactKB) {
@@ -601,6 +619,7 @@ class FactKB extends HashDict {
             for (const item of facts) {
                 const k = item[0];
                 const v = item[1];
+
                 if (this._tell(k, v) instanceof False || (typeof v === "undefined")) {
                     continue;
                 }
@@ -608,28 +627,21 @@ class FactKB extends HashDict {
                 // lookup routing tables
                 const arr = full_implications.get(new Implication(k, v)).toArray();
                 for (const item of arr) {
-                    this._tell(item[0], item[1]);
+                    this._tell(item.p, item.q);
                 }
                 const currimp = beta_triggers.get(new Implication(k, v));
-                if (!(currimp.isEmpty())) {
-                    beta_maytrigger.add(beta_triggers.get(new Implication(k, v)));
+                if (!(currimp.length == 0)) {
+                    beta_maytrigger.addArr(currimp);
                 }
             }
             // --- beta chains ---
             facts = [];
             for (const bidx of beta_maytrigger.toArray()) {
-                const [bcond, bimpl] = beta_rules[bidx];
-                for (const item of bcond) {
-                    const k = item[0];
-                    const v = item[1];
-                    if (this.get(k) !== v) {
-                        continue;
-                    }
-                    facts.push(bimpl);
+                const {p: bcond, q: bimpl} = beta_rules[bidx];
+                if (bcond.toArray().every((imp: any) => this.get(imp.p) == imp.q)) {
+                    facts.push([bimpl.p, bimpl.q]);
                 }
             }
         }
     }
 }
-
-export {FactKB, FactRules};

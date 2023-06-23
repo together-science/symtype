@@ -7,22 +7,23 @@ Notable chnages made (WB & GM):
 - Arrays are being used instead of tuples
 - The methods hashKey() and toString() are added to Logic for hashing. The
   static method hashKey() is also added to Logic and hashes depending on the input.
-- The array args in the AndOr_Base constructor is not sorted or put in a set
-  since we did't see why this would be necesary
 - A constructor is added to the logic class, which is used by Logic and its
   subclasses (AndOr_Base, And, Or, Not)
 - In the flatten method of AndOr_Base we removed the try catch and changed the
   while loop to depend on the legnth of the args array
 - Added expand() and eval_propagate_not as abstract methods to the Logic class
 - Added static New methods to Not, And, and Or which function as constructors
-- Replacemd normal booleans with Logic.True and Logic.False since it is sometimes
-necesary to find if a given argumenet is a boolean
+- Replaced normal booleans with Logic.True and Logic.False since it is sometimes
+  necesary to find if a given argumenet is a boolean
 - Added some v2 methods which return true, false, and undefined, which works
   with the rest of the code
+- TODO: the boolean logic here needs to be consistent with the rest of the code
+    - Logic.True and Logic.False are not used elsewhere
+    - Undefied is usually used as the third boolean, and not null
 
 */
 
-import {Util} from "./utility.js";
+import {Util, HashSet} from "./utility";
 
 
 function _torf(args: any[]): Logic | null {
@@ -309,20 +310,20 @@ class Logic {
 
     static op_2class: Record<string, (...args: any[]) => Logic> = {
         "&": (...args) => {
-            return And.__new__(And.prototype, ...args);
+            return And.New(...args);
         },
         "|": (...args) => {
-            return Or.__new__(Or.prototype, ...args);
+            return Or.New(...args);
         },
         "!": (arg) => {
-            return Not.__new__(Not.prototype, arg);
+            return Not.New(arg);
         },
     };
 
     args: any[];
 
     constructor(...args: any[]) {
-        this.args = args;
+        this.args = args.flat();
     }
 
     _eval_propagate_not(): any {
@@ -437,7 +438,8 @@ class Logic {
             }
             // already scheduled operation, e.g. '&'
             if (schedop) {
-                lexpr = Logic.op_2class[schedop](lexpr, flexTerm);
+                const op = Logic.op_2class[schedop];
+                lexpr = op(lexpr, flexTerm);
                 schedop = null;
                 continue;
             }
@@ -482,12 +484,12 @@ class False extends Logic {
 
 
 class AndOr_Base extends Logic {
-    static __new__(cls: any, ...args: any[]) {
+    static __new__(cls: any, op_x_notx: any, ...args: any[]) {
         const bargs: any[] = [];
         for (const a of args) {
-            if (a == cls.get_op_x_notx()) {
+            if (a == op_x_notx) {
                 return a;
-            } else if (a == !(cls.get_op_x_notx())) {
+            } else if (a == op_x_notx.opposite) {
                 continue; // skip this argument
             }
             bargs.push(a);
@@ -495,21 +497,23 @@ class AndOr_Base extends Logic {
 
         // prev version: args = sorted(set(this.flatten(bargs)), key=hash)
         // we think we don't need the sort and set
-        args = AndOr_Base.flatten(bargs);
+        args = new HashSet(AndOr_Base.flatten(bargs)).toArray().sort(
+            (a, b) => Util.hashKey(a).localeCompare(Util.hashKey(b))
+        );
 
         // creating a set with hash keys for args
-        const args_set = new Set(args.map((e) => Util.hashKey(e)));
+        const args_set = new HashSet(args);
 
         for (const a of args) {
-            if (args_set.has((Not.New(a)).hashKey())) {
-                return cls.get_op_x_notx();
+            if (args_set.has(Not.New(a))) {
+                return op_x_notx;
             }
         }
 
         if (args.length == 1) {
             return args.pop();
         } else if (args.length == 0) {
-            if (cls.get_op_x_notx() instanceof True) {
+            if (op_x_notx instanceof True) {
                 return Logic.False;
             }
             return Logic.True;
@@ -520,13 +524,13 @@ class AndOr_Base extends Logic {
 
     static flatten(args: any[]): any[] {
         // quick-n-dirty flattening for And and Or
-        const args_queue: any[] = [...args];
+        const args_queue: any[] = args;
         const res = [];
         while (args_queue.length > 0) {
             const arg: any = args_queue.pop();
             if (arg instanceof Logic) {
                 if (arg instanceof this) {
-                    args_queue.push(arg.args);
+                    args_queue.push(...arg.args);
                     continue;
                 }
             }
@@ -538,12 +542,9 @@ class AndOr_Base extends Logic {
 
 class And extends AndOr_Base {
     static New(...args: any[]) {
-        return super.__new__(And, args);
+        return super.__new__(And, Logic.False, ...args);
     }
 
-    get_op_x_notx(): Logic {
-        return Logic.False;
-    }
 
     _eval_propagate_not(): Or {
         // ! (a&b&c ...) == !a | !b | !c ...
@@ -590,11 +591,7 @@ class And extends AndOr_Base {
 
 class Or extends AndOr_Base {
     static New(...args: any[]) {
-        return super.__new__(Or, args);
-    }
-
-    get_op_x_notx(): Logic {
-        return Logic.True;
+        return super.__new__(Or, Logic.True, ...args);
     }
 
     _eval_propagate_not(): And {

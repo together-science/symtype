@@ -4,22 +4,23 @@ Notable changes made (and notes):
 - Float is handeled entirely by decimal.js, and now only takes precision in
   # of decimal points
 - Note: only methods necessary for add, mul, and pow have been implemented
+- TODO: needs more _eval_is properties and need to debug rational eval power
 */
 
 // basic implementations only - no utility added yet
-import {_AtomicExpr} from "./expr.js";
-import {NumberKind} from "./kind.js";
-import {ManagedProperties} from "./assumptions.js";
-import {global_parameters} from "./parameters.js";
-import {Add} from "./add.js";
-import {S, Singleton} from "./singleton.js";
+import {_AtomicExpr} from "./expr";
+import {NumberKind} from "./kind";
+import {ManagedProperties} from "./assumptions";
+import {global_parameters} from "./parameters";
+import {Add} from "./add";
+import {S, Singleton} from "./singleton";
 import Decimal from "decimal.js";
-import {as_int} from "../utilities/misc.js";
-import {Pow} from "./power.js";
-import {Global} from "./global.js";
-import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_.js";
-import {HashDict} from "./utility.js";
-import {Mul} from "./mul.js";
+import {as_int} from "../utilities/misc";
+import {Pow} from "./power";
+import {Global} from "./global";
+import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_";
+import {HashDict} from "./utility";
+import {Mul} from "./mul";
 
 /*
 utility functions
@@ -207,21 +208,20 @@ class _Number_ extends _AtomicExpr {
 
     __mul__(other: any) {
         if (other instanceof _Number_ && global_parameters.evaluate) {
-            const cls: any = this.constructor;
             if (other === S.Nan) {
                 return S.Nan;
             } else if (other === S.Infinity) {
-                if (cls.is_zero) {
+                if (this.is_zero()) {
                     return S.NaN;
-                } else if (cls.is_positive) {
+                } else if (this.is_positive()) {
                     return S.Infinity;
                 } else {
                     return S.NegativeInfinity;
                 }
             } else if (other === S.NegativeInfinity) {
-                if (cls.is_zero) {
+                if (this.is_zero()) {
                     return S.NaN;
-                } else if (cls.is_positive) {
+                } else if (this.is_positive()) {
                     return S.NegativeInfinity;
                 } else {
                     return S.Infinity;
@@ -362,6 +362,10 @@ class Float extends _Number_ {
 
     _eval_is_finite() {
         return this.decimal.isFinite();
+    }
+
+    toString() {
+        return this.decimal.toString()
     }
 }
 
@@ -588,7 +592,7 @@ class Rational extends _Number_ {
     }
 
     _eval_is_positive() {
-        return !this._eval_is_negative;
+        return !this._eval_is_negative();
     }
 
     _eval_is_odd() {
@@ -600,11 +604,15 @@ class Rational extends _Number_ {
     }
 
     _eval_is_finite() {
-        return this.p === S.Infinity || this.p === S.NegativeInfinity;
+        return !(this.p === S.Infinity || this.p === S.NegativeInfinity);
     }
 
     eq(other: Rational) {
         return this.p === other.p && this.q === other.q;
+    }
+
+    toString() {
+        return String(this.p) + "/" + String(this.q)
     }
 };
 
@@ -638,6 +646,7 @@ class Integer extends Rational {
     __slots__: any[] = [];
     constructor(p: number) {
         super(p, undefined, undefined, false);
+        this.p = p;
         if (p === 1) {
             return S.One;
         } else if (p === 0) {
@@ -645,7 +654,6 @@ class Integer extends Rational {
         } else if (p === -1) {
             return S.NegativeOne;
         }
-        this.p = p;
     }
 
     factors(limit: any = undefined) {
@@ -846,6 +854,10 @@ class Integer extends Rational {
         }
         return result;
     }
+
+    toString() {
+        return String(this.p);
+    }
 };
 
 ManagedProperties.register(Integer);
@@ -996,7 +1008,7 @@ class NaN extends _Number_ {
     static is_commutative = true;
     static is_extended_real: any = undefined;
     static is_real: any = undefined;
-    static is_rationa: any = undefined;
+    static is_rational: any = undefined;
     static is_algebraic: any = undefined;
     static is_transcendental: any = undefined;
     static is_integer: any = undefined;
@@ -1008,6 +1020,9 @@ class NaN extends _Number_ {
     static is_negative: any = undefined;
     static is_number = true;
     __slots__: any = [];
+    toString() {
+        return "NAN";
+    }
 }
 
 ManagedProperties.register(NaN);
@@ -1049,6 +1064,10 @@ class ComplexInfinity extends _AtomicExpr {
 
     constructor() {
         super();
+    }
+
+    toString() {
+        return "ComplexInfinity";
     }
 }
 
@@ -1103,7 +1122,7 @@ class Infinity extends _Number_ {
     // done enough such that add and mul can handle infinity as an argument
     __add__(other: any) {
         if (other instanceof _Number_ && global_parameters.evaluate) {
-            if (other === S.Infinity || other === S.NaN) {
+            if (other === S.NegativeInfinity || other === S.NaN) {
                 return S.NaN;
             }
             return this;
@@ -1115,12 +1134,16 @@ class Infinity extends _Number_ {
         if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.Zero || other === S.NaN) {
                 return S.NaN;
-            } else if (other.is_extended_positive) {
+            } else if (other.is_extended_positive()) {
                 return this;
             }
             return S.NegativeInfinity;
         }
         return super.__mul__(other);
+    }
+
+    toString() {
+        return "Infinity";
     }
 }
 
@@ -1163,12 +1186,16 @@ class NegativeInfinity extends _Number_ {
         if (other instanceof _Number_ && global_parameters.evaluate) {
             if (other === S.Zero || other === S.NaN) {
                 return S.NaN;
-            } else if (other.is_extended_positive) {
+            } else if (other.is_extended_positive()) {
                 return this;
             }
             return S.Infinity;
         }
         return super.__mul__(other);
+    }
+
+    toString() {
+        return "NegInfinity";
     }
 }
 

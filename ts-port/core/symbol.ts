@@ -4,13 +4,13 @@ Notable changes
 - Class structure reworked based on a constructor system (view source)
 */
 
-import {mix, base, HashDict} from "./utility.js";
-import {AtomicExpr} from "./expr.js";
-import {Boolean} from "./boolalg.js";
-import {NumberKind, UndefinedKind} from "./kind.js";
-import {fuzzy_bool_v2} from "./logic.js";
-import {StdFactKB} from "./assumptions.js";
-import {ManagedProperties} from "./assumptions.js";
+import {mix, base, HashDict} from "./utility";
+import {AtomicExpr} from "./expr";
+import {Boolean} from "./boolalg";
+import {NumberKind, UndefinedKind} from "./kind";
+import {fuzzy_bool_v2} from "./logic";
+import {StdFactKB} from "./assumptions";
+import {ManagedProperties} from "./assumptions";
 
 
 class Symbol extends mix(base).with(Boolean, AtomicExpr) {
@@ -59,13 +59,19 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
 
     constructor(name: any, properties: Record<any, any> = undefined) {
         super();
-        const assumptions = new HashDict(properties);
-        Symbol._sanitize(assumptions);
         this.name = name;
+
+        // add user assumptions
+        const assumptions: HashDict = new HashDict(properties);
+        Symbol._sanitize(assumptions);
         const tmp_asm_copy = assumptions.copy();
+
+        // strict commutativity
         const is_commutative = fuzzy_bool_v2(assumptions.get("commutative", true));
-        assumptions.add("commutative", is_commutative);
-        this._assumptions = new StdFactKB(assumptions);
+        assumptions.add("is_commutative", is_commutative);
+
+        // Merge with object assumptions and reassign object properties
+        this._assumptions = new StdFactKB(assumptions)
         this._assumptions._generator = tmp_asm_copy;
     }
 
@@ -94,6 +100,10 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
             }
             assumptions.add(key, v as boolean);
         }
+    }
+
+    toString() {
+        return this.name;
     }
 }
 

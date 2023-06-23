@@ -11,7 +11,7 @@ Notable changes made (WB and GM):
 
 */
 
-import {LRUCache} from "./utility.js";
+import {LRUCache} from "./utility";
 
 const settings = {
     debug: false,

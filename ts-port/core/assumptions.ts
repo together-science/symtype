@@ -2,17 +2,15 @@
 Notable changes made (and notes):
 - ManagedProperties reworked as normal class - each class is registered directly
   after defined
-- ManagedProperties tracks properties of base classes by tracking all properties
-  (see comments within class)
-- Class properties from _eval_is methods are assigned to each object itself in
-  the Basic constructor
-- To-do: make accessing properties more consistent (i.e., same syntax for
-  acessing static and non-static properties)
+- ManagedProperties loops through superclasses to assign static properties that
+  aren't inherited (thanks TypeScript)
+- Getit acts as a lambda, so properties are now accessed with function notation
+  i.e., myobject.is_property()
 */
 
-import {FactKB, FactRules} from "./facts.js";
-import {BasicMeta} from "./core.js";
-import {HashDict, HashSet, Util} from "./utility.js";
+import {FactKB, FactRules} from "./facts";
+import {BasicMeta} from "./core";
+import {HashDict, HashSet, Implication, Util} from "./utility";
 
 
 const _assume_rules = new FactRules([
@@ -112,15 +110,18 @@ export function as_property(fact: any) {
 }
 
 export function make_property(obj: any, fact: any) {
-    obj[as_property(fact)] = getit;
+    // choosing to run getit() on make_property to add consistency in accessing
+    // propoerties of symtype objects. this may slow down symtype slightly
+    obj[as_property(fact)] = getit
     function getit() {
         if (typeof obj._assumptions[fact] !== "undefined") {
-            return obj._assumptions[fact];
+            return obj._assumptions.get(fact);
         } else {
             return _ask(fact, obj);
         }
     }
 }
+
 
 // eslint-disable-next-line no-unused-vars
 function _ask(fact: any, obj: any) {
@@ -141,18 +142,19 @@ function _ask(fact: any, obj: any) {
     */
 
     // FactKB which is dict-like and maps facts to their known values:
-    const assumptions: FactKB = obj._assumptions;
+    const assumptions: StdFactKB = obj._assumptions;
 
     // A dict that maps facts to their handlers:
     const handler_map: HashDict = obj._prop_handler;
 
     // This is our queue of facts to check:
-    const facts_to_check = new Array(fact);
+    let facts_to_check = new Array(fact);
     const facts_queued = new HashSet([fact]);
 
     const cls = obj.constructor;
 
-    for (const fact_i of facts_to_check) {
+    for (let i = 0; i < facts_to_check.length; i++) {
+        const fact_i = facts_to_check[i];
         if (typeof assumptions.get(fact_i) !== "undefined") {
             continue;
         } else if (cls[as_property(fact)]) {
@@ -161,12 +163,7 @@ function _ask(fact: any, obj: any) {
         let fact_i_value = undefined;
         let handler_i = handler_map.get(fact_i);
         if (typeof handler_i !== "undefined") {
-            handler_i = handler_i.name;
-            if (obj[handler_i]) {
-                fact_i_value = obj[handler_i]();
-            } else {
-                fact_i_value = undefined;
-            }
+            fact_i_value = obj[handler_i.name]();
         }
 
         if (typeof fact_i_value !== "undefined") {
@@ -177,13 +174,11 @@ function _ask(fact: any, obj: any) {
         if (typeof fact_value !== "undefined") {
             return fact_value;
         }
-        const factset = _assume_rules.prereq.get(fact_i).difference(facts_queued);
+        const factset = _assume_rules.prereq.get(fact_i).difference(facts_queued).toArray();
         if (factset.size !== 0) {
-            const new_facts_to_check = new Array(_assume_rules.prereq.get(fact_i).difference(facts_queued));
-            Util.shuffleArray(new_facts_to_check);
-            facts_to_check.push(new_facts_to_check);
-            facts_to_check.flat();
-            facts_queued.addArr(new_facts_to_check);
+            Util.shuffleArray(factset);
+            facts_to_check = facts_to_check.concat(factset).flat();
+            facts_queued.addArr(facts_to_check);
         } else {
             continue;
         }
@@ -211,9 +206,10 @@ class ManagedProperties {
         // by the class or if we set them as undefined.
         // Add these properties to a dict called local_defs
         const local_defs = new HashDict();
+        const cls_props = Object.getOwnPropertyNames(cls);
         for (const k of _assume_defined.toArray()) {
             const attrname = as_property(k);
-            if (attrname in cls) {
+            if (cls_props.includes(attrname)) {
                 let v = cls[attrname];
                 if ((typeof v === "number" && Number.isInteger(v)) || typeof v === "boolean" || typeof v === "undefined") {
                     if (typeof v !== "undefined") {
@@ -224,38 +220,38 @@ class ManagedProperties {
             }
         }
 
-        // Keep track of the explicit assumptions for all registered classes.
-        // For a given class, this looks like the assumptions for all of its
-        // superclasses since we register classes top-down.
-        this.all_explicit_assumptions.merge(local_defs);
+        const all_defs = new HashDict()
+        const supers = Util.getSupers(cls);
+        for (let i = supers.length - 1; i >= 0; i--) {
+            const base = supers[i];
+            const assumptions = base._explicit_class_assumptions;
+            if (typeof assumptions !== "undefined") {
+                all_defs.merge(assumptions)
+            }
+        }
 
-        // Set class properties
-        cls._explicit_class_assumptions = this.all_explicit_assumptions;
-        cls.default_assumptions = new StdFactKB(this.all_explicit_assumptions);
+        all_defs.merge(local_defs);
+
+        // Set class properties for assume_defined
+        cls._explicit_class_assumptions = all_defs
+        cls.default_assumptions = new StdFactKB(all_defs);
 
         // Add default assumptions as class properties
         for (const item of cls.default_assumptions.entries()) {
             cls[as_property(item[0])] = item[1];
         }
+        // get the misc. properties of the superclasses and assign to class
+        for (const supercls of Util.getSupers(cls)) {
+            const staticDefs = new HashSet(Object.getOwnPropertyNames(cls).filter(
+                prop => prop.includes("is_") && !_assume_defined.has(prop.replace("is_", ""))));
 
-        // Create two sets: one of the default assumption keys for this class
-        // another for the base classes
-        const s = new HashSet();
-        s.addArr(cls.default_assumptions.keys());
-        this.all_default_assumptions.addArr(cls.default_assumptions.keys());
+            const otherProps = new HashSet(Object.getOwnPropertyNames(supercls).filter(
+                prop => prop.includes("is_") && !_assume_defined.has(prop.replace("is_", ""))));
 
-
-        // Add only the properties from base classes that we don't already have
-        for (const fact of this.all_default_assumptions.difference(s).toArray()) {
-            const pname = as_property(fact);
-            if (!(pname in cls)) {
-                make_property(cls, fact);
+            const uniqueProps = otherProps.difference(staticDefs);
+            for (const fact of uniqueProps.toArray()) {
+                cls[fact] = supercls[fact]
             }
-        }
-
-        const alldefs = new HashSet(Object.keys(cls));
-        for (const fact of alldefs.difference(cls.default_assumptions).toArray()) {
-            cls.default_assumptions.add(fact, cls[fact]);
         }
     }
 }

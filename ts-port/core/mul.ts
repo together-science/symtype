@@ -1,16 +1,16 @@
-import {divmod} from "../ntheory/factor_.js";
-import {Add} from "./add.js";
-import {ManagedProperties} from "./assumptions.js";
-import {Basic} from "./basic.js";
-import {Expr} from "./expr.js";
-import {Global} from "./global.js";
-import {fuzzy_notv2, _fuzzy_groupv2} from "./logic.js";
-import {Integer, Rational} from "./numbers.js";
-import {AssocOp} from "./operations.js";
-import {global_parameters} from "./parameters.js";
-import {Pow} from "./power.js";
-import {S} from "./singleton.js";
-import {mix, base, HashDict, HashSet, ArrDefaultDict} from "./utility.js";
+import {divmod} from "../ntheory/factor_";
+import {Add} from "./add";
+import {ManagedProperties} from "./assumptions";
+import {Basic} from "./basic";
+import {Expr} from "./expr";
+import {Global} from "./global";
+import {fuzzy_notv2, _fuzzy_groupv2} from "./logic";
+import {Integer, Rational} from "./numbers";
+import {AssocOp} from "./operations";
+import {global_parameters} from "./parameters";
+import {Pow} from "./power";
+import {S} from "./singleton";
+import {mix, base, HashDict, HashSet, ArrDefaultDict} from "./utility";
 
 // # internal marker to indicate:
 // "there are still non-commutative objects -- don't forget to process them"
@@ -159,14 +159,14 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         let rv = undefined;
         if (seq.length === 2) {
             let [a, b] = seq;
-            if (b.constructor.is_Rational) {
+            if (b.is_Rational()) {
                 [a, b] = [b, a];
                 seq = [a, b];
             }
-            if (!(a.constructor.is_zero && a.constructor.is_Rational)) {
+            if (!(a.is_zero() && a.is_Rational())) {
                 let r;
                 [r, b] = b.as_coeff_Mul();
-                if (b.constructor.is_Add) {
+                if (b.is_Add()) {
                     if (r !== S.One) {
                         let arb;
                         const ar = a.__mul__(r);
@@ -201,12 +201,12 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         const order_symbols: any[] = [];
 
         for (let o of seq) {
-            if (o.constructor.is_Mul) {
-                if (o.constructor.is_commutative) {
+            if (o.is_Mul()) {
+                if (o.is_commutative()) {
                     seq.push(...o._args);
                 } else {
                     for (const q of o._args) {
-                        if (q.constructor.is_commutative) {
+                        if (q.is_commutative()) {
                             seq.push(q);
                         } else {
                             nc_seq.push(q);
@@ -214,10 +214,10 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                     }
                 }
                 continue;
-            } else if (o.constructor.is_Number) {
-                if (o === S.NaN || coeff === S.ComplexInfinity && o.constructor.is_zero) {
+            } else if (o.is_Number()) {
+                if (o === S.NaN || coeff === S.ComplexInfinity && o.is_zero()) {
                     return [[S.NaN], [], undefined];
-                } else if (coeff.constructor.is_Number) {
+                } else if (coeff.is_Number()) {
                     coeff = coeff.__mul__(o);
                     if (coeff === S.NaN) {
                         return [[S.NaN], [], undefined];
@@ -230,13 +230,13 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 }
                 coeff = S.ComplexInfinity;
                 continue;
-            } else if (o.is_commutative || o.constructor.is_commutative) {
+            } else if (o.is_commutative()) {
                 let e; let b;
                 [b, e] = o.as_base_exp();
-                if (o.constructor.is_Pow) {
-                    if (b.constructor.is_Number) {
-                        if (e.constructor.is_Rational) {
-                            if (e.constructor.is_Integer) {
+                if (o.is_Pow()) {
+                    if (b.is_Number()) {
+                        if (e.is_Rational()) {
+                            if (e.is_Integer()) {
                                 coeff = coeff.__mul__(new Pow(b, e));
                                 continue;
                             } else if (e.is_negative()) {
@@ -250,7 +250,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                                 pnum_rat.setdefault(b, []).push(e);
                             }
                             continue;
-                        } else if (b.is_positive() || b.constructor.is_integer) {
+                        } else if (b.is_positive() || b.is_integer()) {
                             num_exp.push([b, e]);
                             continue;
                         }
@@ -271,9 +271,9 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                     const [b1, e1] = o1.as_base_exp();
                     const [b2, e2] = o.as_base_exp();
                     const new_exp = e1.__add__(e2);
-                    if (b1.eq(b2) && !(new_exp.constructor.is_Add)) {
+                    if (b1.eq(b2) && !(new_exp.is_Add())) {
                         const o12 = b1._eval_power(new_exp);
-                        if (o12.constructor.is_commutative) {
+                        if (o12.is_commutative()) {
                             seq.push(o12);
                             continue;
                         } else {
@@ -316,15 +316,15 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             let changed = false;
             for (let [b, e] of c_powers) {
                 let p: any;
-                if (e.constructor.is_zero === true) {
-                    if ((b.constructor.is_Add || b.constructor.is_Mul &&
+                if (e.is_zero() === true) {
+                    if ((b.is_Add() || b.is_Mul() &&
                         b._args.includes(S.ComplexInfinity, S.Infinity, S.NefativeInfinity))) {
                         return [[S.NaN], [], undefined];
                     }
                     continue;
                 }
                 if (e === S.One) {
-                    if (b.constructor.is_Number) {
+                    if (b.is_Number()) {
                         coeff = coeff.__mul__(b);
                         continue;
                     }
@@ -332,7 +332,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 }
                 if (e !== S.One) {
                     p = new Pow(b, e);
-                    if (p.constructor.is_Pow && !b.constructor.is_Pow) {
+                    if (p.is_Pow() && !b.is_Pow()) {
                         const bi = b;
                         [b, e] = p.as_base_exp();
                         if (b !== bi) {
@@ -419,15 +419,15 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             }
             if (bi !== S.One) {
                 const obj: any = new Pow(bi, ei);
-                if (obj.constructor.is_Number) {
+                if (obj.is_Number()) {
                     coeff = coeff.__mul__(obj);
                 } else {
                     for (const item of this.make_args(Mul, obj)) { // !!!!!!
-                        if (item.constructor.is_Number) {
+                        if (item.is_Number()) {
                             coeff = coeff.__mul__(obj);
                         } else {
                             [bi, ei] = item._args;
-                            pnew.add(ei, pnew.get(ei).push(bi));
+                            pnew.add(ei, pnew.get(ei).concat(bi));
                         }
                     }
                 }
@@ -462,7 +462,10 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
 
         const c_part_argv2 = [];
-        for (const [b, e] of pnew.entries()) {
+        for (let [e, b] of pnew.entries()) {
+            if (Array.isArray(b)) {
+                b = b[0];
+            }
             c_part_argv2.push(new Pow(b, e));
         }
         c_part.push(...c_part_argv2);
@@ -471,10 +474,10 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             function _handle_for_oo(c_part: any[], coeff_sign: number) {
                 const new_c_part = [];
                 for (const t of c_part) {
-                    if (t.is_extended_negative) {
+                    if (t.is_extended_positive()) {
                         continue;
                     }
-                    if (t.is_extended_negative) {
+                    if (t.is_extended_negative()) {
                         coeff_sign *= -1;
                         continue;
                     }
@@ -491,19 +494,19 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         if (coeff === S.ComplexInfinity) {
             const ctemp = [];
             for (const c of c_part) {
-                if (!(fuzzy_notv2(c.constructor.is_zero) && c.is_extended_real() !== "undefined")) {
+                if (!(fuzzy_notv2(c.is_zero()) && c.is_extended_real() !== "undefined")) {
                     ctemp.push(c);
                 }
             }
             c_part = ctemp;
             const nctemp = [];
             for (const c of nc_part) {
-                if (!(fuzzy_notv2(c.constructor.is_zero) && c.is_extended_real() !== "undefined")) {
+                if (!(fuzzy_notv2(c.is_zero()) && c.is_extended_real() !== "undefined")) {
                     nctemp.push(c);
                 }
             }
             nc_part = nctemp;
-        } else if (coeff.constructor.is_zero) {
+        } else if (coeff.is_zero()) {
             for (const c of c_part) {
                 if (c.is_finite() === false) {
                     return [[S.NaN], [], order_symbols];
@@ -513,7 +516,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
 
         const _new = [];
         for (const i of c_part) {
-            if (i.constructor.is_Number) {
+            if (i.is_Number()) {
                 coeff = coeff.__mul__(i);
             } else {
                 _new.push(i);
@@ -528,7 +531,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
 
         if (global_parameters.distribute && !nc_part && c_part.length === 2 &&
-            c_part[0].constructor.is_Number && c_part[0].is_finite() && c_part[1].constructor.is_Add) {
+            c_part[0].is_Number() && c_part[0].is_finite() && c_part[1].is_Add()) {
             coeff = c_part[0];
             const addarg = [];
             for (const f of c_part[1]._args) {
@@ -543,14 +546,14 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         const coeff: any = this._args.slice(0, 1)[0];
         const args: any = this._args.slice(1);
 
-        if (coeff.constructor.is_Number) {
-            if (!rational || coeff.constructor.is_Rational) {
+        if (coeff.is_Number()) {
+            if (!rational || coeff.is_Rational()) {
                 if (args.length === 1) {
                     return [coeff, args[0]];
                 } else {
                     return [coeff, this._new_rawargs(true, ...args)];
                 }
-            } else if (coeff.constructor.is_extended_negative) {
+            } else if (coeff.is_extended_negative()) {
                 return [S.NegativeOne, this._new_rawargs(true, ...[-coeff].concat(args))];
             }
         }
@@ -559,7 +562,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
 
     _eval_power(e: any) {
         const [cargs, nc] = this.args_cnc(false, true, false);
-        if (e.constructor.is_Integer) {
+        if (e.is_Integer()) {
             const mulargs = [];
             for (const b of cargs) {
                 mulargs.push(new Pow(b, e, false));
@@ -569,7 +572,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
         const p = new Pow(this, e, false);
 
-        if (e.constructor.is_Rational || e.constructor.is_Float) {
+        if (e.is_Rational() || e.is_Float()) {
             return p._eval_expand_power_base();
         }
 
@@ -598,8 +601,8 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         >>> _keep_coeff(S(-1), x + y, sign=True)
         -(x + y)
         */
-        if (!(coeff.constructor.is_Number)) {
-            if (factors.constructor.is_Number) {
+        if (!(coeff.is_Number())) {
+            if (factors.is_Number()) {
                 [factors, coeff] = [coeff, factors];
             } else {
                 return coeff.__mul__(factors);
@@ -612,8 +615,8 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             return factors;
         } else if (coeff === S.NegativeOne && !sign) {
             return factors.__mul__(S.NegativeOne);
-        } else if (factors.constructor.isAdd) {
-            if (!clear && coeff.constructor.is_Rational && coeff.q !== 1) {
+        } else if (factors.is_Add()) {
+            if (!clear && coeff.is_Rational() && coeff.q !== 1) {
                 let args = [];
                 for (const i of factors._args) {
                     args.push(i.as_coeff_Mul());
@@ -624,7 +627,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 }
                 args = temp;
                 for (const [c] of args) {
-                    if (c.constructor.is_Integer) {
+                    if (c.is_Integer()) {
                         const temparg = [];
                         for (const i of args) {
                             if (i[0] === 1) {
@@ -640,9 +643,9 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 }
             }
             return new Mul(false, true, coeff, factors);
-        } else if (factors.constructor.isMul) {
+        } else if (factors.is_Mul()) {
             const margs: any[] = factors._args;
-            if (margs[0].constructor.is_Number) {
+            if (margs[0].is_Number()) {
                 margs[0] = margs[0].__mul__(coeff);
                 if (margs[0] === 1) {
                     margs.splice(2, 1);
@@ -653,7 +656,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             return this._from_args(Mul, undefined, ...margs);
         } else {
             let m = coeff.__mul__(factors);
-            if (m.constructor.is_Number && !(factors.constructor.is_Number)) {
+            if (m.is_Number() && !(factors.is_Number())) {
                 m = this._from_args(Mul, undefined, coeff, factors);
             }
             return m;
@@ -668,9 +671,27 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
     _eval_is_commutative() {
         const allargs = [];
         for (const a of this._args) {
-            allargs.push(a.constructor.is_commutative);
+            allargs.push(a.is_commutative());
         }
         return _fuzzy_groupv2(allargs);
+    }
+
+    // WB addition for jasmine tests
+    toString() {
+        let result = "";
+        const num_args = this._args.length
+        for (let i = 0; i < num_args; i++) {
+            const arg = this._args[i];
+            let temp;
+            if (i != num_args - 1) {
+                temp = arg.toString() + "*"
+            } else {
+                temp = arg.toString();
+            }
+            result = result.concat(temp)
+        }
+    
+        return result;
     }
 }
 

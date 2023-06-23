@@ -1,14 +1,18 @@
 /*
 Notable changes made (and notes):
 - Basic reworked with constructor system
-- _eval_is properties (dependent on object) are now assigned in Basic
-- Some properties of Basic (and subclasses) are static
+- Basic handles OBJECT properties, ManagedProperties handles CLASS properties
+- Since _eval_is_properties are not static, Basic is now assigned to create the
+  class property handler (and does so only once per object)
+- Some properties of Basic (and subclasses) are now static
+- Aside from setting object properties from _assume_defined, Basic now also
+  sets the static properties of the class as properties for the object
 */
 
-import {as_property, make_property, ManagedProperties, _assume_defined} from "./assumptions.js";
-import {Util, HashDict, mix, base, HashSet} from "./utility.js";
-import {UndefinedKind} from "./kind.js";
-import {preorder_traversal} from "./traversal.js";
+import {as_property, make_property, ManagedProperties, _assume_defined, StdFactKB} from "./assumptions";
+import {Util, HashDict, mix, base, HashSet} from "./utility";
+import {UndefinedKind} from "./kind";
+import {preorder_traversal} from "./traversal";
 
 
 const _Basic = (superclass: any) => class _Basic extends superclass {
@@ -45,7 +49,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     __slots__ = ["_mhash", "_args", "_assumptions"];
     _args: any[];
     _mhash: Number | undefined;
-    _assumptions;
+    _assumptions: StdFactKB;
 
     // To be overridden with True in the appropriate subclasses
     static is_number = false;
@@ -90,6 +94,11 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         this._assumptions = cls.default_assumptions.stdclone();
         this._mhash = undefined;
         this._args = args;
+        this.assignProps();
+    }
+
+    assignProps() {
+        const cls: any = this.constructor;
         // Create a dictionary to handle the current properties of the class
         // Only evuated once per class
         if (typeof cls._prop_handler === "undefined") {
@@ -101,13 +110,15 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
                 }
             }
         }
-        // Add all defined properties
         this._prop_handler = cls._prop_handler.copy();
         for (const fact of _assume_defined.toArray()) {
-            const pname = as_property(fact);
-            if (typeof cls[pname] === "undefined") {
-                make_property(this, fact);
-            }
+            make_property(this, fact);
+        }
+        // Add misc. static properties of class as object properties
+        const otherProps = new HashSet(Object.getOwnPropertyNames(cls).filter(
+            prop => prop.includes("is_") && !_assume_defined.has(prop.replace("is_", ""))));
+        for (const miscprop of otherProps.toArray()) {
+            this[miscprop] = () => cls[miscprop];
         }
     }
 

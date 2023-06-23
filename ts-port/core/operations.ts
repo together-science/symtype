@@ -5,12 +5,12 @@ Notable changes made and notes:
 - Simplify argument added to constructor to prevent infinite recursion
 */
 
-import {_Basic} from "./basic.js";
-import {mix} from "./utility.js";
-import {global_parameters} from "./parameters.js";
-import {fuzzy_and_v2} from "./logic.js";
-import {ManagedProperties} from "./assumptions.js";
-import {S} from "./singleton.js";
+import {_Basic} from "./basic";
+import {mix} from "./utility";
+import {global_parameters} from "./parameters";
+import {fuzzy_and_v2} from "./logic";
+import {ManagedProperties} from "./assumptions";
+import {S} from "./singleton";
 
 
 const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(_Basic) {
@@ -26,7 +26,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
        deprecated. See :ref:`non-expr-args-deprecated` for details.
     Parameters
     ==========
-    *args :
+    *args :ƒ
         Arguments which are operated
     evaluate : bool, optional
         Evaluate the operation. If not passed, refer to ``global_parameters.evaluate``.
@@ -91,11 +91,11 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
         if (typeof is_commutative === "undefined") {
             const input: any[] = [];
             for (const a of args) {
-                input.push(a.is_commutative);
+                input.push(a.is_commutative());
             }
             is_commutative = fuzzy_and_v2(input);
         }
-        obj.is_commutative = is_commutative;
+        obj.is_commutative = () => is_commutative;
         return obj;
     }
 

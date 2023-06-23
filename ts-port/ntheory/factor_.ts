@@ -9,10 +9,10 @@ Notable changes made
 - Advanced factoring algorithms for factorint are not yet implemented
 */
 
-import {Rational, int_nthroot, Integer} from "../core/numbers.js";
-import {S} from "../core/singleton.js";
-import {HashDict, Util} from "../core/utility.js";
-import {as_int} from "../utilities/misc.js";
+import {Rational, int_nthroot, Integer} from "../core/numbers";
+import {S} from "../core/singleton";
+import {HashDict, Util} from "../core/utility";
+import {as_int} from "../utilities/misc";
 
 const small_trailing = new Array(256).fill(0);
 for (let j = 1; j < 8; j++) {

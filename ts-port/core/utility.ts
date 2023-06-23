@@ -25,8 +25,9 @@ class Util {
 
     // check if arr1 is a subset of arr2
     static isSubset(arr1: any[], arr2: any[]): boolean {
+        const temparr = arr2.map((i: any) => Util.hashKey(i))
         for (const e of arr1) {
-            if (!(arr2.includes(e))) {
+            if (!temparr.includes(Util.hashKey(e))) {
                 return false;
             }
         }
@@ -161,14 +162,17 @@ class Util {
         return undefined;
     }
 
-    static getSupers(obj: any) {
-        const res: any[] = [];
-        let s = Object.getPrototypeOf(Object.getPrototypeOf(obj));
-        while (s.constructor.name !== "Object") {
-            res.push(s.name);
-            s = Object.getPrototypeOf(s);
+    static getSupers(cls: any): any[] {
+        const sprs = [];
+        const supercls = Object.getPrototypeOf(cls);
+      
+        if ( supercls !== Object.prototype && supercls !== null) {
+            sprs.push(supercls);
+            const parents = Util.getSupers(supercls);
+            sprs.push(...parents);
         }
-        return res;
+      
+        return sprs;
     }
 
     static shuffleArray(arr: any[]) {
@@ -194,6 +198,11 @@ class Util {
             arr[i] = newvals[count];
             count++;
         }
+    }
+
+    static splitLogicStr(s:string): any[] {
+        const match = s.match(/^(.+?)\s+(.+?)\s+(.*)/);
+        return match?.slice(1);
     }
 }
 
@@ -302,6 +311,15 @@ class HashSet {
         }
         return res;
     }
+
+    intersects(other: HashSet) {
+        for (const i of this.toArray()) {
+            if (other.has(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 // a hashdict class replacing the dict class in python
@@ -406,6 +424,25 @@ class HashDict {
             }
         }
         return true;
+    }
+
+    factorsToString() {
+        let numerator = "";
+        let denominator = "";
+        for (const [factor, exp] of this.entries()) {
+            for (let i = 0; i < Math.abs(exp); i++) {
+                if (exp < 0) {
+                    denominator += (factor.toString() + "*")
+                } else {
+                    numerator += (factor.toString() + "*")
+                }
+            }
+        }
+        if (denominator.length == 0) {
+            return numerator.slice(0, -1);
+        } else {
+            return numerator.slice(0, -1) + "/" + denominator.slice(0, -1);
+        }
     }
 }
 

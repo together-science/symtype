@@ -16,7 +16,8 @@
         "build-prod": "sh build.sh",
         "build": "sh build.sh --dev --no_tsc",
         "lint": "eslint . --ext .ts",
-        "test": "node ts-port/dest/testing.js"
+        "quick-test": "node ts-port/dest/testing.js",
+        "test": "ts-node node_modules/jasmine/bin/jasmine"
     },
     "dependencies": {
         "decimal.js": "^10.4.3"
