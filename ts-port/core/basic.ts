@@ -78,6 +78,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     static is_Boolean = false;
     static is_Not = false;
     static is_Matrix = false;
+    static is_Expr = false;
     static is_Vector = false;
     static is_Point = false;
     static is_MatAdd = false;
@@ -322,6 +323,23 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
             rv = fallback(this, old, _new);
         }
         return rv;
+    }
+
+    is_comparable() {
+        if (this.is_extended_real() === false) {
+            return false;
+        }
+        if (!this.is_number()) {
+            return false;
+        }
+        let n = this;
+        if (!n.is_Number()) {
+            const n = this.eval_evalf(2);
+        }
+        if (!n.is_Number()) {
+            return false;
+        }
+        return n.precision != 1
     }
 };
 

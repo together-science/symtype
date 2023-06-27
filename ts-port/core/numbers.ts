@@ -3,6 +3,9 @@ Notable changes made (and notes):
 - Number classes registered after they are defined
 - Float is handeled entirely by decimal.js, and now only takes precision in
   # of decimal points
+   - Make characteristics of float, such as its relational methods, are very
+     different because of this change
+   - Still, the functionality of sympy is replicated
 - Note: only methods necessary for add, mul, and pow have been implemented
 - TODO: needs more _eval_is properties and need to debug rational eval power
 */
@@ -262,6 +265,10 @@ class _Number_ extends _AtomicExpr {
     _float_val(prec: number): any {
         return undefined;
     }
+
+    __ge__(other: any) {
+        throw new Error("object needs __ge__() method")
+    }
 };
 
 // eslint-disable-next-line new-cap
@@ -381,6 +388,20 @@ class Float extends _Number_ {
     toString() {
         return this.decimal.toString()
     }
+
+    __ge__(other: any) {
+        if (other.is_Rational()) {
+            const product = Decimal.set({precision: this.prec}).mul(this.decimal, other.q);
+            return product.gte(other.p)
+        } else if (other.is_Float()) {
+            return this.decimal.gte(other.decimal);
+        } else if (other.is_comparable() && other !== S.Infinity && other !== S.NegativeInfinity) {
+            other = other.evalf(this.precision);
+            if (other.precision > 1  && other.is_Number()) {
+                return this.decimal.gte(other._float_val(this.precision))
+            }
+        }
+    }
 }
 
 ManagedProperties.register(Float);
@@ -471,11 +492,11 @@ class Rational extends _Number_ {
     __sub__(other: any) {
         if (global_parameters.evaluate) {
             if (other instanceof Integer) {
-                return new Rational(this.q * other.p - this.p, this.q, 1);
+                return new Rational(this.p - this.q*other.p, this.q, 1)
             } else if (other instanceof Rational) {
                 return new Rational(this.p * other.q - this.q * other.p, this.q * other.q);
             } else if (other instanceof Float) {
-                return this.__mul__(S.NegativeOne).__add__(other);
+                return other.__mul__(S.NegativeOne).__add__(this);
             } else {
                 return super.__sub__(other);
             }
@@ -552,6 +573,28 @@ class Rational extends _Number_ {
         if (expt instanceof _Number_) {
             if (expt instanceof Float) {
                 return this.eval_evalf(expt.prec)._eval_power(expt);
+            } else if (expt.is_extended_negative()) {
+                const ne = expt.__mul__(S.NegativeOne);
+                if (ne === S.One) {
+                    return new Rational(this.q, this.p)
+                }
+                if (this.is_negative()) {
+                    const p1 = new Pow(S.NegativeOne, expt);
+                    const p2 = new Pow(new Rational(this.q, (-1) * this.p), ne);
+                    return new Mul(true, true, p1, p2);
+                }
+                else {
+                    return new Pow(new Rational(this.q, this.p), ne);
+                }
+            }
+            else if (expt === S.Infinity) {
+                if (this.p > this.q) {
+                    return S.Infinity;
+                }
+                if (this.p < (-1) * this.q) {
+                    throw new Error("imaginary values not yet supported in symtypo")
+                }
+                return S.Zero;
             } else if (expt instanceof Integer) {
                 return new Rational(this.p ** expt.p, this.q ** expt.p, 1);
             } else if (expt instanceof Rational) {
@@ -634,6 +677,33 @@ class Rational extends _Number_ {
         } else {
             throw new Error("gcd not implemented for non rationals")
         }
+    }
+
+    _Rrel(other: any, attr: any) {
+        if (other.is_Number()) {
+            let op = undefined;
+            let [s, o]: any = [this, other];
+            if (other.is_Rational()) {
+                [s, o] = [new Integer(s.p * o.q), new Integer(s.q * o.p)]
+            }
+            if (o[attr]) {
+                return o[attr](s)
+            }
+            if (o.is_number() && o.is_extended_real()) {
+                return [new Integer(s.p), s.q*o];
+            }
+        }
+    }
+
+
+    __ge__(other: any) {
+        let rv: any = this._Rrel(other, "__le__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return super.__ge__(rv[1]);
     }
 
     toString() {
@@ -794,7 +864,7 @@ class Integer extends Rational {
             }
         }
         if (expt === S.NegativeInfinity) {
-            return new Rational(1, this, 1)._eval_power(S.Infinity);
+            return new Pow(new Rational(1, this), S.Infinity);
         }
         if (!(expt instanceof _Number_)) {
             if (this.is_negative && expt.is_even) {
@@ -879,6 +949,20 @@ class Integer extends Rational {
         }
         return result;
     }
+
+    __le__(other: any) {
+        if (other.is_Integer()) {
+            return this.p <= other.p;
+        }
+        return super.__le__(other)
+    } 
+
+    __ge__(other: any) {
+        if (other.is_Integer()) {
+            return this.p >= other.p;
+        }
+        return super.__ge__(other)
+    } 
 
     toString() {
         return String(this.p);
@@ -1167,6 +1251,10 @@ class Infinity extends _Number_ {
         return super.__mul__(other);
     }
 
+    _float_val() {
+        return new Float("Infinity");
+    }
+
     toString() {
         return "Infinity";
     }
@@ -1217,6 +1305,10 @@ class NegativeInfinity extends _Number_ {
             return S.Infinity;
         }
         return super.__mul__(other);
+    }
+
+    _float_val() {
+        return new Float("-Infinity");
     }
 
     toString() {

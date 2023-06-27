@@ -11,6 +11,7 @@ import {Global} from "./global";
 import {_Number_} from "./numbers";
 import {global_parameters} from "./parameters";
 import {S} from "./singleton";
+import {is_gt, is_lt} from "./relational";
 
 export class Pow extends _Expr {
     /*
@@ -109,14 +110,17 @@ export class Pow extends _Expr {
                 if (e === S.Infinity) {
                     // this part is not fully done
                     // should be updated to use relational
-                    if (b.is_positive()) {
+                    if (is_gt(b, S.One)) {
                         return S.Infinity;
-                    } else if (b.is_zero()) {
+                    } 
+                    if (is_gt(b, S.NegativeOne) && is_lt(b, S.One)) {
                         return S.Zero;
-                    } else {
+                    }
+                    if (is_lt(b, S.NegativeOne)) {
                         if (b.is_finite()) {
                             return S.ComplexInfinity;
-                        } else {
+                        }
+                        if (b.is_finite() === false) {
                             return S.NaN;
                         }
                     }
@@ -128,15 +132,14 @@ export class Pow extends _Expr {
                 } else if (e === S.NegativeOne && !b) {
                     return S.ComplexInfinity;
                 } else if ((e.is_Symbol() && e.is_integer() ||
-                    e.is_Integer() && (b.is_Number() &&
-                    b.is_Mul() || b.is_Number())) && (e.is_extended_negative === true)) {
-                    if (e.is_even() || e.is_even()) {
+                    e.is_Integer()) && ((b.is_number() &&
+                    b.is_Mul() || b.is_Number())) && (e.is_extended_negative() === true)) {
+                    if (e.is_even()) {
                         b = b.__mul__(S.NegativeOne);
                     } else {
-                        return new Pow(b.__mul__(S.NegativeOne), e).__mul__(S.NegativeOne);
+                        return S.NegativeOne.__mul__(new Pow(b.__mul__(S.NegativeOne), e))
                     }
                 }
-                0.
                 if (b === S.NaN || e === S.NaN) {
                     return S.NaN;
                 } else if (b === S.One) {
