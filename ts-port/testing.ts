@@ -6,4 +6,4 @@ import {S} from "../ts-port/core/singleton";
 import {_Expr, _AtomicExpr} from "../ts-port/core/expr";
 import {is_gt, is_ge} from "../ts-port/core/relational";
 
-console.log(new Pow(_Number_.new(1, 5), S.NegativeInfinity).toString());
+console.log(new Pow(_Number_.new(-2), S.NegativeInfinity).toString());
