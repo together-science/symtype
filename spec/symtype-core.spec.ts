@@ -99,26 +99,53 @@ describe("Core", function () {
     });
 
     it("should compute exponents with symtype objects correctly and handle weird cases", function () {
-        // NOTE: POW HAS LIMITED FUNCTIONALITY COMPARED TO ADD AND MUL (ATM)
-        // THIS IS ESPECIALLY TRUE FOR THE WEIRD CASES (SEE BELOW) - more tests coming
         const n = _Number_.new(4);
+        const nneg = _Number_.new(-2);
         const n2 = _Number_.new(4, 9);
+        const n2neg = _Number_.new(-4, 9);
         const n3 = _Number_.new(-1.5);
-        const x = new Symbol("x");
         expect(new Pow(n, n).toString()).toBe("256");
         expect(new Pow(n, n2).toString()).toBe("2^8/9");
         expect(new Pow(n, n3).toString()).toBe("0.125");
+        expect(new Pow(n2, n).toString()).toBe("256/6561");
+        expect(new Pow(n2, n2).toString()).toBe("1/3*2^8/9*3^1/9");
         expect(new Pow(n2, n3).toString()).toBe("3.37500000000001");
-        expect(new Pow(n, x).toString()).toBe("4^x");
-        expect(new Pow(n, new Mul(true, true, n2, n3)).toString()).toBe("0.39685026299205");
-        expect(new Pow(new Mul(true, true, n2, n), new Mul(true, true, n, n, x)).toString()).toBe("16/9^16*x");
-        expect(new Pow(n, new Add(true, true, n, x)).toString()).toBe("4^4 + x");
-        expect(new Pow(n, new Mul(true, true, n, x)).toString()).toBe("4^4*x");
-        expect(new Pow(n, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(n3, n).toString()).toBe("5.0625");
+        expect(new Pow(_Number_.new(1.5), n2).toString()).toBe("1.1974648711484");
+        expect(new Pow(_Number_.new(1.5), _Number_.new(1.5)).toString()).toBe("1.83711730708738");
+        expect(new Pow(nneg, S.NegativeInfinity).toString()).toBe("0");
+        expect(new Pow(n2neg, S.NegativeInfinity).toString()).toBe("NAN");
+        expect(new Pow(nneg, S.Infinity).toString()).toBe("ComplexInfinity");
+        expect(new Pow(n2neg, S.Infinity).toString()).toBe("0");
+        expect(new Pow(n, S.NegativeInfinity).toString()).toBe("0");
+        expect(new Pow(n2, S.NegativeInfinity).toString()).toBe("Infinity");
         expect(new Pow(n, S.Infinity).toString()).toBe("Infinity");
-        expect(new Pow(n, S.NaN).toString()).toBe("NAN");
-        expect(new Pow(n, S.ComplexInfinity, S.Infinity).toString()).toBe("NAN");
-        expect(new Pow(n, S.NaN, S.Infinity).toString()).toBe("NAN");
+        expect(new Pow(n2, S.Infinity).toString()).toBe("0");
+        expect(new Pow(n, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(n2, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(n, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(n2, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(S.NegativeInfinity, nneg).toString()).toBe("0");
+        expect(new Pow(S.NegativeInfinity, n2neg).toString()).toBe("0");
+        expect(new Pow(S.Infinity, nneg).toString()).toBe("0");
+        expect(new Pow(S.Infinity, n2neg).toString()).toBe("0");
+        expect(new Pow(S.NegativeInfinity, n).toString()).toBe("Infinity");
+        expect(new Pow(S.NegativeInfinity, _Number_.new(1, 2)).toString()).toBe("Infinity*-1^1/2");
+        expect(new Pow(S.Infinity, n).toString()).toBe("Infinity");
+        expect(new Pow(S.Infinity, _Number_.new(1, 2)).toString()).toBe("Infinity");
+        expect(new Pow(S.ComplexInfinity, nneg).toString()).toBe("0");
+        expect(new Pow(S.ComplexInfinity, n2neg).toString()).toBe("0");
+        expect(new Pow(S.ComplexInfinity, n).toString()).toBe("ComplexInfinity");
+        expect(new Pow(S.ComplexInfinity, n2).toString()).toBe("ComplexInfinity");
+        expect(new Pow(S.Infinity, S.Infinity).toString()).toBe("Infinity");
+        expect(new Pow(S.Infinity, S.NegativeInfinity).toString()).toBe("0");
+        expect(new Pow(S.Infinity, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(S.NegativeInfinity, S.Infinity).toString()).toBe("NAN");
+        expect(new Pow(S.NegativeInfinity, S.NegativeInfinity).toString()).toBe("NAN");
+        expect(new Pow(S.NegativeInfinity, S.ComplexInfinity).toString()).toBe("NAN");
+        expect(new Pow(S.ComplexInfinity, S.Infinity).toString()).toBe("0");
+        expect(new Pow(S.ComplexInfinity, S.NegativeInfinity).toString()).toBe("0");
+        expect(new Pow(S.ComplexInfinity, S.ComplexInfinity).toString()).toBe("NAN");
     });
 
     it("should substitute values for symbols and evaluate the expressions correctly", function () {

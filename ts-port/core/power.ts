@@ -133,7 +133,7 @@ export class Pow extends _Expr {
                     return S.ComplexInfinity;
                 } else if ((e.is_Symbol() && e.is_integer() ||
                     e.is_Integer()) && ((b.is_number() &&
-                    b.is_Mul() || b.is_Number())) && (e.is_extended_negative() === true)) {
+                    b.is_Mul() || b.is_Number())) && (b.is_extended_negative() === true)) {
                     if (e.is_even()) {
                         b = b.__mul__(S.NegativeOne);
                     } else {
@@ -147,7 +147,7 @@ export class Pow extends _Expr {
                         return S.NaN;
                     }
                     return S.One;
-                } else if (e.is_Number() && b.is_Number()) {
+                } else if (e.is_Atom()) {
                     // base E stuff not yet implemented
                     const obj = b._eval_power(e);
                     if (typeof obj !== "undefined") {

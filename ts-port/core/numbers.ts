@@ -867,7 +867,7 @@ class Integer extends Rational {
             return new Pow(new Rational(1, this), S.Infinity);
         }
         if (!(expt instanceof _Number_)) {
-            if (this.is_negative && expt.is_even) {
+            if (this.is_negative() && expt.is_even()) {
                 return this.__mul__(S.NegativeOne)._eval_power(expt);
             }
         }
@@ -1002,6 +1002,25 @@ class Zero extends IntegerConstant {
     constructor() {
         super(0);
     }
+
+    _eval_power(expt: any): any {
+        if (expt.is_extended_positive()) {
+            return this;
+        }
+        if (expt.is_extended_negative()) {
+            return S.ComplexInfinity;
+        }
+        if (expt.is_extended_real() === false) {
+            return S.NaN;
+        }
+        const [coeff, terms] = expt.as_coeff_Mul();
+        if (coeff.is_negative()) {
+            return new Pow(S.ComplexInfinity, terms);
+        }
+        if (coeff !== S.One) {
+            return new Pow(this, terms);
+        }
+    }
 };
 
 ManagedProperties.register(Zero);
@@ -1026,6 +1045,10 @@ class One extends IntegerConstant {
     __slots__: any[] = [];
     constructor() {
         super(1);
+    }
+
+    _eval_power(expt: any) {
+        return this;
     }
 };
 
@@ -1055,13 +1078,13 @@ class NegativeOne extends IntegerConstant {
     }
 
     _eval_power(expt: any) {
-        if (expt.is_odd) {
+        if (expt.is_odd()) {
             return S.NegativeOne;
-        } else if (expt.is_even) {
+        } else if (expt.is_even()) {
             return S.One;
         }
-        if (expt instanceof _Number_) {
-            if (expt instanceof Float) {
+        if (expt.is_Number()) {
+            if (expt.is_Float()) {
                 return new Float(-1.0)._eval_power(expt);
             }
             if (expt === S.NaN) {
@@ -1178,6 +1201,24 @@ class ComplexInfinity extends _AtomicExpr {
     toString() {
         return "ComplexInfinity";
     }
+
+    _eval_power(expt: any) {
+        if (expt === S.ComplexInfinity) {
+            return S.NaN;
+        }
+
+        if (expt.is_Number()) {
+            if (expt.is_zero()) {
+                return S.NaN;
+            } else {
+                if (expt.is_positive()) {
+                    return S.ComplexInfinity;
+                } else {
+                    return S.Zero;
+                }
+            }
+        }
+    }
 }
 
 ManagedProperties.register(ComplexInfinity);
@@ -1258,6 +1299,43 @@ class Infinity extends _Number_ {
     toString() {
         return "Infinity";
     }
+
+    _eval_power(expt: any) {
+        /*
+        ``expt`` is symbolic object but not equal to 0 or 1.
+
+        ================ ======= ==============================
+        Expression       Result  Notes
+        ================ ======= ==============================
+        ``oo ** nan``    ``nan``
+        ``oo ** -p``     ``0``   ``p`` is number, ``oo``
+        ================ ======= ==============================
+
+        See Also
+        ========
+        Pow
+        NaN
+        NegativeInfinity
+        */
+
+        if (expt.is_extended_positive()) {
+            return S.Infinity;
+        }
+        if (expt.is_extended_negative()) {
+            return S.Zero;
+        }
+        if (expt === S.NaN) {
+            return S.NaN;
+        }
+        if (expt === S.ComplexInfinity) {
+            return S.NaN;
+        }
+        if (expt.is_extended_real() === false && expt.is_number()) {
+            throw new Error("imaginary numbers not yet supported in symtype")
+        }
+
+
+    }
 }
 
 class NegativeInfinity extends _Number_ {
@@ -1313,6 +1391,54 @@ class NegativeInfinity extends _Number_ {
 
     toString() {
         return "NegInfinity";
+    }
+
+    _eval_power(expt: any) {
+        /*
+        ``expt`` is symbolic object but not equal to 0 or 1.
+
+        ================ ======= ==============================
+        Expression       Result  Notes
+        ================ ======= ==============================
+        ``(-oo) ** nan`` ``nan``
+        ``(-oo) ** oo``  ``nan``
+        ``(-oo) ** -oo`` ``nan``
+        ``(-oo) ** e``   ``oo``  ``e`` is positive even integer
+        ``(-oo) ** o``   ``-oo`` ``o`` is positive odd integer
+        ================ ======= ==============================
+
+        See Also
+        ========
+
+        Infinity
+        Pow
+        NaN
+        */
+
+        if (expt.is_number()) {
+            if (expt === S.NaN || expt === S.Infinity || expt === S.NegativeInfinity) {
+                return S.NaN;
+            }
+
+            if (expt.is_Integer() && expt.is_extended_positive()) {
+                if (expt.is_odd()) {
+                    return S.NegativeInfinity;
+                } else {
+                    return S.Infinity;
+                }
+            }
+            // THIS PART NEEDS COMPLEX NUMBERS FOR FULL
+            const inf_part = new Pow(S.Infinity, expt)
+            const s_part = new Pow(S.NegativeOne, expt)
+            if (inf_part === S.Zero) {
+                return inf_part;
+            }
+            // if (inf_part === S.ComplexInfinity && s_part.is_finite() && !s_part.is_zero()) {
+            //     return S.ComplexInfinity;
+            // }
+            return new Mul(true, true, s_part, inf_part);
+        }
+
     }
 }
 
