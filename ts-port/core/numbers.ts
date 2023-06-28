@@ -706,6 +706,10 @@ class Rational extends _Number_ {
         return super.__ge__(rv[1]);
     }
 
+    as_numer_denom() {
+        return [new Integer(this.p), new Integer(this.q)]
+    }
+
     toString() {
         return String(this.p) + "/" + String(this.q)
     }
@@ -963,6 +967,10 @@ class Integer extends Rational {
         }
         return super.__ge__(other)
     } 
+
+    as_numer_denom() {
+        return [this, S.One]
+    }
 
     toString() {
         return String(this.p);
@@ -1427,15 +1435,15 @@ class NegativeInfinity extends _Number_ {
                     return S.Infinity;
                 }
             }
-            // THIS PART NEEDS COMPLEX NUMBERS FOR FULL
+            // THIS PART NEEDS COMPLEX NUMBERS FOR FULL FUNCTIONALITY
             const inf_part = new Pow(S.Infinity, expt)
             const s_part = new Pow(S.NegativeOne, expt)
-            if (inf_part === S.Zero) {
+            if (inf_part === S.Zero && s_part.is_finite()) {
                 return inf_part;
             }
-            // if (inf_part === S.ComplexInfinity && s_part.is_finite() && !s_part.is_zero()) {
-            //     return S.ComplexInfinity;
-            // }
+            if (inf_part === S.ComplexInfinity && s_part.is_finite() && !s_part.is_zero()) {
+                return S.ComplexInfinity;
+            }
             return new Mul(true, true, s_part, inf_part);
         }
 

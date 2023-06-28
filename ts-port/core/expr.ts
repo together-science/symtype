@@ -168,6 +168,10 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
         }
         return [c, nc];
     }
+
+    as_numer_denom() {
+        return [this, S.One];
+    }
 };
 
 // eslint-disable-next-line new-cap

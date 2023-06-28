@@ -204,6 +204,16 @@ class Util {
         const match = s.match(/^(.+?)\s+(.+?)\s+(.*)/);
         return match?.slice(1);
     }
+
+    static abs(val: any) {
+        if (val.is_Symbol()) {
+            return val;
+        } else if (val._float_val) {
+            return Math.abs(val._float_val())
+        } else {
+            throw new Error("abs not supported for this object type")
+        }
+    }
 }
 
 // custom version of the Set class

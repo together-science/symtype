@@ -60,6 +60,7 @@ describe("Core", function () {
         const n2 = _Number_.new(4, 9);
         const n3 = _Number_.new(-1.5);
         const x = new Symbol("x");
+        // handle multiple number types
         expect(new Add(true, true, n, n2).toString()).toBe("40/9");
         expect(new Add(true, true, n, n2, x).toString()).toBe("40/9 + x");
         expect(new Add(true, true, n, n3, x).toString()).toBe("2.5 + x");
@@ -67,7 +68,8 @@ describe("Core", function () {
         expect(new Add(true, true, x, x, x).toString()).toBe("3*x");
         expect(new Add(true, true, x, x, new Add(true, true, n, n3, x)).toString()).toBe("2.5 + 3*x");
         expect(new Add(true, true, x, n3, new Mul(true, true, n3, x)).toString()).toBe("-1.5 + -0.5*x");
-        expect(new Add(true, true, x, n2, new Pow(n, x)).toString()).toBe("4/9 + 4^x + x");
+        expect(new Add(true, true, x, n2, new Pow(n, x)).toString()).toBe("4/9 + 4^(x) + x");
+        // handle weird inputs
         expect(new Add(true, true, n, x, S.ComplexInfinity).toString()).toBe("ComplexInfinity + x")
         expect(new Add(true, true, n, x, S.Infinity).toString()).toBe("Infinity + x")
         expect(new Add(true, true, n, x, S.NegativeInfinity).toString()).toBe("NegInfinity + x")
@@ -81,21 +83,28 @@ describe("Core", function () {
         const n2 = _Number_.new(4, 9);
         const n3 = _Number_.new(-1.5);
         const x = new Symbol("x");
+        // handles multiple types of inputs
         expect(new Mul(true, true, n, n2, n3, x).toString()).toBe("-2.66666666666667*x");
         expect(new Mul(true, true, n3, n3).toString()).toBe("2.25");
         expect(new Mul(true, true, n, _Number_.new(1, 2)).toString()).toBe("2");
         expect(new Mul(false, true, n, n2, x).toString()).toBe("4*4/9*x");
-        expect(new Mul(true, true, x, x, x).toString()).toBe("x^3");
-        expect(new Mul(true, true, x, x, new Mul(true, true, n, n2, x)).toString()).toBe("16/9*x^3");
-        expect(new Mul(true, true, x, new Pow(n, x)).toString()).toBe("4^x*x");
-        expect(new Mul(true, true, new Pow(n, x), new Pow(n, x)).toString()).toBe("4^2*x");
+        expect(new Mul(true, true, x, x, x).toString()).toBe("x^(3)");
+        expect(new Mul(true, true, x, x, new Mul(true, true, n, n2, x)).toString()).toBe("16/9*x^(3)");
+        expect(new Mul(true, true, x, new Pow(n, x)).toString()).toBe("4^(x)*x");
+        expect(new Mul(true, true, new Pow(n, x), new Pow(n, x)).toString()).toBe("4^(2*x)");
         expect(new Mul(true, true, n, new Add(true, true, x, n)).toString()).toBe("16 + 4*x");
+        // handle weird cases
         expect(new Mul(true, true, n, x, S.ComplexInfinity).toString()).toBe("ComplexInfinity*x");
         expect(new Mul(true, true, n, x, S.Infinity).toString()).toBe("Infinity*x");
         expect(new Mul(true, true, n, x, S.NegativeInfinity).toString()).toBe("NegInfinity*x");
         expect(new Mul(true, true, n, x, S.Infinity, S.NegativeInfinity).toString()).toBe("NegInfinity*x");
         expect(new Mul(true, true, n, x, S.ComplexInfinity, S.Infinity).toString()).toBe("ComplexInfinity*x");
         expect(new Mul(true, true, n, x, S.NaN, S.Infinity).toString()).toBe("NAN");
+        // simplify expressions (basic)
+        expect(new Mul(true, true, n, x).__truediv__(new Mul(true, true, n, x)).toString()).toBe("1");
+        expect(new Pow(n, x).__truediv__(new Pow(n, x)).toString()).toBe("1");
+        expect(new Mul(true, true, new Mul(true, true, x, n), new Mul(true, true, x, n2)).toString()).toBe("16/9*x^(2)");
+        expect(new Pow(n, n.__mul__(x)).__truediv__(new Pow(n, x)).toString()).toBe("4^(3*x)");
     });
 
     it("should compute exponents with symtype objects correctly and handle weird cases", function () {
@@ -104,15 +113,18 @@ describe("Core", function () {
         const n2 = _Number_.new(4, 9);
         const n2neg = _Number_.new(-4, 9);
         const n3 = _Number_.new(-1.5);
+        const x = new Symbol("x")
+        // handle multiple number types
         expect(new Pow(n, n).toString()).toBe("256");
-        expect(new Pow(n, n2).toString()).toBe("2^8/9");
+        expect(new Pow(n, n2).toString()).toBe("2^(8/9)");
         expect(new Pow(n, n3).toString()).toBe("0.125");
         expect(new Pow(n2, n).toString()).toBe("256/6561");
-        expect(new Pow(n2, n2).toString()).toBe("1/3*2^8/9*3^1/9");
+        expect(new Pow(n2, n2).toString()).toBe("1/3*2^(8/9)*3^(1/9)");
         expect(new Pow(n2, n3).toString()).toBe("3.37500000000001");
         expect(new Pow(n3, n).toString()).toBe("5.0625");
         expect(new Pow(_Number_.new(1.5), n2).toString()).toBe("1.1974648711484");
         expect(new Pow(_Number_.new(1.5), _Number_.new(1.5)).toString()).toBe("1.83711730708738");
+        // handle weird inputx
         expect(new Pow(nneg, S.NegativeInfinity).toString()).toBe("0");
         expect(new Pow(n2neg, S.NegativeInfinity).toString()).toBe("NAN");
         expect(new Pow(nneg, S.Infinity).toString()).toBe("ComplexInfinity");
@@ -130,7 +142,7 @@ describe("Core", function () {
         expect(new Pow(S.Infinity, nneg).toString()).toBe("0");
         expect(new Pow(S.Infinity, n2neg).toString()).toBe("0");
         expect(new Pow(S.NegativeInfinity, n).toString()).toBe("Infinity");
-        expect(new Pow(S.NegativeInfinity, _Number_.new(1, 2)).toString()).toBe("Infinity*-1^1/2");
+        expect(new Pow(S.NegativeInfinity, _Number_.new(1, 2)).toString()).toBe("Infinity*-1^(1/2)");
         expect(new Pow(S.Infinity, n).toString()).toBe("Infinity");
         expect(new Pow(S.Infinity, _Number_.new(1, 2)).toString()).toBe("Infinity");
         expect(new Pow(S.ComplexInfinity, nneg).toString()).toBe("0");
@@ -146,6 +158,8 @@ describe("Core", function () {
         expect(new Pow(S.ComplexInfinity, S.Infinity).toString()).toBe("0");
         expect(new Pow(S.ComplexInfinity, S.NegativeInfinity).toString()).toBe("0");
         expect(new Pow(S.ComplexInfinity, S.ComplexInfinity).toString()).toBe("NAN");
+        // handle nested pow
+        expect(new Pow(new Pow(x, new Add(true, true, x, n)), n).toString()).toBe("x^(16 + 4*x)");
     });
 
     it("should substitute values for symbols and evaluate the expressions correctly", function () {
