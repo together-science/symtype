@@ -6,7 +6,7 @@ import {Expr} from "./expr";
 import {Global} from "./global";
 import {fuzzy_not, _fuzzy_group} from "./logic";
 import {Integer, Rational} from "./numbers";
-import {AssocOp} from "./operations";
+import {AssocOp, _AssocOp} from "./operations";
 import {global_parameters} from "./parameters";
 import {Pow} from "./power";
 import {S} from "./singleton";
@@ -423,7 +423,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 if (obj.is_Number()) {
                     coeff = coeff.__mul__(obj);
                 } else {
-                    for (const item of this.make_args(Mul, obj)) { // !!!!!!
+                    for (const item of _AssocOp.make_args(Mul, obj)) { // !!!!!!
                         if (item.is_Number()) {
                             coeff = coeff.__mul__(obj);
                         } else {

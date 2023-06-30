@@ -109,7 +109,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
         return this._from_args(this.constructor, is_commutative, ...args);
     }
 
-    make_args(cls: any, expr: any) {
+    static make_args(cls: any, expr: any) {
         if (expr instanceof cls) {
             return expr._args;
         } else {
@@ -118,7 +118,9 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
     }
 };
 
-// eslint-disable-next-line new-cap
-ManagedProperties.register(AssocOp(Object));
+const _AssocOp = AssocOp(Object)
 
-export {AssocOp};
+// eslint-disable-next-line new-cap
+ManagedProperties.register(_AssocOp);
+
+export {AssocOp, _AssocOp};

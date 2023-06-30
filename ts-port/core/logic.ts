@@ -532,6 +532,6 @@ class Not extends Logic {
     }
 }
 
-export {Logic, And, Or, Not, fuzzy_and, fuzzy_bool, fuzzy_not};
+export { Logic, And, Or, Not, fuzzy_and, fuzzy_bool, fuzzy_not, fuzzy_xor };
 
 
