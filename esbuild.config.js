@@ -15,7 +15,7 @@ require("esbuild").build({
     watch: false,
     define: {"BUILD_DATE": JSON.stringify(date /* + ", "+user*/)},
     // Replace with the browser versions you need to target
-    target: ["chrome60", "firefox60", "safari11", "edge20"],
+    target: ["chrome67", "firefox68", "safari14", "edge79"],
     // In dev mode, include sources in the source mapping; otherwise, do not.
     sourcesContent: isDev,
     sourcemap: (isDev) ? "inline" : true,

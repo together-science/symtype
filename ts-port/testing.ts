@@ -1,6 +1,6 @@
 import {Add} from "../ts-port/core/add";
 import {Mul} from "../ts-port/core/mul";
-import {_Number_} from "../ts-port/core/numbers";
+import {_Number_, igcdex} from "../ts-port/core/numbers";
 import {Pow} from "../ts-port/core/power";
 import {S} from "../ts-port/core/singleton";
 import {Symbol} from "../ts-port/core/symbol";
