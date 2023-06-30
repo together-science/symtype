@@ -163,7 +163,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 [a, b] = [b, a];
                 seq = [a, b];
             }
-            if (!(a.is_zero() && a.is_Rational())) {
+            if (a.is_Rational() && !a.is_zero()) {
                 let r;
                 [r, b] = b.as_coeff_Mul();
                 if (b.is_Add()) {
@@ -296,7 +296,8 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             // eslint-disable-next-line no-unused-vars
             for (const [b, d] of common_b.entries()) {
                 for (const [di, li] of d.entries()) {
-                    d.add(di, new Add(true, true, ...li));
+                    const item = new Add(true, true, ...li);
+                    d.add(di, item);
                 }
             }
             const new_c_powers = [];
@@ -512,6 +513,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                     return [[S.NaN], [], order_symbols];
                 }
             }
+            return [[coeff], [], order_symbols]
         }
 
         const _new = [];

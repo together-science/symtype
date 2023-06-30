@@ -11,6 +11,10 @@ import {Global} from "./global";
 import {_Number_} from "./numbers";
 import {global_parameters} from "./parameters";
 import {S} from "./singleton";
+import {is_gt, is_lt} from "./relational";
+import { fuzzy_not } from "./logic";
+import { Util } from "./utility";
+
 
 export class Pow extends _Expr {
     /*
@@ -109,14 +113,17 @@ export class Pow extends _Expr {
                 if (e === S.Infinity) {
                     // this part is not fully done
                     // should be updated to use relational
-                    if (b.is_positive()) {
+                    if (is_gt(b, S.One)) {
                         return S.Infinity;
-                    } else if (b.is_zero()) {
+                    } 
+                    if (is_gt(b, S.NegativeOne) && is_lt(b, S.One)) {
                         return S.Zero;
-                    } else {
+                    }
+                    if (is_lt(b, S.NegativeOne)) {
                         if (b.is_finite()) {
                             return S.ComplexInfinity;
-                        } else {
+                        }
+                        if (b.is_finite() === false) {
                             return S.NaN;
                         }
                     }
@@ -127,16 +134,15 @@ export class Pow extends _Expr {
                     return b;
                 } else if (e === S.NegativeOne && !b) {
                     return S.ComplexInfinity;
-                } else if ((e.is_Symbol() && e.is_integer() ||
-                    e.is_Integer() && (b.is_Number() &&
-                    b.is_Mul() || b.is_Number())) && (e.is_extended_negative === true)) {
-                    if (e.is_even() || e.is_even()) {
+                } else if ((e.is_Symbol() && e.is_integer() || e.is_Integer()) 
+                && ((b.is_number() && b.is_Mul() || b.is_Number())) 
+                && (b.is_extended_negative())) {
+                    if (e.is_even()) {
                         b = b.__mul__(S.NegativeOne);
                     } else {
-                        return new Pow(b.__mul__(S.NegativeOne), e).__mul__(S.NegativeOne);
+                        return S.NegativeOne.__mul__(new Pow(b.__mul__(S.NegativeOne), e))
                     }
                 }
-                0.
                 if (b === S.NaN || e === S.NaN) {
                     return S.NaN;
                 } else if (b === S.One) {
@@ -144,7 +150,7 @@ export class Pow extends _Expr {
                         return S.NaN;
                     }
                     return S.One;
-                } else if (e.is_Number() && b.is_Number()) {
+                } else if (e.is_Atom()) {
                     // base E stuff not yet implemented
                     const obj = b._eval_power(e);
                     if (typeof obj !== "undefined") {
@@ -168,6 +174,126 @@ export class Pow extends _Expr {
         return [b, e];
     }
 
+    _eval_is_finite() {
+        const b = this._args[0];
+        const e = this._args[1];
+        if (e.is_negative()) {
+            if (b.is_zero()) {
+                return false;
+            }
+            if (b.is_infinite() || b.is_nonzero()) {
+                return true;
+            }
+        }
+        const c1 = b.is_finite();
+        if (typeof c1 === "undefined") {
+            return undefined;
+        }
+        const c2 = e.is_finite()
+        if (typeof c2 === "undefined") {
+            return undefined;
+        }
+        if (c1 && c2) {
+            if (e.is_nonnegative() || fuzzy_not(b.is_zero)) {
+                return true;
+            }
+        }
+    }
+
+
+    _eval_is_zero() {
+        const b = this._args[0];
+        const e = this._args[1];
+        if (b.is_zero()) {
+            if (e.is_extended_positive()) {
+                return true;
+            } else if (e.is_extended_nonpositive()) {
+                return false;
+            }
+        } else if (b.is_zero() === false) {
+            if (b.is_finite() && e.is_finite()) {
+                return false;
+            } else if (e.is_negative()) {
+                return b.is_infinite();
+            } else if (e.is_nonnegative()) {
+                return false;
+            } else if (e.is_infinite() && e.is_extended_real()) {
+                if (_Number_.new(1 - Util.abs(b)).is_extended_positive()) {
+                    return e.is_extended_positive();
+                } else if (_Number_.new(1 - Util.abs(b)).is_extended_negative()) {
+                    return e.is_extended_negative();
+                }
+            }
+        } else if (b.is_finite() && e.is_negative()) {
+            return false;
+        }
+    }
+
+    _eval_power(other: any) {
+        let [b, e] = this.as_base_exp();
+        if (b === S.NaN) {
+            return new Pow(new Pow(b, e), other);
+        }
+
+        let s: any = undefined;
+        if (other.is_integer()) {
+            s = S.One
+        } else if (typeof e.is_extended_real() !== "undefined") {
+            // HELPER FUNCTIONS
+            function _half(e: any) {
+                if (e.q === 2) {
+                    return true;
+                }
+                const [n, d] = e.as_numer_denom();
+                // PLACEHOLDER FOR IS_EQ : TO-DO UPDATE THIS !!!!!
+                if (n.is_integer() && d.toString() === "2") {
+                    return true;
+                }
+            }
+
+            function _n2(e: any) {
+                const rv = e.eval_evalf(2);
+                if (rv.is_Number()) {
+                    return rv;
+                }
+
+            }
+
+            if (e.is_extended_real()) {
+                if (e === S.NegativeOne) {
+                    if (_half(other)) {
+                        if (b.is_negative()) {
+                            const p1 = new Pow(S.NegativeOne, other);
+                            const p2 = new Pow(b.__mul__(S.NegativeOne), e.__mul__(other));
+                            return Global.construct("Mul", true, true, p1, p2);
+                        } else if (b.is_negative() === false) {
+                            return new Pow(b, other.__mul__(S.NegativeOne));
+                        }
+                    }
+                } else if (e.is_even()) {
+                    if (b.is_extended_real()) {
+                        b = Util.abs(b);
+                    }
+                }
+
+                if (Util.abs(e) < 1 || e === S.One) {
+                    s = S.One;
+                } else if (b.is_extended_nonnegative()) {
+                    s = S.One;
+                } else if (_half(other)) {
+                    throw new Error("imaginary units not yet supported")
+                }
+            } else {
+                throw new Error("imaginary units not yet supported")
+            }
+
+        }
+
+        if (typeof s !== "undefined") {
+            return s.__mul__(new Pow(b, e.__mul__(other))); // this might not work
+        }
+    }
+
     static _new(b: any, e: any) {
         return new Pow(b, e);
     }
@@ -176,7 +302,7 @@ export class Pow extends _Expr {
     toString() {
         const b = this._args[0].toString();
         const e = this._args[1].toString();
-        return b + "^" + e;
+        return b + "^" + "(" + e + ")";
     }
 }
 

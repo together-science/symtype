@@ -3,6 +3,9 @@ Notable changes made (and notes):
 - Number classes registered after they are defined
 - Float is handeled entirely by decimal.js, and now only takes precision in
   # of decimal points
+   - Make characteristics of float, such as its relational methods, are very
+     different because of this change
+   - Still, the functionality of sympy is replicated
 - Note: only methods necessary for add, mul, and pow have been implemented
 - TODO: needs more _eval_is properties and need to debug rational eval power
 */
@@ -29,7 +32,8 @@ These are somewhat written differently than in sympy (which depends on mpmath)
 but they provide the same functionality
 */
 
-function igcd(x: number, y: number) {
+// Computes nonnegative integer greatest common divisor.
+export function igcd(x: number, y: number) {
     while (y) {
         const t = y;
         y = x % y;
@@ -38,15 +42,31 @@ function igcd(x: number, y: number) {
     return x;
 }
 
+// Computes integer least common multiple.
+export function ilcm(...args: any[]) {
+    if (args.length < 2) {
+        throw new Error("ilcm needs at least 2 arguments")
+    }
+    if (args.includes(0)) {
+        return 0;
+    }
+    let a = args[0];
+    for (const b of args.slice(1)) {
+        a = Math.floor(a / igcd(a, b)) * b
+    }
+    return a;
+}
+
+// Returns the nth root of y
 export function int_nthroot(y: number, n: number) {
     const x = Math.floor(y**(1/n));
     const isexact = x**n === y;
     return [x, isexact];
 }
 
-// turn a float to a rational -> repliacates mpmath functionality but we should
+// turn a float to a rational -> replicates mpmath functionality but we should
 // probably find a library to do this eventually
-function toRatio(n: any, eps: number) {
+export function toRatio(n: any, eps: number) {
     const gcde = (e: number, x: number, y: number) => {
         const _gcd: any = (a: number, b: number) => (b < e ? a : _gcd(b, a % b));
         return _gcd(Math.abs(x), Math.abs(y));
@@ -55,7 +75,8 @@ function toRatio(n: any, eps: number) {
     return [Math.floor(n / c), Math.floor(1 / c)];
 }
 
-function igcdex(a: number = undefined, b: number = undefined) {
+// Returns x, y, g such that g = x*a + y*b = gcd(a, b).
+export function igcdex(a: number = undefined, b: number = undefined) {
     if (typeof a === "undefined" && typeof b === "undefined") {
         return [0, 1, 0];
     }
@@ -70,7 +91,7 @@ function igcdex(a: number = undefined, b: number = undefined) {
     let x_sign;
     let y_sign;
     if (a < 0) {
-        a = -1;
+        a = -a;
         x_sign = -1;
     } else {
         x_sign = 1;
@@ -91,15 +112,19 @@ function igcdex(a: number = undefined, b: number = undefined) {
     return [x * x_sign, y * y_sign, a];
 }
 
-function mod_inverse(a: any, m: any) {
+// Return the number c such that, a * c = 1 \ mod(m) where c has the same sign as m.
+export function mod_inverse(a: any, m: any) {
     let c = undefined;
     [a, m] = [as_int(a), as_int(m)];
     if (m !== 1 && m !== -1) {
         // eslint-disable-next-line no-unused-vars
         const [x, b, g] = igcdex(a, m);
-        if (g === 1) {
-            c = x & m;
+        if (g == 1) {
+            c = x % m;
         }
+    }
+    if (c < 0) {
+        c += m;
     }
     return c;
 }
@@ -248,6 +273,10 @@ class _Number_ extends _AtomicExpr {
     _float_val(prec: number): any {
         return undefined;
     }
+
+    __ge__(other: any) {
+        throw new Error("object needs __ge__() method")
+    }
 };
 
 // eslint-disable-next-line new-cap
@@ -367,6 +396,20 @@ class Float extends _Number_ {
     toString() {
         return this.decimal.toString()
     }
+
+    __ge__(other: any) {
+        if (other.is_Rational()) {
+            const product = Decimal.set({precision: this.prec}).mul(this.decimal, other.q);
+            return product.gte(other.p)
+        } else if (other.is_Float()) {
+            return this.decimal.gte(other.decimal);
+        } else if (other.is_comparable() && other !== S.Infinity && other !== S.NegativeInfinity) {
+            other = other.evalf(this.precision);
+            if (other.precision > 1  && other.is_Number()) {
+                return this.decimal.gte(other._float_val(this.precision))
+            }
+        }
+    }
 }
 
 ManagedProperties.register(Float);
@@ -457,11 +500,11 @@ class Rational extends _Number_ {
     __sub__(other: any) {
         if (global_parameters.evaluate) {
             if (other instanceof Integer) {
-                return new Rational(this.q * other.p - this.p, this.q, 1);
+                return new Rational(this.p - this.q*other.p, this.q, 1)
             } else if (other instanceof Rational) {
                 return new Rational(this.p * other.q - this.q * other.p, this.q * other.q);
             } else if (other instanceof Float) {
-                return this.__mul__(S.NegativeOne).__add__(other);
+                return other.__mul__(S.NegativeOne).__add__(this);
             } else {
                 return super.__sub__(other);
             }
@@ -538,6 +581,28 @@ class Rational extends _Number_ {
         if (expt instanceof _Number_) {
             if (expt instanceof Float) {
                 return this.eval_evalf(expt.prec)._eval_power(expt);
+            } else if (expt.is_extended_negative()) {
+                const ne = expt.__mul__(S.NegativeOne);
+                if (ne === S.One) {
+                    return new Rational(this.q, this.p)
+                }
+                if (this.is_negative()) {
+                    const p1 = new Pow(S.NegativeOne, expt);
+                    const p2 = new Pow(new Rational(this.q, (-1) * this.p), ne);
+                    return new Mul(true, true, p1, p2);
+                }
+                else {
+                    return new Pow(new Rational(this.q, this.p), ne);
+                }
+            }
+            else if (expt === S.Infinity) {
+                if (this.p > this.q) {
+                    return S.Infinity;
+                }
+                if (this.p < (-1) * this.q) {
+                    throw new Error("imaginary values not yet supported in symtypo")
+                }
+                return S.Zero;
             } else if (expt instanceof Integer) {
                 return new Rational(this.p ** expt.p, this.q ** expt.p, 1);
             } else if (expt instanceof Rational) {
@@ -546,21 +611,21 @@ class Rational extends _Number_ {
                     intpart++;
                     const remfracpart = intpart * expt.q - expt.p;
                     const ratfracpart = new Rational(remfracpart, expt.q);
+                    const p1 = new Pow(new Integer(this.p), expt)
+                    const p2 = new Pow(new Integer(this.q), ratfracpart)
                     if (this.p !== 1) {
-                        // eslint-disable-next-line max-len
-                        return new Integer(this.p)._eval_power(expt).__mul__(new Integer(this.q))._eval_power(ratfracpart).__mul__(new Rational(1, this.q ** intpart, 1));
-                    }
-                    return new Integer(this.q)._eval_power(ratfracpart).__mul__(new Rational(1, this.q ** intpart, 1));
+                        return new Mul(true, true, p1, p2, new Rational(1, this.q ** intpart));
+                    } // p = 1, so p1 can be eliminated
+                    return new Mul(true, true, p2, new Rational(1, this.q ** intpart))
                 } else {
                     const remfracpart = expt.q - expt.p;
                     const ratfracpart = new Rational(remfracpart, expt.q);
+                    const p1 = new Pow(new Integer(this.p), expt)
+                    const p2 = new Pow(new Integer(this.q), ratfracpart)
                     if (this.p !== 1) {
-                        // eslint-disable-next-line max-len
-                        const p1 = new Integer(this.p)._eval_power(expt);
-                        const p2 = new Integer(this.q)._eval_power(ratfracpart);
-                        return p1.__mul__(p2).__mul__(new Rational(1, this.q, 1));
+                        return new Mul(true, true, p1, p2, new Rational(1, this.q));
                     }
-                    return new Integer(this.q)._eval_power(ratfracpart).__mul__(new Rational(1, this.q, 1));
+                    return new Mul(true, true, p2, new Rational(1, this.q));
                 }
             }
         }
@@ -609,6 +674,48 @@ class Rational extends _Number_ {
 
     eq(other: Rational) {
         return this.p === other.p && this.q === other.q;
+    }
+
+    gcd(other: any) {
+        if (other instanceof Rational) {
+            if (other === S.Zero) {
+                return other;
+            }
+            return new Rational(igcd(this.p, other.p), ilcm(this.q, other.q))
+        } else {
+            throw new Error("gcd not implemented for non rationals")
+        }
+    }
+
+    _Rrel(other: any, attr: any) {
+        if (other.is_Number()) {
+            let op = undefined;
+            let [s, o]: any = [this, other];
+            if (other.is_Rational()) {
+                [s, o] = [new Integer(s.p * o.q), new Integer(s.q * o.p)]
+            }
+            if (o[attr]) {
+                return o[attr](s)
+            }
+            if (o.is_number() && o.is_extended_real()) {
+                return [new Integer(s.p), s.q*o];
+            }
+        }
+    }
+
+
+    __ge__(other: any) {
+        let rv: any = this._Rrel(other, "__le__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return super.__ge__(rv[1]);
+    }
+
+    as_numer_denom() {
+        return [new Integer(this.p), new Integer(this.q)]
     }
 
     toString() {
@@ -769,10 +876,10 @@ class Integer extends Rational {
             }
         }
         if (expt === S.NegativeInfinity) {
-            return new Rational(1, this, 1)._eval_power(S.Infinity);
+            return new Pow(new Rational(1, this), S.Infinity);
         }
         if (!(expt instanceof _Number_)) {
-            if (this.is_negative && expt.is_even) {
+            if (this.is_negative() && expt.is_even()) {
                 return this.__mul__(S.NegativeOne)._eval_power(expt);
             }
         }
@@ -855,6 +962,24 @@ class Integer extends Rational {
         return result;
     }
 
+    __le__(other: any) {
+        if (other.is_Integer()) {
+            return this.p <= other.p;
+        }
+        return super.__le__(other)
+    } 
+
+    __ge__(other: any) {
+        if (other.is_Integer()) {
+            return this.p >= other.p;
+        }
+        return super.__ge__(other)
+    } 
+
+    as_numer_denom() {
+        return [this, S.One]
+    }
+
     toString() {
         return String(this.p);
     }
@@ -893,6 +1018,25 @@ class Zero extends IntegerConstant {
     constructor() {
         super(0);
     }
+
+    _eval_power(expt: any): any {
+        if (expt.is_extended_positive()) {
+            return this;
+        }
+        if (expt.is_extended_negative()) {
+            return S.ComplexInfinity;
+        }
+        if (expt.is_extended_real() === false) {
+            return S.NaN;
+        }
+        const [coeff, terms] = expt.as_coeff_Mul();
+        if (coeff.is_negative()) {
+            return new Pow(S.ComplexInfinity, terms);
+        }
+        if (coeff !== S.One) {
+            return new Pow(this, terms);
+        }
+    }
 };
 
 ManagedProperties.register(Zero);
@@ -917,6 +1061,10 @@ class One extends IntegerConstant {
     __slots__: any[] = [];
     constructor() {
         super(1);
+    }
+
+    _eval_power(expt: any) {
+        return this;
     }
 };
 
@@ -946,13 +1094,13 @@ class NegativeOne extends IntegerConstant {
     }
 
     _eval_power(expt: any) {
-        if (expt.is_odd) {
+        if (expt.is_odd()) {
             return S.NegativeOne;
-        } else if (expt.is_even) {
+        } else if (expt.is_even()) {
             return S.One;
         }
-        if (expt instanceof _Number_) {
-            if (expt instanceof Float) {
+        if (expt.is_Number()) {
+            if (expt.is_Float()) {
                 return new Float(-1.0)._eval_power(expt);
             }
             if (expt === S.NaN) {
@@ -1069,6 +1217,24 @@ class ComplexInfinity extends _AtomicExpr {
     toString() {
         return "ComplexInfinity";
     }
+
+    _eval_power(expt: any) {
+        if (expt === S.ComplexInfinity) {
+            return S.NaN;
+        }
+
+        if (expt.is_Number()) {
+            if (expt.is_zero()) {
+                return S.NaN;
+            } else {
+                if (expt.is_positive()) {
+                    return S.ComplexInfinity;
+                } else {
+                    return S.Zero;
+                }
+            }
+        }
+    }
 }
 
 ManagedProperties.register(ComplexInfinity);
@@ -1142,8 +1308,49 @@ class Infinity extends _Number_ {
         return super.__mul__(other);
     }
 
+    _float_val() {
+        return new Float("Infinity");
+    }
+
     toString() {
         return "Infinity";
+    }
+
+    _eval_power(expt: any) {
+        /*
+        ``expt`` is symbolic object but not equal to 0 or 1.
+
+        ================ ======= ==============================
+        Expression       Result  Notes
+        ================ ======= ==============================
+        ``oo ** nan``    ``nan``
+        ``oo ** -p``     ``0``   ``p`` is number, ``oo``
+        ================ ======= ==============================
+
+        See Also
+        ========
+        Pow
+        NaN
+        NegativeInfinity
+        */
+
+        if (expt.is_extended_positive()) {
+            return S.Infinity;
+        }
+        if (expt.is_extended_negative()) {
+            return S.Zero;
+        }
+        if (expt === S.NaN) {
+            return S.NaN;
+        }
+        if (expt === S.ComplexInfinity) {
+            return S.NaN;
+        }
+        if (expt.is_extended_real() === false && expt.is_number()) {
+            throw new Error("imaginary numbers not yet supported in symtype")
+        }
+
+
     }
 }
 
@@ -1194,8 +1401,60 @@ class NegativeInfinity extends _Number_ {
         return super.__mul__(other);
     }
 
+    _float_val() {
+        return new Float("-Infinity");
+    }
+
     toString() {
         return "NegInfinity";
+    }
+
+    _eval_power(expt: any) {
+        /*
+        ``expt`` is symbolic object but not equal to 0 or 1.
+
+        ================ ======= ==============================
+        Expression       Result  Notes
+        ================ ======= ==============================
+        ``(-oo) ** nan`` ``nan``
+        ``(-oo) ** oo``  ``nan``
+        ``(-oo) ** -oo`` ``nan``
+        ``(-oo) ** e``   ``oo``  ``e`` is positive even integer
+        ``(-oo) ** o``   ``-oo`` ``o`` is positive odd integer
+        ================ ======= ==============================
+
+        See Also
+        ========
+
+        Infinity
+        Pow
+        NaN
+        */
+
+        if (expt.is_number()) {
+            if (expt === S.NaN || expt === S.Infinity || expt === S.NegativeInfinity) {
+                return S.NaN;
+            }
+
+            if (expt.is_Integer() && expt.is_extended_positive()) {
+                if (expt.is_odd()) {
+                    return S.NegativeInfinity;
+                } else {
+                    return S.Infinity;
+                }
+            }
+            // THIS PART NEEDS COMPLEX NUMBERS FOR FULL FUNCTIONALITY
+            const inf_part = new Pow(S.Infinity, expt)
+            const s_part = new Pow(S.NegativeOne, expt)
+            if (inf_part === S.Zero && s_part.is_finite()) {
+                return inf_part;
+            }
+            if (inf_part === S.ComplexInfinity && s_part.is_finite() && !s_part.is_zero()) {
+                return S.ComplexInfinity;
+            }
+            return new Mul(true, true, s_part, inf_part);
+        }
+
     }
 }
 

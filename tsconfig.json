@@ -7,7 +7,7 @@
       "removeComments": true,
       "sourceMap": true,
       "allowSyntheticDefaultImports": true,
-      "target": "es2019",
+      "target": "es2020",
       "outDir": "ts-port/tsc-dest",
     },
   }

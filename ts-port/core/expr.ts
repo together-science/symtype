@@ -33,6 +33,7 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
 
     __slots__: any[] = [];
     static is_scalar = true;
+    static is_Expr = true;
 
     constructor(...args: any) {
         super(...args);
@@ -166,6 +167,10 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
             }
         }
         return [c, nc];
+    }
+
+    as_numer_denom() {
+        return [this, S.One];
     }
 };
 
