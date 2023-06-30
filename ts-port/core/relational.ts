@@ -5,8 +5,8 @@ Notes and changes (by WB):
   has a consistent syntax for its assumptions
     - If you want to do a relational with assumptions, apply assumptions to the
       objects first and then do the relational
-- Multiple dispatch is currently not implemented. TODO: find an alternative
-- Boolean and BooleanAtom sympy classes are not accounted for in is_eq
+- Multiple dispatch is currently not implemented. The together math application
+  only needs relational functionality for expressions, so dispatch is unnecessary.
 - Typescript constructors may not return booleans, so a static new method is
   implemented for relational classes
 

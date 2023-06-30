@@ -10,22 +10,30 @@ import {Eq, Ne, Gt, Lt, Ge, Le} from "../ts-port/core/relational";
 
 const x: any = new Symbol("x")
 const n = _Number_.new(2);
-const n2 = _Number_.new(2.5);
+const lhs = _Number_.new(2.5);
+const rhs = new Add(true, true, new Mul(true, true, x, n), n)
 
-console.log(Eq.new(x, n).toString())
-console.log(Eq.new(n2, n).toString())
+console.log(Eq.new(lhs, rhs).toString())
 
-console.log(Ne.new(x, n).toString())
-console.log(Ne.new(n2, n).toString())
+// console.log(Eq.new(x, n).toString())
+// console.log(Eq.new(n2, n).toString())
 
-console.log(Gt.new(x, n).toString())
-console.log(Gt.new(n2, n).toString())
+// console.log(Ne.new(x, n).toString())
+// console.log(Ne.new(n2, n).toString())
 
-console.log(Ge.new(x, n).toString())
-console.log(Ge.new(n2, n).toString())
+// console.log(Gt.new(x, n).toString())
+// console.log(Gt.new(n2, n).toString())
 
-console.log(Lt.new(x, n).toString())
-console.log(Lt.new(n2, n).toString())
+// console.log(Ge.new(x, n).toString())
+// console.log(Ge.new(n2, n).toString())
 
-console.log(Le.new(x, n).toString())
-console.log(Le.new(n2, n).toString())
+// console.log(Lt.new(x, n).toString())
+// console.log(Lt.new(n2, n).toString())
+
+// console.log(Le.new(x, n).toString())
+// console.log(Le.new(n2, n).toString())
+
+const a: any = new Symbol("a", {"commutative": false})
+const b: any = new Symbol("b", {"commutative": false})
+console.log(new Mul(true, true, a, b))
+// console.log(Eq.new(new Mul(true, true, a, b), new Mul(true, true, b, a)))
