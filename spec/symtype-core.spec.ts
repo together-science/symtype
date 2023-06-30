@@ -4,7 +4,7 @@
 
 import {Add} from "../ts-port/core/add";
 import {Mul} from "../ts-port/core/mul";
-import {_Number_} from "../ts-port/core/numbers";
+import {_Number_, igcd, ilcm, int_nthroot, toRatio, mod_inverse, igcdex} from "../ts-port/core/numbers";
 import {S} from "../ts-port/core/singleton";
 import {Pow} from "../ts-port/core/power";
 import {Symbol} from "../ts-port/core/symbol";
@@ -183,6 +183,20 @@ describe("Core", function () {
         expect(factorrat(_Number_.new(32, 4634)).factorsToString()).toBe("2*2*2*2/7*331");
         expect(factorrat(_Number_.new(6877, 123)).factorsToString()).toBe("13*23*23/3*41");
         expect(factorrat(_Number_.new(3, 13)).factorsToString()).toBe("3/13");
+    });
+
+    it("helper functions should produce the expected values", function () {
+        expect(igcd(12, 24)).toBe(12);
+        expect(igcd(100, 101)).toBe(1);
+        expect(ilcm(5, 10)).toBe(10);
+        expect(ilcm(8, 16)).toBe(16);
+        expect(igcdex(2, 3)).toEqual([-1, 1, 1]);
+        expect(igcdex(10, 12)).toEqual([-1, 1, 2]);
+        expect(int_nthroot(27, 3)).toEqual([3, true]);
+        expect(int_nthroot(10, 2)).toEqual([3, false]);
+        expect(toRatio(1.2000, 0.0001)).toEqual([6, 5])
+        expect(mod_inverse(3, 11)).toBe(4)
+        expect(mod_inverse(-3, 11)).toBe(7)
     });
 });
 

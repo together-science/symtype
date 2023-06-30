@@ -6,6 +6,9 @@ Notable changes made (and notes):
    - Make characteristics of float, such as its relational methods, are very
      different because of this change
    - Still, the functionality of sympy is replicated
+   - Make characteristics of float, such as its relational methods, are very
+     different because of this change
+   - Still, the functionality of sympy is replicated
 - Note: only methods necessary for add, mul, and pow have been implemented
 - TODO: needs more _eval_is properties and need to debug rational eval power
 */
@@ -32,7 +35,8 @@ These are somewhat written differently than in sympy (which depends on mpmath)
 but they provide the same functionality
 */
 
-function igcd(x: number, y: number) {
+// Computes nonnegative integer greatest common divisor.
+export function igcd(x: number, y: number) {
     while (y) {
         const t = y;
         y = x % y;
@@ -41,7 +45,8 @@ function igcd(x: number, y: number) {
     return x;
 }
 
-function ilcm(...args: any[]) {
+// Computes integer least common multiple.
+export function ilcm(...args: any[]) {
     if (args.length < 2) {
         throw new Error("ilcm needs at least 2 arguments")
     }
@@ -55,15 +60,16 @@ function ilcm(...args: any[]) {
     return a;
 }
 
+// Returns the nth root of y
 export function int_nthroot(y: number, n: number) {
     const x = Math.floor(y**(1/n));
     const isexact = x**n === y;
     return [x, isexact];
 }
 
-// turn a float to a rational -> repliacates mpmath functionality but we should
+// turn a float to a rational -> replicates mpmath functionality but we should
 // probably find a library to do this eventually
-function toRatio(n: any, eps: number) {
+export function toRatio(n: any, eps: number) {
     const gcde = (e: number, x: number, y: number) => {
         const _gcd: any = (a: number, b: number) => (b < e ? a : _gcd(b, a % b));
         return _gcd(Math.abs(x), Math.abs(y));
@@ -72,7 +78,8 @@ function toRatio(n: any, eps: number) {
     return [Math.floor(n / c), Math.floor(1 / c)];
 }
 
-function igcdex(a: number = undefined, b: number = undefined) {
+// Returns x, y, g such that g = x*a + y*b = gcd(a, b).
+export function igcdex(a: number = undefined, b: number = undefined) {
     if (typeof a === "undefined" && typeof b === "undefined") {
         return [0, 1, 0];
     }
@@ -87,7 +94,7 @@ function igcdex(a: number = undefined, b: number = undefined) {
     let x_sign;
     let y_sign;
     if (a < 0) {
-        a = -1;
+        a = -a;
         x_sign = -1;
     } else {
         x_sign = 1;
@@ -108,15 +115,19 @@ function igcdex(a: number = undefined, b: number = undefined) {
     return [x * x_sign, y * y_sign, a];
 }
 
-function mod_inverse(a: any, m: any) {
+// Return the number c such that, a * c = 1 \ mod(m) where c has the same sign as m.
+export function mod_inverse(a: any, m: any) {
     let c = undefined;
     [a, m] = [as_int(a), as_int(m)];
     if (m !== 1 && m !== -1) {
         // eslint-disable-next-line no-unused-vars
         const [x, b, g] = igcdex(a, m);
-        if (g === 1) {
-            c = x & m;
+        if (g == 1) {
+            c = x % m;
         }
+    }
+    if (c < 0) {
+        c += m;
     }
     return c;
 }

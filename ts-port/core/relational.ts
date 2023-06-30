@@ -16,6 +16,7 @@ import {fuzzy_bool, fuzzy_and, fuzzy_not, fuzzy_xor} from "./logic";
 import {Basic} from "./basic";
 import {_Expr} from "./expr";
 import {_Boolean} from "./boolalg";
+
 import {Add} from "./add";
 import {Mul} from "./mul";
 import {S} from "./singleton";
@@ -638,6 +639,10 @@ function _n2(a: any, b: any) {
             return diff
         }
     }
+    return undefined;
+}
+
+function _eval_is_ge(lhs: any, rhs: any): any {
     return undefined;
 }
 
