@@ -666,7 +666,7 @@ function _n2(a: any, b: any) {
 }
 
 function _eval_is_eq(lhs: any, rhs: any): any {
-    if (Array.isArray(lhs) && rhs.is_Expr() || Array.isArray(rhs) && lhs.is_Expr()) {
+    if (Array.isArray(lhs) && rhs.isinstance(_Expr) || Array.isArray(rhs) && lhs.isinstance(_Expr)) {
         return false;
     } else if (Array.isArray(lhs) && Array.isArray(rhs)) {
         const eqs = [];
@@ -939,7 +939,7 @@ export function is_eq(lhs: any, rhs: any): any {
         // complex numbers not yet supported
     }
 
-    if (lhs.is_Expr() && rhs.is_Expr()) {
+    if (lhs.isinstance(_Expr) && rhs.isinstance(_Expr)) {
         const dif = lhs.__sub__(rhs);
         const z = dif.is_zero();
         if (typeof z !== "undefined") {

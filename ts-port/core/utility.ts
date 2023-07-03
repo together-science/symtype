@@ -624,22 +624,23 @@ class MixinBuilder {
         this.supers = new Set();
     }
     with(...mixins: any[]) {
-        // TODO ADD COMMENTS
+        // new cls that we're returning with all of the properties of the mixins
         const newcls = mixins.reduce((c, mixin) => {
             this.supers.add(mixin.name);
             return mixin(c);
         }, this.superclass);
+        // see if this new class has old supers (from 2 generations ago)
         if (newcls.supers) {
+            // if it does, add those supers to our set
             for (const [item, _] of newcls.supers.entries()) {
                 this.supers.add(item);
             }
         }
+        // add all supers to the cls
         newcls.supers = this.supers;
         return newcls;
     }
 }
-
-// const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic)
 
 class base {}
 

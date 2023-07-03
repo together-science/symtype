@@ -79,7 +79,6 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     static is_Boolean = false;
     static is_Not = false;
     static is_Matrix = false;
-    static is_Expr = false;
     static is_Vector = false;
     static is_Point = false;
     static is_MatAdd = false;
