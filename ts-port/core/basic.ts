@@ -88,7 +88,6 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     static is_commutative: boolean | undefined;
 
     static kind = UndefinedKind;
-    static all_unique_props: HashSet = new HashSet();
 
     constructor(...args: any) {
         super();
@@ -122,6 +121,20 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         for (const miscprop of otherProps.toArray()) {
             this[miscprop] = () => cls[miscprop];
         }
+    }
+
+    isinstance(cls: any) {
+        if (this instanceof cls) {
+            return true;
+        }
+        const supers = (this.constructor as any).supers;
+        if (supers) {
+            if (cls.clsname) {
+                return supers.has(cls.clsname);
+            }
+            return supers.has(cls.name);
+        }
+        return false;
     }
 
     __getnewargs__() {

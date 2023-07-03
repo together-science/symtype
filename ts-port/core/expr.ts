@@ -34,6 +34,7 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
     __slots__: any[] = [];
     static is_scalar = true;
     static is_Expr = true;
+    static clsname = "Expr";
 
     constructor(...args: any) {
         super(...args);
@@ -202,6 +203,7 @@ const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(superclass)
     */
     static is_number = false;
     static is_Atom = true;
+    static clsname = "AtomicExpr";
 
     __slots__: any[] = [];
 

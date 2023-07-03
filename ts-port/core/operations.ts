@@ -37,6 +37,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
 
     __slots__: any[] = ["is_commutative"];
     static _args_type: any = undefined;
+    static clsname = "AssocOp";
 
     constructor(cls: any, evaluate: any, simplify: boolean, ...args: any) {
         // identity wasn't working for some reason, so here is a bandaid fix

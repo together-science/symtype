@@ -87,7 +87,6 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
     static is_Mul = true;
     _args_type = Expr;
     static identity = S.One;
-    static is_Expr = true; // bandaid fix, need to work out multiple inheritance
 
     constructor(evaluate: boolean, simplify: boolean, ...args: any) {
         super(Mul, evaluate, simplify, ...args);

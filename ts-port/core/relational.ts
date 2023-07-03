@@ -25,6 +25,7 @@ import {HashDict, Util} from "./utility";
 import { global_parameters } from "./parameters";
 import { ManagedProperties } from "./assumptions";
 import { Global } from "./global";
+import { _Expr } from "./expr";
 
 class Relational extends _Boolean {
     /*
@@ -796,7 +797,7 @@ export function is_ge(lhs: any, rhs: any) {
     True
     */
 
-    if (!(lhs.is_Expr() && rhs.is_Expr())) {
+    if (!(lhs.isinstance(_Expr) && rhs.isinstance(_Expr))) {
         throw new Error("can only compare inequalities with Expr")
     }
 

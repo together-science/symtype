@@ -618,13 +618,28 @@ class Iterator {
 
 class MixinBuilder {
     superclass;
+    supers: Set<string>;
     constructor(superclass: any) {
         this.superclass = superclass;
+        this.supers = new Set();
     }
     with(...mixins: any[]) {
-        return mixins.reduce((c, mixin) => mixin(c), this.superclass);
+        // TODO ADD COMMENTS
+        const newcls = mixins.reduce((c, mixin) => {
+            this.supers.add(mixin.name);
+            return mixin(c);
+        }, this.superclass);
+        if (newcls.supers) {
+            for (const [item, _] of newcls.supers.entries()) {
+                this.supers.add(item);
+            }
+        }
+        newcls.supers = this.supers;
+        return newcls;
     }
 }
+
+// const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic)
 
 class base {}
 
