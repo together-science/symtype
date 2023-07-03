@@ -807,37 +807,37 @@ class Rational extends _Number_ {
         } else if (!Array.isArray(rv)) {
             return rv;
         }
-        return super.__ge__(rv[1]);
+        return Ge.new(this, rv[1]);
     }
 
     __gt__(other: any) {
-        let rv: any = this._Rrel(other, "__gt__");
-        if (typeof rv === "undefined") {
-            rv = [this, other]
-        } else if (!Array.isArray(rv)) {
-            return rv;
-        }
-        return super.__gt__(rv[1]);
-    }
-
-    __le__(other: any) {
-        let rv: any = this._Rrel(other, "__le__");
-        if (typeof rv === "undefined") {
-            rv = [this, other]
-        } else if (!Array.isArray(rv)) {
-            return rv;
-        }
-        return super.__le__(rv[1]);
-    }
-
-    __lt__(other: any) {
         let rv: any = this._Rrel(other, "__lt__");
         if (typeof rv === "undefined") {
             rv = [this, other]
         } else if (!Array.isArray(rv)) {
             return rv;
         }
-        return super.__lt__(rv[1]);
+        return Gt.new(this, rv[1]);
+    }
+
+    __le__(other: any) {
+        let rv: any = this._Rrel(other, "__ge__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return Le.new(this, rv[1]);
+    }
+
+    __lt__(other: any) {
+        let rv: any = this._Rrel(other, "__gt__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return Lt.new(this, rv[1]);
     }
 
     as_numer_denom() {
@@ -1124,7 +1124,7 @@ class Integer extends Rational {
 
     __lt__(other: any) {
         if (other.is_Integer()) {
-            return this.p > other.p;
+            return this.p < other.p;
         }
         return super.__lt__(other)
     } 

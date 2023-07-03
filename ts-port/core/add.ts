@@ -92,6 +92,7 @@ export class Add extends mix(base).with(Expr, AssocOp) {
     // eslint-disable-next-line new-cap
     static _args_type = Expr(Object);
     static identity = S.Zero; 
+    static is_Expr = true; // bandaid fix, need to work out multiple inheritance
 
     constructor(evaluate: boolean, simplify: boolean, ...args: any) {
         super(Add, evaluate, simplify, ...args);
