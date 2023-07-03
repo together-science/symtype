@@ -198,6 +198,15 @@ describe("Core", function () {
         expect(mod_inverse(3, 11)).toBe(4)
         expect(mod_inverse(-3, 11)).toBe(7)
     });
+
+    it("should compare objects correctly", function () {
+        const a: any = new Symbol("a")
+        const b: any = new Symbol("b")
+        expect(new Mul(true, true, a, b).__eq__(new Mul(true, true, b, a))).toBeTrue();
+        const c: any = new Symbol("c", {"commutative": false})
+        const d: any = new Symbol("d", {"commutative": false})
+        expect(new Mul(true, true, c, d).__eq__(new Mul(true, true, d, c))).toBeFalse();
+    });
 });
 
 

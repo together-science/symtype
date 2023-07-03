@@ -9,6 +9,7 @@ import {Integer, Rational} from "./numbers";
 import {AssocOp, _AssocOp} from "./operations";
 import {global_parameters} from "./parameters";
 import {Pow} from "./power";
+import {is_eq} from "./relational";
 import {S} from "./singleton";
 import {mix, base, HashDict, HashSet, ArrDefaultDict} from "./utility";
 
@@ -27,7 +28,7 @@ class NC_Marker {
 
 function _mulsort(args: any[]) {
     // eslint-disable-next-line new-cap
-    args.sort((a, b) => Basic.cmp(a, b));
+    return args.sort((a, b) => Basic.cmp(a, b));
 }
 
 export class Mul extends mix(base).with(Expr, AssocOp) {
@@ -261,9 +262,9 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 if (o !== NC_Marker) {
                     nc_seq.push(o);
                 }
-                while (nc_seq) {
-                    o = nc_seq.splice(0, 1);
-                    if (!(nc_part)) {
+                while (nc_seq.length > 0) {
+                    o = nc_seq.splice(0, 1)[0];
+                    if (nc_part.length === 0) {
                         nc_part.push(o);
                         continue;
                     }
@@ -271,7 +272,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                     const [b1, e1] = o1.as_base_exp();
                     const [b2, e2] = o.as_base_exp();
                     const new_exp = e1.__add__(e2);
-                    if (b1.eq(b2) && !(new_exp.is_Add())) {
+                    if (is_eq(b1, b2) && !(new_exp.is_Add())) {
                         const o12 = b1._eval_power(new_exp);
                         if (o12.is_commutative()) {
                             seq.push(o12);
@@ -526,7 +527,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
         c_part = _new;
 
-        _mulsort(c_part);
+        c_part = _mulsort(c_part);
 
         if (coeff !== S.One) {
             c_part.splice(0, 0, coeff);

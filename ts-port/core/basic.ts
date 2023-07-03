@@ -54,6 +54,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     // To be overridden with True in the appropriate subclasses
     static is_number = false;
     static is_Atom = false;
+    static is_Basic = true;
     static is_Symbol = false;
     static is_symbol = false;
     static is_Indexed = false;
@@ -138,11 +139,6 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return this._mhash;
     }
 
-    // bandaid solution for instanceof issue - still need to fix
-    instanceofBasic() {
-        return true;
-    }
-
     assumptions0() {
         /*
         Return object `type` assumptions.
@@ -170,7 +166,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return {};
     }
 
-    hashKey() {
+    _hashable_content() {
         /* Return a tuple of information about self that can be used to
         compute the hash. If a class defines additional attributes,
         like ``name`` in Symbol, then this method should be updated
@@ -202,22 +198,24 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         }
         const n1 = self.constructor.name;
         const n2 = other.constructor.name;
-        if (n1 && n2) {
-            return (n1 > n2 as unknown as number) - (n1 < n2 as unknown as number);
+        let c = (n1 > n2 as unknown as number) - (n1 < n2 as unknown as number)
+        if (c !== 0) {
+            return c
         }
 
         const st = self._hashable_content();
         const ot = other._hashable_content();
-        if (st && ot) {
-            return (st.length > ot.length as unknown as number) - (st.length < ot.length as unknown as number);
+        c = (st.length > ot.length as unknown as number) - (st.length < ot.length as unknown as number);
+        if (c !== 0) {
+            return c;
         }
-        for (const elem of Util.zip(st, ot)) {
+        for (const elem of Util.zip([...st], [...ot])) {
             const l = elem[0];
             const r = elem[1];
             // !!! skipping frozenset stuff
             let c;
             if (l instanceof Basic) {
-                c = l.cmp(r);
+                c = Basic.cmp(l, r);
             } else {
                 c = (l > r as unknown as number) - (l < r as unknown as number);
             }
@@ -256,6 +254,30 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
             if (i !== j || typeof i !== typeof j) {
                 return false;
             }
+        }
+        return true;
+    }
+
+    __eq__(other: any) {
+        if (this === other) {
+            return true;
+        }
+        if ((!(this.is_Number()) && other.is_Number()) && typeof this !== typeof other) {
+            return false;
+        }
+        const [a, b]: any = [this._hashable_content(), other._hashable_content()];
+        if (!Util.arrEq(a, b)) {
+            return false;
+        }
+        for (const elem of Util.zip(a, b)) {
+            const elem0 = elem[0];
+            const elem1 = elem[1];
+            if (!(elem0 instanceof Basic)) {
+                continue;
+            }
+            if (elem0.is_Number() && typeof elem0 !== typeof elem1) {
+                return false;
+            }    
         }
         return true;
     }

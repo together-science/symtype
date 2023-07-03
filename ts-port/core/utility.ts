@@ -99,6 +99,11 @@ class Util {
         }
         for (let i = 0; i < arr1.length; i++) {
             if (!(arr1[i] === arr2[i])) {
+                if (arr1[i].__eq__) {
+                    if (!arr1[i].__eq__(arr2[i])) {
+                        return false;
+                    }
+                }
                 return false;
             }
         }

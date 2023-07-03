@@ -27,6 +27,7 @@ import {Global} from "./global";
 import {divmod, factorint, factorrat, perfect_power} from "../ntheory/factor_";
 import {HashDict} from "./utility";
 import {Mul} from "./mul";
+import {Ge, Le, Gt, Lt, Eq, Ne} from "./relational";
 
 /*
 utility functions
@@ -280,6 +281,26 @@ class _Number_ extends _AtomicExpr {
     __ge__(other: any) {
         throw new Error("object needs __ge__() method")
     }
+
+    __eq__(other: any) {
+        throw new Error("object needs __eq__() method")
+    }
+
+    __ne__(other: any) {
+        throw new Error("object needs __ne__() method")
+    }
+
+    __gt__(other: any) {
+        throw new Error("object needs __gt__() method")
+    }
+
+    __lt__(other: any) {
+        throw new Error("object needs __lt__() method")
+    }
+
+    __le__(other: any) {
+        throw new Error("object needs __le__() method")
+    }
 };
 
 // eslint-disable-next-line new-cap
@@ -400,18 +421,68 @@ class Float extends _Number_ {
         return this.decimal.toString()
     }
 
-    __ge__(other: any) {
+    __eq__(other: any) {
+        if (other.is_Float()) {
+            return this.decimal.eq(other.decimal);
+        }
+        if (other.is_Rational()) {
+            return other.__eq__(this);
+        }
+        if (other.is_Number()) {
+            const as_float = other._float_val(this.precision);
+            return this.decimal.eq(as_float.decimal);
+        }
+        return false;
+    }
+
+    __ne__(other: any) {
+        return !(this.__eq__(other));
+    }
+
+    _Frel(other: any, op: string) {
         if (other.is_Rational()) {
             const product = Decimal.set({precision: this.prec}).mul(this.decimal, other.q);
-            return product.gte(other.p)
+            return (product as any)[op](other.p);
         } else if (other.is_Float()) {
-            return this.decimal.gte(other.decimal);
+            return (this.decimal as any)[op](other.decimal);
         } else if (other.is_comparable() && other !== S.Infinity && other !== S.NegativeInfinity) {
             other = other.evalf(this.precision);
             if (other.precision > 1  && other.is_Number()) {
-                return this.decimal.gte(other._float_val(this.precision))
+                return (this.decimal as any)[op](other._float_val(this.precision))
             }
         }
+    }
+
+    __ge__(other: any) {
+        const rv = this._Frel(other, "gte");
+        if (typeof rv === "undefined") {
+            return Ge.new(this, other);
+        }
+        return rv;
+    }
+
+    __le__(other: any) {
+        const rv = this._Frel(other, "lte");
+        if (typeof rv === "undefined") {
+            return Le.new(this, other);
+        }
+        return rv;
+    }
+
+    __gt__(other: any) {
+        const rv = this._Frel(other, "gt");
+        if (typeof rv === "undefined") {
+            return Gt.new(this, other);
+        }
+        return rv;
+    }
+
+    __lt__(other: any) {
+        const rv = this._Frel(other, "lt");
+        if (typeof rv === "undefined") {
+            return Lt.new(this, other);
+        }
+        return rv;
     }
 }
 
@@ -675,10 +746,6 @@ class Rational extends _Number_ {
         return !(this.p === S.Infinity || this.p === S.NegativeInfinity);
     }
 
-    eq(other: Rational) {
-        return this.p === other.p && this.q === other.q;
-    }
-
     gcd(other: any) {
         if (other instanceof Rational) {
             if (other === S.Zero) {
@@ -706,6 +773,32 @@ class Rational extends _Number_ {
         }
     }
 
+    __eq__(other: any) {
+        if (!other.is_Number()) {
+            return false;
+        }
+        if (!this) {
+            return !other;
+        }
+        if (other.is_Rational()) {
+            return this.p == other.p && this.q == other.q;
+        }
+        if (other.is_Float()) {
+            if (this.q & (this.q - 1)) { // I don't really understand this
+                return false;
+            }
+            // this part is very different from sympy due to its reliance
+            // on the mpmath library
+            const as_float = this.eval_evalf(other.precision);
+            return as_float.decimal.eq(other.decimal)
+        }
+        return false;
+    }
+
+    __ne__(other: any) {
+        return !(this.__eq__(other));
+    }
+
 
     __ge__(other: any) {
         let rv: any = this._Rrel(other, "__le__");
@@ -715,6 +808,36 @@ class Rational extends _Number_ {
             return rv;
         }
         return super.__ge__(rv[1]);
+    }
+
+    __gt__(other: any) {
+        let rv: any = this._Rrel(other, "__gt__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return super.__gt__(rv[1]);
+    }
+
+    __le__(other: any) {
+        let rv: any = this._Rrel(other, "__le__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return super.__le__(rv[1]);
+    }
+
+    __lt__(other: any) {
+        let rv: any = this._Rrel(other, "__lt__");
+        if (typeof rv === "undefined") {
+            rv = [this, other]
+        } else if (!Array.isArray(rv)) {
+            return rv;
+        }
+        return super.__lt__(rv[1]);
     }
 
     as_numer_denom() {
@@ -965,6 +1088,19 @@ class Integer extends Rational {
         return result;
     }
 
+    __eq__(other: any) {
+        if (Number.isInteger(other)) {
+            return this.p === other;
+        } else if (other.is_Integer()) {
+            return this.p === other.p;
+        }
+        return super.__eq__(other);
+    }
+
+    __ne__(other: any) {
+        return !(this.__eq__(other));
+    }
+
     __le__(other: any) {
         if (other.is_Integer()) {
             return this.p <= other.p;
@@ -977,6 +1113,20 @@ class Integer extends Rational {
             return this.p >= other.p;
         }
         return super.__ge__(other)
+    } 
+
+    __gt__(other: any) {
+        if (other.is_Integer()) {
+            return this.p > other.p;
+        }
+        return super.__gt__(other)
+    } 
+
+    __lt__(other: any) {
+        if (other.is_Integer()) {
+            return this.p > other.p;
+        }
+        return super.__lt__(other)
     } 
 
     as_numer_denom() {
@@ -1174,6 +1324,30 @@ class NaN extends _Number_ {
     toString() {
         return "NAN";
     }
+
+    __eq__(other: any) {
+        return other === S.NaN;
+    }
+
+    __ne__(other: any) {
+        return other !== S.NaN;
+    }
+
+    __ge__(other: any) {
+        return Ge.new(this, other);
+    }
+
+    __gt__(other: any) {
+        return Gt.new(this, other);
+    }
+
+    __le__(other: any) {
+        return Le.new(this, other);
+    }
+
+    __lt__(other: any) {
+        return Lt.new(this, other);
+    }
 }
 
 ManagedProperties.register(NaN);
@@ -1352,8 +1526,30 @@ class Infinity extends _Number_ {
         if (expt.is_extended_real() === false && expt.is_number()) {
             throw new Error("imaginary numbers not yet supported in symtype")
         }
+    }
 
+    __eq__(other: any) {
+        return other === S.Infinity || other === Infinity;
+    }
 
+    __ne__(other: any) {
+        return other !== S.Infinity || other !== Infinity;
+    }
+
+    __ge__(other: any) {
+        return Ge.new(this, other);
+    }
+
+    __gt__(other: any) {
+        return Gt.new(this, other);
+    }
+
+    __le__(other: any) {
+        return Le.new(this, other);
+    }
+
+    __lt__(other: any) {
+        return Lt.new(this, other);
     }
 }
 
@@ -1457,7 +1653,30 @@ class NegativeInfinity extends _Number_ {
             }
             return new Mul(true, true, s_part, inf_part);
         }
+    }
 
+    __eq__(other: any) {
+        return other === S.NegativeInfinity || other === -Infinity;
+    }
+
+    __ne__(other: any) {
+        return other !== S.NegativeInfinity || other !== -Infinity;
+    }
+
+    __ge__(other: any) {
+        return Ge.new(this, other);
+    }
+
+    __gt__(other: any) {
+        return Gt.new(this, other);
+    }
+
+    __le__(other: any) {
+        return Le.new(this, other);
+    }
+
+    __lt__(other: any) {
+        return Lt.new(this, other);
     }
 }
 

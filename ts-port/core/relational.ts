@@ -5,25 +5,26 @@ Notes and changes (by WB):
   has a consistent syntax for its assumptions
     - If you want to do a relational with assumptions, apply assumptions to the
       objects first and then do the relational
-- Multiple dispatch is currently not implemented. The together math application
-  only needs relational functionality for expressions, so dispatch is unnecessary.
+- Multiple dispatch is currently not implemented for is_ge since _eval_is_ge 
+  can only return undefined in sympy, meaning it doesnt do anything ???
+- _eval_is_Eq, rather than using multiple dispatch, just checks the types of 
+  the inputs and proceeds from there
 - Typescript constructors may not return booleans, so a static new method is
   implemented for relational classes
 
 */
 
 import {fuzzy_bool, fuzzy_and, fuzzy_not, fuzzy_xor} from "./logic";
-import {Basic} from "./basic";
-import {_Expr} from "./expr";
+import {_Basic} from "./basic";
 import {_Boolean} from "./boolalg";
-
 import {Add} from "./add";
 import {Mul} from "./mul";
 import {S} from "./singleton";
-import {Float} from "./numbers";
 import {_AssocOp} from "./operations";
-import {HashDict} from "./utility";
+import {HashDict, Util} from "./utility";
 import { global_parameters } from "./parameters";
+import { ManagedProperties } from "./assumptions";
+import { Global } from "./global";
 
 class Relational extends _Boolean {
     /*
@@ -107,18 +108,22 @@ class Relational extends _Boolean {
     >>> my_inequality.rel_op
         '<'
     */
+    lhs;
+    rhs;
+    static is_Relational = true;
 
     static ValidRelationOperator: HashDict = new HashDict();
 
     constructor(lhs: any, rhs: any, rop: any = undefined) {
         super(lhs, rhs);
+        this.lhs = this._args[0];
+        this.rhs = this._args[1]
         let cls: any = this.constructor;
         if (cls.name === "Relational") {
             cls = Relational.ValidRelationOperator.get(rop);
             if (typeof cls === "undefined") {
                 throw new Error("invalid operator for rel")
             }
-            // TODO: BOOLEAN STUFF (WITH CLASS)
             if (cls.name !== "Eq" && cls.name !== "Ne")
                 if (typeof lhs === "boolean" || typeof rhs === "boolean") {
                     throw new Error("bool arg can only be used for eq and ne")
@@ -126,8 +131,10 @@ class Relational extends _Boolean {
             return cls.new(lhs, rhs);
         }
     }
-
 }
+
+ManagedProperties.register(Relational);
+Global.register("Relational", Relational.constructor);
 
 class Equality extends Relational {
     /*
@@ -198,6 +205,7 @@ class Equality extends Relational {
        but this behavior is deprecated and will be removed in a future version
        of SymPy.
     */
+    static is_Equality = true;
 
     static new(lhs: any, rhs: any, evaluate: boolean = undefined) {
         if (typeof evaluate === "undefined") {
@@ -221,6 +229,9 @@ class Equality extends Relational {
 }
 
 export const Eq = Equality;
+
+ManagedProperties.register(Eq);
+Global.register("Eq", Eq.new);
 
 class Unequality extends Relational {
     /*
@@ -263,7 +274,7 @@ class Unequality extends Relational {
         if (evaluate) {
             const val = is_neq(lhs, rhs);
             if (typeof val === "undefined") {
-                // return an Eq object if we can't process the args
+                // return an Ne object if we can't process the args
                 return new Ne(lhs, rhs);
             } else {
                 // otherwise return our value
@@ -278,6 +289,9 @@ class Unequality extends Relational {
 }
 
 export const Ne = Unequality;
+
+ManagedProperties.register(Ne);
+Global.register("Ne", Ne.new);
 
 class Inequality extends Relational {
     /*
@@ -554,6 +568,8 @@ class GreaterThan extends Relational {
 }
 
 export const Ge = GreaterThan;
+ManagedProperties.register(Ge);
+Global.register("Ge", Ge.new);
 
 class LessThan extends Relational {
 
@@ -572,6 +588,8 @@ class LessThan extends Relational {
 }
 
 export const Le = LessThan;
+ManagedProperties.register(Le);
+Global.register("Le", Le.new);
 
 class StrictGreaterThan extends Relational {
 
@@ -590,6 +608,8 @@ class StrictGreaterThan extends Relational {
 }
 
 export const Gt = StrictGreaterThan;
+ManagedProperties.register(Gt);
+Global.register("Gt", Gt.new);
 
 class StrictLessThan extends Relational {
 
@@ -608,6 +628,8 @@ class StrictLessThan extends Relational {
 }
 
 export const Lt = StrictLessThan;
+ManagedProperties.register(Lt);
+Global.register("Lt", Lt.new);
 
 Relational.ValidRelationOperator = new HashDict({
     None: Equality,
@@ -642,12 +664,17 @@ function _n2(a: any, b: any) {
     return undefined;
 }
 
-function _eval_is_ge(lhs: any, rhs: any): any {
-    return undefined;
-}
-
 function _eval_is_eq(lhs: any, rhs: any): any {
-    return false;
+    if (Array.isArray(lhs) && rhs.is_Expr() || Array.isArray(rhs) && lhs.is_Expr()) {
+        return false;
+    } else if (Array.isArray(lhs) && Array.isArray(rhs)) {
+        const eqs = [];
+        for (const [s, o] of Util.zip(lhs, rhs)) {
+            eqs.push(fuzzy_bool(is_eq(s, 0)));
+        }
+        return fuzzy_and(eqs);
+    }
+    return undefined;
 }
 
 export function is_lt(lhs: any, rhs: any) {
@@ -799,7 +826,7 @@ export function is_ge(lhs: any, rhs: any) {
     }
 }
 
-function is_neq(lhs: any, rhs: any): any {
+export function is_neq(lhs: any, rhs: any): any {
     /*
     Fuzzy bool for lhs does not equal rhs.
 
@@ -808,7 +835,7 @@ function is_neq(lhs: any, rhs: any): any {
     return fuzzy_not(is_eq(lhs, rhs))
 }
 
-function is_eq(lhs: any, rhs: any): any {
+export function is_eq(lhs: any, rhs: any): any {
     /*
     Fuzzy bool representing mathematical equality between *lhs* and *rhs*.
 
@@ -887,7 +914,10 @@ function is_eq(lhs: any, rhs: any): any {
     False
     */
 
-    // skipping dispatch stuff for now cuz its confusing
+    const retval = _eval_is_eq(lhs, rhs)
+    if (typeof retval !== "undefined") {
+        return retval;
+    }
 
     if (lhs === rhs) {
         return true;

@@ -172,6 +172,22 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
     as_numer_denom() {
         return [this, S.One];
     }
+
+    __ge__(other: any) {
+        return Global.construct("Ge", this, other);
+    }
+
+    __le__(other: any) {
+        return Global.construct("Le", this, other);
+    }
+
+    __gt__(other: any) {
+        return Global.construct("Gt", this, other);
+    }
+
+    __lt__(other: any) {
+        return Global.construct("Lt", this, other);
+    }
 };
 
 // eslint-disable-next-line new-cap
