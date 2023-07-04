@@ -28,7 +28,7 @@ class NC_Marker {
 
 function _mulsort(args: any[]) {
     // eslint-disable-next-line new-cap
-    return args.sort((a, b) => Basic.cmp(a, b));
+    args.sort((a, b) => Basic.cmp(a, b));
 }
 
 export class Mul extends mix(base).with(Expr, AssocOp) {
@@ -527,7 +527,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
         c_part = _new;
 
-        c_part = _mulsort(c_part);
+        _mulsort(c_part);
 
         if (coeff !== S.One) {
             c_part.splice(0, 0, coeff);

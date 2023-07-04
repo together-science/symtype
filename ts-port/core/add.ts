@@ -17,7 +17,7 @@ import {_fuzzy_group} from "./logic";
 
 function _addsort(args: any[]) {
     // eslint-disable-next-line new-cap
-    return args.sort((a, b) => Basic.cmp(a, b));
+    args.sort((a, b) => Basic.cmp(a, b));
 }
 
 export class Add extends mix(base).with(Expr, AssocOp) {
