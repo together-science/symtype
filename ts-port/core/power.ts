@@ -135,8 +135,8 @@ export class Pow extends _Expr {
                 } else if (e === S.NegativeOne && !b) {
                     return S.ComplexInfinity;
                 } else if ((e.is_Symbol() && e.is_integer() || e.is_Integer()) 
-                    && ((b.is_number() && b.is_Mul() || b.is_Number())) 
-                    && (b.is_extended_negative())) {
+                && ((b.is_number() && b.is_Mul() || b.is_Number())) 
+                && (b.is_extended_negative())) {
                     if (e.is_even()) {
                         b = b.__mul__(S.NegativeOne);
                     } else {

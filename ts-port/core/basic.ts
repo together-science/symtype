@@ -54,7 +54,6 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     // To be overridden with True in the appropriate subclasses
     static is_number = false;
     static is_Atom = false;
-    static is_Basic = true;
     static is_Symbol = false;
     static is_symbol = false;
     static is_Indexed = false;
@@ -221,7 +220,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         if (c !== 0) {
             return c;
         }
-        for (const elem of Util.zip([...st], [...ot])) {
+        for (const elem of Util.zip(st, ot)) {
             const l = elem[0];
             const r = elem[1];
             // !!! skipping frozenset stuff
