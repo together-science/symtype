@@ -128,9 +128,9 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         const supers = (this.constructor as any).supers;
         if (supers) {
             if (cls.clsname) {
-                return supers.has(cls.clsname);
+                return supers.has(cls.clsname) || (this.constructor as any).clsname === cls.clsname;
             }
-            return supers.has(cls.name);
+            return supers.has(cls.name) || (this.constructor as any).name === cls.name;
         }
         return false;
     }
@@ -207,19 +207,21 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         if (self === other) {
             return 0;
         }
+        // compare class names
         const n1 = self.constructor.name;
         const n2 = other.constructor.name;
         let c = (n1 > n2 as unknown as number) - (n1 < n2 as unknown as number)
         if (c !== 0) {
             return c
         }
-
+        // compare length of hashable content arrays
         const st = self._hashable_content();
         const ot = other._hashable_content();
         c = (st.length > ot.length as unknown as number) - (st.length < ot.length as unknown as number);
         if (c !== 0) {
             return c;
         }
+        // otherwise, go arg by arg and compare
         for (const elem of Util.zip(st, ot)) {
             const l = elem[0];
             const r = elem[1];
