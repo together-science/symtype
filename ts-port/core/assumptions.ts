@@ -194,10 +194,6 @@ function _ask(fact: any, obj: any) {
 
 
 class ManagedProperties {
-    static all_explicit_assumptions: HashDict = new HashDict();
-    static all_default_assumptions: HashSet = new HashSet();
-
-
     static register(cls: any) {
         // register with BasicMeta (record class name)
         BasicMeta.register(cls);

@@ -13,7 +13,7 @@ import {global_parameters} from "./parameters";
 import {S} from "./singleton";
 import {is_gt, is_lt} from "./relational";
 import { fuzzy_not } from "./logic";
-import { Util } from "./utility";
+import {Util} from "./utility";
 
 
 export class Pow extends _Expr {

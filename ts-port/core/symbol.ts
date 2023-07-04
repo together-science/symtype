@@ -53,8 +53,8 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         return true;
     }
 
-    hashKey() {
-        return this.name + this.args;
+    _hashable_content() {
+        return [this.name].concat(this._assumptions.entries().flat())
     }
 
     constructor(name: any, properties: Record<any, any> = undefined) {
@@ -75,7 +75,7 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         this._assumptions._generator = tmp_asm_copy;
     }
 
-    equals(other: Symbol) {
+    __eq__(other: Symbol) {
         if (this.name = other.name) {
             if (this._assumptions.isSame(other._assumptions)) {
                 return true;

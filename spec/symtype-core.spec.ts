@@ -8,6 +8,7 @@ import {_Number_, igcd, ilcm, int_nthroot, toRatio, mod_inverse, igcdex} from ".
 import {S} from "../ts-port/core/singleton";
 import {Pow} from "../ts-port/core/power";
 import {Symbol} from "../ts-port/core/symbol";
+import {Eq, Ne, Ge, Gt, Le, Lt} from "../ts-port/core/relational";
 import {factorint, factorrat} from "../ts-port/ntheory/factor_";
 
 
@@ -197,6 +198,162 @@ describe("Core", function () {
         expect(toRatio(1.2000, 0.0001)).toEqual([6, 5])
         expect(mod_inverse(3, 11)).toBe(4)
         expect(mod_inverse(-3, 11)).toBe(7)
+    });
+
+    it("should compare objects correctly (relational)", function () {
+        const f = _Number_.new(1.5)
+        const n = _Number_.new(2)
+        const r = _Number_.new(-2, 3)
+        const x = new Symbol("x");
+
+        // Float
+        expect(f.__eq__(f)).toBeTrue();
+        expect(f.__ge__(f)).toBeTrue();
+        expect(f.__gt__(f)).toBeFalse();
+        expect(f.__le__(f)).toBeTrue();
+        expect(f.__lt__(f)).toBeFalse();
+        expect(f.__eq__(r)).toBeFalse();
+        expect(f.__ge__(r)).toBeTrue();
+        expect(f.__gt__(r)).toBeTrue();
+        expect(f.__le__(r)).toBeFalse();
+        expect(f.__lt__(r)).toBeFalse();
+        expect(f.__eq__(n)).toBeFalse();
+        expect(f.__ge__(n)).toBeFalse();
+        expect(f.__gt__(n)).toBeFalse();
+        expect(f.__le__(n)).toBeTrue();
+        expect(f.__lt__(n)).toBeTrue();
+        expect(f.__eq__(S.Infinity)).toBeFalse();
+        expect(f.__ge__(S.Infinity)).toBeFalse();
+        expect(f.__gt__(S.Infinity)).toBeFalse();
+        expect(f.__le__(S.Infinity)).toBeTrue();
+        expect(f.__lt__(S.Infinity)).toBeTrue();
+        expect(f.__eq__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__ge__(S.NegativeInfinity)).toBeTrue();
+        expect(f.__gt__(S.NegativeInfinity)).toBeTrue();
+        expect(f.__le__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__lt__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__eq__(S.ComplexInfinity)).toBeFalse();
+        // Rational
+        expect(r.__eq__(f)).toBeFalse();
+        expect(r.__ge__(f)).toBeFalse();
+        expect(r.__gt__(f)).toBeFalse();
+        expect(r.__le__(f)).toBeTrue();
+        expect(r.__lt__(f)).toBeTrue();
+        expect(r.__eq__(r)).toBeTrue();
+        expect(r.__ge__(r)).toBeTrue();
+        expect(r.__gt__(r)).toBeFalse();
+        expect(r.__le__(r)).toBeTrue();
+        expect(r.__lt__(r)).toBeFalse();
+        expect(r.__eq__(n)).toBeFalse();
+        expect(r.__ge__(n)).toBeFalse();
+        expect(r.__gt__(n)).toBeFalse();
+        expect(r.__le__(n)).toBeTrue();
+        expect(r.__lt__(n)).toBeTrue();
+        expect(f.__eq__(S.Infinity)).toBeFalse();
+        expect(f.__ge__(S.Infinity)).toBeFalse();
+        expect(f.__gt__(S.Infinity)).toBeFalse();
+        expect(f.__le__(S.Infinity)).toBeTrue();
+        expect(f.__lt__(S.Infinity)).toBeTrue();
+        expect(f.__eq__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__ge__(S.NegativeInfinity)).toBeTrue();
+        expect(f.__gt__(S.NegativeInfinity)).toBeTrue();
+        expect(f.__le__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__lt__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__eq__(S.ComplexInfinity)).toBeFalse();
+        // Integer
+        expect(n.__eq__(f)).toBeFalse();
+        expect(n.__ge__(f)).toBeTrue();
+        expect(n.__gt__(f)).toBeTrue();
+        expect(n.__le__(f)).toBeFalse();
+        expect(n.__lt__(f)).toBeFalse();
+        expect(n.__eq__(r)).toBeFalse();
+        expect(n.__ge__(r)).toBeTrue();
+        expect(n.__gt__(r)).toBeTrue();
+        expect(n.__le__(r)).toBeFalse();
+        expect(n.__lt__(r)).toBeFalse();
+        expect(n.__eq__(n)).toBeTrue();
+        expect(n.__ge__(n)).toBeTrue();
+        expect(n.__gt__(n)).toBeFalse();
+        expect(n.__le__(n)).toBeTrue();
+        expect(n.__lt__(n)).toBeFalse();
+        expect(f.__eq__(S.Infinity)).toBeFalse();
+        expect(f.__ge__(S.Infinity)).toBeFalse();
+        expect(f.__gt__(S.Infinity)).toBeFalse();
+        expect(f.__le__(S.Infinity)).toBeTrue();
+        expect(f.__lt__(S.Infinity)).toBeTrue();
+        expect(f.__eq__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__ge__(S.NegativeInfinity)).toBeTrue();
+        expect(f.__gt__(S.NegativeInfinity)).toBeTrue();
+        expect(f.__le__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__lt__(S.NegativeInfinity)).toBeFalse();
+        expect(f.__eq__(S.ComplexInfinity)).toBeFalse();
+        // Singleton (only testing eq and ge cuz those are used to derive others)
+        expect(S.ComplexInfinity.__eq__(n)).toBeFalse();
+        expect(S.ComplexInfinity.__eq__(S.ComplexInfinity)).toBeTrue();
+        expect(S.Infinity.__eq__(n)).toBeFalse();
+        expect(S.Infinity.__ge__(n)).toBeTrue();
+        expect(S.Infinity.__ge__(r)).toBeTrue();
+        expect(S.Infinity.__ge__(f)).toBeTrue();
+        expect(S.Infinity.__eq__(S.Infinity)).toBeTrue();
+        expect(S.Infinity.__eq__(S.NegativeInfinity)).toBeFalse();
+        expect(S.NegativeInfinity.__eq__(n)).toBeFalse();
+        expect(S.NegativeInfinity.__ge__(n)).toBeFalse();
+        expect(S.NegativeInfinity.__ge__(r)).toBeFalse();
+        expect(S.NegativeInfinity.__ge__(f)).toBeFalse();
+        expect(S.NegativeInfinity.__eq__(S.Infinity)).toBeFalse();
+        expect(S.NegativeInfinity.__eq__(S.NegativeInfinity)).toBeTrue();
+
+        // Eq (singletons already tested above, so no need to repeat)
+        expect(Eq.new(new Add(true, true, x, r), n).toString()).toBe("-2/3 + x == 2");
+        expect(Eq.new(f, f)).toBeTrue();
+        expect(Eq.new(f, r)).toBeFalse();
+        expect(Eq.new(f, n)).toBeFalse();
+        expect(Eq.new(r, f)).toBeFalse();
+        expect(Eq.new(r, r)).toBeTrue();
+        expect(Eq.new(r, n)).toBeFalse();
+        expect(Eq.new(n, f)).toBeFalse();
+        expect(Eq.new(n, r)).toBeFalse();
+        expect(Eq.new(n, n)).toBeTrue();
+        // Ge (singletons already tested above)
+        expect(Ge.new(new Add(true, true, x, r), n).toString()).toBe("-2/3 + x >= 2")
+        expect(Ge.new(f, f)).toBeTrue();
+        expect(Ge.new(f, r)).toBeTrue();
+        expect(Ge.new(f, n)).toBeFalse();
+        expect(Ge.new(r, f)).toBeFalse();
+        expect(Ge.new(r, r)).toBeTrue();
+        expect(Ge.new(r, n)).toBeFalse();
+        expect(Ge.new(n, f)).toBeTrue();
+        expect(Ge.new(n, r)).toBeTrue();
+        expect(Ge.new(n, n)).toBeTrue();
+
+        // We don't need to test the functionality of the others as they derive 
+        // from these two, but we should still check simplification
+
+        // Ne
+        expect(Ne.new(new Add(true, true, x, r), n).toString()).toBe("-2/3 + x != 2");
+        expect(Ne.new(r, f)).toBeTrue();
+        // Le
+        expect(Le.new(new Add(true, true, x, r), n).toString()).toBe("-2/3 + x <= 2")
+        expect(Le.new(r, f)).toBeTrue();
+        // Gt
+        expect(Gt.new(new Add(true, true, x, r), n).toString()).toBe("-2/3 + x > 2");
+        expect(Gt.new(r, f)).toBeFalse();
+        // Lt
+        expect(Lt.new(new Add(true, true, x, r), n).toString()).toBe("-2/3 + x < 2")
+        expect(Le.new(r, f)).toBeTrue();
+        
+        
+        // expressions
+
+        // commutativity
+        const a: any = new Symbol("a")
+        const b: any = new Symbol("b")
+        expect(new Mul(true, true, a, b).__eq__(new Mul(true, true, b, a))).toBeTrue();
+        expect(new Add(true, true, a, b).__eq__(new Add(true, true, b, a))).toBeTrue();
+        const c: any = new Symbol("c", {"commutative": false})
+        const d: any = new Symbol("d", {"commutative": false})
+        expect(new Mul(true, true, c, d).__eq__(new Mul(true, true, d, c))).toBeFalse();
+        expect(new Add(true, true, c, d).__eq__(new Add(true, true, d, c))).toBeFalse();
     });
 });
 

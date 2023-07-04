@@ -99,6 +99,11 @@ class Util {
         }
         for (let i = 0; i < arr1.length; i++) {
             if (!(arr1[i] === arr2[i])) {
+                if (arr1[i].__eq__) {
+                    if (!arr1[i].__eq__(arr2[i])) {
+                        return false;
+                    }
+                }
                 return false;
             }
         }
@@ -613,11 +618,27 @@ class Iterator {
 
 class MixinBuilder {
     superclass;
+    supers: Set<string>;
     constructor(superclass: any) {
         this.superclass = superclass;
+        this.supers = new Set();
     }
     with(...mixins: any[]) {
-        return mixins.reduce((c, mixin) => mixin(c), this.superclass);
+        // new cls that we're returning with all of the properties of the mixins
+        const newcls = mixins.reduce((c, mixin) => {
+            this.supers.add(mixin.name);
+            return mixin(c);
+        }, this.superclass);
+        // see if this new class has old supers (from 2 generations ago)
+        if (newcls.supers) {
+            // if it does, add those supers to our set
+            for (const [item, _] of newcls.supers.entries()) {
+                this.supers.add(item);
+            }
+        }
+        // add all supers to the cls
+        newcls.supers = this.supers;
+        return newcls;
     }
 }
 

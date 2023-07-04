@@ -1,6 +1,6 @@
 /*
 Notable changes made (and notes):
-- Barebones implementation - only enough as needed for symbol
+- Barebones implementation - only enough as needed for symbol and relational
 */
 
 import {_Basic} from "./basic";
@@ -12,8 +12,14 @@ const Boolean = (superclass: any) => class Boolean extends mix(base).with(_Basic
     __slots__: any[] = [];
 
     static kind = BooleanKind;
+
+    constructor(...args: any[]) {
+        super(...args);
+    }
 };
 
-ManagedProperties.register(Boolean(Object));
+const _Boolean = Boolean(Object)
 
-export {Boolean};
+ManagedProperties.register(_Boolean);
+
+export {_Boolean, Boolean};
