@@ -57,7 +57,7 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         return [this.name].concat(this._assumptions.entries().flat())
     }
 
-    constructor(name: any, properties: Record<any, any> = undefined) {
+    constructor(name: any, properties: Record<string, boolean> = undefined) {
         super();
         this.name = name;
 
@@ -116,4 +116,62 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
 // eslint-disable-next-line new-cap
 ManagedProperties.register(Symbol);
 
-export {Symbol};
+class Dummy extends Symbol {
+    /*
+    Dummy symbols are each unique, even if they have the same name:
+
+    Examples
+    ========
+
+    >>> from sympy import Dummy
+    >>> Dummy("x") == Dummy("x")
+    False
+
+    If a name is not supplied then a string value of an internal count will be
+    used. This is useful when a temporary variable is needed and the name
+    of the variable used in the expression is not important.
+
+    >>> Dummy() #doctest: +SKIP
+    _Dummy_10
+
+    """
+
+    # In the rare event that a Dummy object needs to be recreated, both the
+    # `name` and `dummy_index` should be passed.  This is used by `srepr` for
+    # example:
+    # >>> d1 = Dummy()
+    # >>> d2 = eval(srepr(d1))
+    # >>> d2 == d1
+    # True
+    #
+    # If a new session is started between `srepr` and `eval`, there is a very
+    # small chance that `d2` will be equal to a previously-created Dummy.
+    */
+    static count = 0;
+    static _base_dummy_index = Math.floor(Math.random() * (9*10**6 - 10**6 + 1)) + 10**6;
+    static is_Dummy = true;
+
+    constructor(name: string = undefined, dummy_index: number = undefined, properties: Record<string, boolean> = {}) {
+        super(name, properties); // this handles sanitization and properties
+
+        if (typeof name !== "undefined") {
+            name = "Dummy_" + String(Dummy.count);
+        }
+
+        if (typeof dummy_index === "undefined") {
+            dummy_index = Dummy._base_dummy_index + Dummy.count;
+            Dummy.count += 1;
+        }
+
+        this.dummy_index = dummy_index;
+    }
+
+    _hashable_content() {
+        return super._hashable_content().concat(this.dummy_index);
+    }
+
+}
+
+ManagedProperties.register(Dummy);
+
+export {Symbol, Dummy};
