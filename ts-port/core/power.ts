@@ -138,9 +138,9 @@ export class Pow extends _Expr {
                 && ((b.is_number() && b.is_Mul() || b.is_Number())) 
                 && (b.is_extended_negative())) {
                     if (e.is_even()) {
-                        b = b.__mul__(S.NegativeOne);
+                        b = b.__neg__()
                     } else {
-                        return S.NegativeOne.__mul__(new Pow(b.__mul__(S.NegativeOne), e))
+                        return new Pow(b.__neg__(), e).__neg__();
                     }
                 }
                 if (b === S.NaN || e === S.NaN) {
@@ -168,7 +168,7 @@ export class Pow extends _Expr {
         const e = this._args[1];
         if (b.is_Rational && b.p === 1 && b.q !== 1) {
             const p1 = _Number_.new(b.q);
-            const p2 = e.__mul__(S.NegativeOne);
+            const p2 = e.__neg__();
             return [p1, p2];
         }
         return [b, e];
@@ -264,10 +264,10 @@ export class Pow extends _Expr {
                     if (_half(other)) {
                         if (b.is_negative()) {
                             const p1 = new Pow(S.NegativeOne, other);
-                            const p2 = new Pow(b.__mul__(S.NegativeOne), e.__mul__(other));
+                            const p2 = new Pow(b.__neg__(), e.__mul__(other));
                             return Global.construct("Mul", true, true, p1, p2);
                         } else if (b.is_negative() === false) {
-                            return new Pow(b, other.__mul__(S.NegativeOne));
+                            return new Pow(b, other.__neg__());
                         }
                     }
                 } else if (e.is_even()) {

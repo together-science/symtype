@@ -245,7 +245,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                                 continue;
                             } else if (b.is_negative()) {
                                 neg1e = neg1e.__add__(e);
-                                b = b.__mul__(S.NegativeOne);
+                                b = b.__neg__();
                             }
                             if (b !== S.One) {
                                 pnum_rat.setdefault(b, []).push(e);
@@ -443,7 +443,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             [p, q] = neg1e._as_numer_denom();
             [n, p] = divmod(p.p, q.p);
             if (n % 2 !== 0) {
-                coeff = coeff.__mul__(S.NegativeOne);
+                coeff = coeff.__neg__();
             }
             if (q === 2) {
                 throw new Error("imaginary numbers not yet supported");
@@ -571,7 +571,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                 mulargs.push(new Pow(b, e, false));
             }
             return new Mul(true, true, ...mulargs).__mul__(
-                new Pow(this._from_args(Mul, undefined, ...nc), e, false));
+                new Pow(_AssocOp._from_args(Mul, undefined, ...nc), e, false));
         }
         const p = new Pow(this, e, false);
 
@@ -617,7 +617,7 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         if (coeff === S.One) {
             return factors;
         } else if (coeff === S.NegativeOne && !sign) {
-            return factors.__mul__(S.NegativeOne);
+            return factors.__neg__();
         } else if (factors.is_Add()) {
             if (!clear && coeff.is_Rational() && coeff.q !== 1) {
                 let args = [];
@@ -639,8 +639,8 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
                                 i;
                             }
                         }
-                        return this._from_args(Add, undefined,
-                            ...this._from_args(Mul, undefined, ...temparg));
+                        return _AssocOp._from_args(Add, undefined,
+                            ..._AssocOp._from_args(Mul, undefined, ...temparg));
                         break;
                     }
                 }
@@ -656,11 +656,11 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
             } else {
                 margs.splice(0, 0, coeff);
             }
-            return this._from_args(Mul, undefined, ...margs);
+            return _AssocOp._from_args(Mul, undefined, ...margs);
         } else {
             let m = coeff.__mul__(factors);
             if (m.is_Number() && !(factors.is_Number())) {
-                m = this._from_args(Mul, undefined, coeff, factors);
+                m = _AssocOp._from_args(Mul, undefined, coeff, factors);
             }
             return m;
         }

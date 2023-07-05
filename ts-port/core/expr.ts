@@ -60,11 +60,11 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
     }
 
     __sub__(other: any) {
-        return Global.construct("Add", true, true, this, other.__mul__(S.NegativeOne));
+        return Global.construct("Add", true, true, this, other.__neg__());
     }
 
     __rsub__(other: any) {
-        return Global.construct("Add", true, true, other, this.__mul__(S.NegativeOne));
+        return Global.construct("Add", true, true, other, this.__neg__());
     }
 
     __mul__(other: any) {
@@ -125,6 +125,10 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
         }
     }
 
+    __neg__() {
+        return Global.construct("Mul", this, S.NegativeOne);
+    }
+
     _eval_power(other: any): any {
         return undefined;
     }
@@ -155,7 +159,7 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
             c[0].is_Number &&
             c[0].is_extended_negative &&
             c[0] !== S.NegativeOne) {
-            c.splice(0, 1, S.NegativeOne, c[0].__mul__(S.NegativeOne));
+            c.splice(0, 1, S.NegativeOne, c[0].__neg__());
         }
 
         if (cset) {
@@ -207,7 +211,7 @@ const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(superclass)
     __slots__: any[] = [];
 
     constructor(...args: any) {
-        super(AtomicExpr, args);
+        super(...args);
     }
 
     _eval_is_polynomial(syms: any) {

@@ -369,6 +369,10 @@ class Float extends _Number_ {
         return super.__div__(other);
     }
 
+    __neg__() {
+        return new Float(this.decimal.mul(-1));
+    }
+
     _eval_is_negative() {
         return this.decimal.lessThan(0);
     }
@@ -393,7 +397,7 @@ class Float extends _Number_ {
                 return new Float(Decimal.set({precision: this.prec}).pow(this.decimal, expt.p), prec);
             } else if (expt instanceof Rational &&
                 expt.p === 1 && expt.q % 2 !== 0 && this.is_negative()) {
-                const negpart = (this.__mul__(S.NegativeOne))._eval_power(expt);
+                const negpart: any = (this.__neg__())._eval_power(expt);
                 return new Mul(true, true, negpart, new Pow(S.NegativeOne, expt, false));
             }
             const val = expt._float_val(this.prec).decimal;
@@ -578,7 +582,7 @@ class Rational extends _Number_ {
             } else if (other instanceof Rational) {
                 return new Rational(this.p * other.q - this.q * other.p, this.q * other.q);
             } else if (other instanceof Float) {
-                return other.__mul__(S.NegativeOne).__add__(this);
+                return other.__neg__().__add__(this);
             } else {
                 return super.__sub__(other);
             }
@@ -593,7 +597,7 @@ class Rational extends _Number_ {
             } else if (other instanceof Rational) {
                 return new Rational(this.q * other.p - this.p * other.q, this.q * other.q);
             } else if (other instanceof Float) {
-                return other.__mul__(S.NegativeOne).__add__(this);
+                return other.__neg__().__add__(this);
             } else {
                 return super.__rsub__(other);
             }
@@ -650,13 +654,17 @@ class Rational extends _Number_ {
         return super.__rtruediv__(other);
     }
 
+    __neg__() {
+        return new Rational(-this.p, this.q);
+    }
+
 
     _eval_power(expt: any) {
         if (expt instanceof _Number_) {
             if (expt instanceof Float) {
                 return this.eval_evalf(expt.prec)._eval_power(expt);
             } else if (expt.is_extended_negative()) {
-                const ne = expt.__mul__(S.NegativeOne);
+                const ne = expt.__neg__();
                 if (ne === S.One) {
                     return new Rational(this.q, this.p)
                 }
@@ -983,6 +991,10 @@ class Integer extends Rational {
         }
     }
 
+    __neg__() {
+        return new Integer(-this.p);
+    }
+
     _eval_is_negative() {
         return this.p < 0;
     }
@@ -1006,7 +1018,7 @@ class Integer extends Rational {
         }
         if (!(expt instanceof _Number_)) {
             if (this.is_negative() && expt.is_even()) {
-                return this.__mul__(S.NegativeOne)._eval_power(expt);
+                return this.__neg__()._eval_power(expt);
             }
         }
         if (expt instanceof Float) {
@@ -1016,9 +1028,9 @@ class Integer extends Rational {
             return undefined;
         }
         if (expt.is_negative()) {
-            const ne = expt.__mul__(S.NegativeOne);
+            const ne = expt.__neg__();
             if (this.is_negative()) {
-                return S.NegativeOne._eval_power(expt).__mul__(new Rational(1, this.__mul__(S.NegativeOne), 1))._eval_power(ne);
+                return S.NegativeOne._eval_power(expt).__mul__(new Rational(1, this.__neg__(), 1))._eval_power(ne);
             } else {
                 return new Rational(1, this.p, 1)._eval_power(ne);
             }
@@ -1190,6 +1202,10 @@ class Zero extends IntegerConstant {
             return new Pow(this, terms);
         }
     }
+
+    __neg__() {
+        return S.Zero;
+    }
 };
 
 ManagedProperties.register(Zero);
@@ -1218,6 +1234,10 @@ class One extends IntegerConstant {
 
     _eval_power(expt: any) {
         return this;
+    }
+
+    __neg__() {
+        return S.NegativeOne;
     }
 };
 
@@ -1264,6 +1284,10 @@ class NegativeOne extends IntegerConstant {
             }
         }
         return;
+    }
+
+    __neg__() {
+        return S.One;
     }
 };
 
@@ -1348,6 +1372,10 @@ class NaN extends _Number_ {
     __lt__(other: any) {
         return Lt.new(this, other);
     }
+
+    __neg__() {
+        return this;
+    }
 }
 
 ManagedProperties.register(NaN);
@@ -1411,6 +1439,10 @@ class ComplexInfinity extends _AtomicExpr {
                 }
             }
         }
+    }
+
+    __neg__() {
+        return this;
     }
 }
 
@@ -1551,6 +1583,10 @@ class Infinity extends _Number_ {
     __lt__(other: any) {
         return Lt.new(this, other);
     }
+
+    __neg__() {
+        return S.NegativeInfinity;
+    }
 }
 
 class NegativeInfinity extends _Number_ {
@@ -1677,6 +1713,10 @@ class NegativeInfinity extends _Number_ {
 
     __lt__(other: any) {
         return Lt.new(this, other);
+    }
+
+    __neg__() {
+        return S.Infinity;
     }
 }
 

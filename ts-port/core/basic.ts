@@ -275,7 +275,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         if (this === other) {
             return true;
         }
-        if ((!(this.is_Number()) && other.is_Number()) && typeof this !== typeof other) {
+        if ((!(this.is_Number()) && other.is_Number()) && this.constructor.name !== other.constructor.name) {
             return false;
         }
         const [a, b]: any = [this._hashable_content(), other._hashable_content()];
@@ -375,6 +375,177 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
             return false;
         }
         return n.precision != 1
+    }
+
+    free_symbols() {
+        /*
+        Return from the atoms of self those which are free symbols.
+
+        Not all free symbols are ``Symbol``. Eg: IndexedBase('I')[0].free_symbols
+
+        For most expressions, all symbols are free symbols. For some classes
+        this is not true. e.g. Integrals use Symbols for the dummy variables
+        which are bound variables, so Integral has a method to return all
+        symbols except those. Derivative keeps track of symbols with respect
+        to which it will perform a derivative; those are
+        bound variables, too, so it has its own free_symbols method.
+
+        Any other method that uses bound variables should implement a
+        free_symbols method.
+        */
+        const res = new HashSet();
+        for (const a of this._args) {
+            res.merge(a.free_symbols());
+        }
+        return res;
+    }
+
+    
+    // important change: changing parameter structure significantly
+    // intsead of having an args parameter, I'm adding pattern and rule as positional
+    // arguments (since those are the intended inputs according to sympy)
+
+    // im also making hints an optional dictionary since this replicates their 
+    // keyword parameter functionality
+
+    // NOTE: PATTERN NOT YET SUPPORTED (only the bare minimum for linear solve)
+    rewrite(rule: any = undefined, pattern: any = undefined, deep: boolean = true, hints: Record<any, any> = {}) {
+        /*
+        Rewrite *self* using a defined rule.
+
+        Rewriting transforms an expression to another, which is mathematically
+        equivalent but structurally different. For example you can rewrite
+        trigonometric functions as complex exponentials or combinatorial
+        functions as gamma function.
+
+        This method takes a *pattern* and a *rule* as positional arguments.
+        *pattern* is optional parameter which defines the types of expressions
+        that will be transformed. If it is not passed, all possible expressions
+        will be rewritten. *rule* defines how the expression will be rewritten.
+
+        Parameters
+        ==========
+
+        args : *rule*, or *pattern* and *rule*.
+            - *pattern* is a type or an iterable of types.
+            - *rule* can be any object.
+
+        deep : bool, optional.
+            If ``True``, subexpressions are recursively transformed. Default is
+            ``True``.
+
+        Examples
+        ========
+
+        If *pattern* is unspecified, all possible expressions are transformed.
+
+        >>> from sympy import cos, sin, exp, I
+        >>> from sympy.abc import x
+        >>> expr = cos(x) + I*sin(x)
+        >>> expr.rewrite(exp)
+        exp(I*x)
+
+        Pattern can be a type or an iterable of types.
+
+        >>> expr.rewrite(sin, exp)
+        exp(I*x)/2 + cos(x) - exp(-I*x)/2
+        >>> expr.rewrite([cos,], exp)
+        exp(I*x)/2 + I*sin(x) + exp(-I*x)/2
+        >>> expr.rewrite([cos, sin], exp)
+        exp(I*x)
+
+        Rewriting behavior can be implemented by defining ``_eval_rewrite()``
+        method.
+
+        >>> from sympy import Expr, sqrt, pi
+        >>> class MySin(Expr):
+        ...     def _eval_rewrite(self, rule, args, **hints):
+        ...         x, = args
+        ...         if rule == cos:
+        ...             return cos(pi/2 - x, evaluate=False)
+        ...         if rule == sqrt:
+        ...             return sqrt(1 - cos(x)**2)
+        >>> MySin(MySin(x)).rewrite(cos)
+        cos(-cos(-x + pi/2) + pi/2)
+        >>> MySin(x).rewrite(sqrt)
+        sqrt(1 - cos(x)**2)
+
+        Defining ``_eval_rewrite_as_[...]()`` method is supported for backwards
+        compatibility reason. This may be removed in the future and using it is
+        discouraged.
+
+        >>> class MySin(Expr):
+        ...     def _eval_rewrite_as_cos(self, *args, **hints):
+        ...         x, = args
+        ...         return cos(pi/2 - x, evaluate=False)
+        >>> MySin(x).rewrite(cos)
+        cos(-x + pi/2)
+        */
+
+        if (!rule && !pattern) {
+            return this;
+        }
+
+        hints = new HashDict(hints);
+        hints.add("deep", deep); // can either set the value or add it
+
+        let method;
+        if (typeof rule === "string") {
+            method = "_eval_rewrite_as_" + rule;
+        } else if (rule.name) {
+            method = "_eval_rewrite_as_" + rule.name.replace("_", "");
+        } else if (rule.clsname) { // adding this to account for clsname prop
+            method = "_eval_rewrite_as_" + rule.clsname;
+        } else { // rule is an instance
+            const cls = rule.constructor.name.replace("_", "");;
+            method = "_eval_rewrite_as_" + cls;
+        }
+
+        if (pattern) {
+            throw new Error("pattern functionality for rewrite not implemented")
+        }
+
+        return this._rewrite(pattern, rule, method, hints)
+    }
+
+    _rewrite(pattern: any, rule: any, method: string, hints: any) {
+        const deep = hints.get("deep");
+        let args = [];
+        if (deep) {
+            for (const a of this._args) {
+                args.push(a._rewrite(pattern, rule, method, hints));
+            }
+        } else {
+            args = this._args;
+        }
+        if (!pattern || pattern.any((p: any) => this.isinstance(p))) {
+            const meth = this[method];
+            let rewritten;
+            if (typeof meth !== "undefined") {
+                rewritten = meth(hints, ...args);
+            } else {
+                rewritten = this._eval_rewrite(rule, args, hints)
+            }
+            if (typeof rewritten !== "undefined") {
+                return rewritten;
+            }
+        }
+        if (args.length === 0) {
+            return this;
+        }
+        return this.func(...args);
+    }
+
+    // this is not yet implemented in subclasses, but it should be to support
+    // full rewrite functionality
+    _eval_rewrite(rule: any, args: any[], hints: any): any {
+        return undefined;
+    }
+
+    // reworking func system to account for the weird parameter structure
+    // of Add and Mul, which makes it so that they need their own func methods
+    func(...args: any[]) {
+        return new (this.constructor as any)(...args);
     }
 };
 

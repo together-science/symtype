@@ -51,7 +51,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
             if (typeof evaluate === "undefined") {
                 evaluate = global_parameters.evaluate;
             } else if (evaluate === false) {
-                let obj = this._from_args(cls, undefined, ...args);
+                let obj = _AssocOp._from_args(cls, undefined, ...args);
                 obj = this._exec_constructor_postprocessors(obj);
                 return obj;
             }
@@ -70,14 +70,14 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
             // eslint-disable-next-line no-unused-vars
             const [c_part, nc_part, order_symbols] = this.flatten(args);
             const is_commutative: boolean = nc_part.length === 0;
-            let obj: any = this._from_args(cls, is_commutative, ...c_part.concat(nc_part));
+            let obj: any = _AssocOp._from_args(cls, is_commutative, ...c_part.concat(nc_part));
             obj = this._exec_constructor_postprocessors(obj);
             // !!! order symbols not yet implemented
             return obj;
         }
     }
 
-    _from_args(cls: any, is_commutative: any, ...args: any) {
+    static _from_args(cls: any, is_commutative: any, ...args: any) {
         /* "Create new instance with already-processed args.
         If the args are not in canonical order, then a non-canonical
         result will be returned, so use with caution. The order of
@@ -107,7 +107,7 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
         } else {
             is_commutative = this.is_commutative;
         }
-        return this._from_args(this.constructor, is_commutative, ...args);
+        return _AssocOp._from_args(this.constructor, is_commutative, ...args);
     }
 
     static make_args(cls: any, expr: any) {
@@ -116,6 +116,10 @@ const AssocOp = (superclass: any) => class AssocOp extends mix(superclass).with(
         } else {
             return [expr];
         }
+    }
+
+    func(...args: any[]) {
+        return new (this.constructor as any)(true, true, ...args);
     }
 };
 

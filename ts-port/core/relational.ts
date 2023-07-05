@@ -224,6 +224,49 @@ class Equality extends Relational {
         }
     }
 
+    _eval_rewrite_as_Add(hints: HashDict, ...args: any[]) {
+        /*
+                """
+        return Eq(L, R) as L - R. To control the evaluation of
+        the result set pass `evaluate=True` to give L - R;
+        if `evaluate=None` then terms in L and R will not cancel
+        but they will be listed in canonical order; otherwise
+        non-canonical args will be returned. If one side is 0, the
+        non-zero side will be returned.
+
+        Examples
+        ========
+
+        >>> from sympy import Eq, Add
+        >>> from sympy.abc import b, x
+        >>> eq = Eq(x + b, x - b)
+        >>> eq.rewrite(Add)
+        2*b
+        >>> eq.rewrite(Add, evaluate=None).args
+        (b, b, x, -x)
+        >>> eq.rewrite(Add, evaluate=False).args
+        (b, x, b, -x)
+        """
+        */
+        const [L, R] = args;
+        if (L.__eq__(S.Zero)) {
+            return R;
+        }
+        if (R.__eq__(S.Zero)) {
+            return L;
+        }
+        const evaluate = hints.get("evaluate", true);
+        if (evaluate) {
+            return L.__sub__(R);
+        }
+        args = _AssocOp.make_args(Add, L).concat(_AssocOp.make_args(Add, R.__neg__()));
+        if (typeof evaluate === "undefined") { // no cancellation, but canonical
+            return new Add(false, true, ...args);
+        }
+        // no cancellation and not canonical
+        return _AssocOp._from_args(Add, args);
+    }
+
     toString() {
         return this._args[0].toString() + " == " + this._args[1].toString()
     }

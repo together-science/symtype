@@ -4,7 +4,7 @@ Notable changes
 - Class structure reworked based on a constructor system (view source)
 */
 
-import {mix, base, HashDict} from "./utility";
+import {mix, base, HashDict, HashSet} from "./utility";
 import {AtomicExpr} from "./expr";
 import {Boolean} from "./boolalg";
 import {NumberKind, UndefinedKind} from "./kind";
@@ -100,6 +100,12 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
             }
             assumptions.add(key, v as boolean);
         }
+    }
+
+    free_symbols() {
+        const res: HashSet= new HashSet();
+        res.add(this);
+        return res;
     }
 
     toString() {

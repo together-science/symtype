@@ -249,6 +249,12 @@ class HashSet {
         return Util.hashKey(item);
     }
 
+    merge(other: HashSet) {
+        for (const item of other.toArray()) {
+            this.add(item);
+        }
+    }
+
     add(item: any) {
         const key = this.encode(item);
         if (!(key in this.dict)) {
@@ -332,6 +338,10 @@ class HashSet {
             }
         }
         return false;
+    }
+
+    toString() {
+        return "{ " + this.toArray().map((e: any) => e.toString()) + " }"
     }
 }
 
