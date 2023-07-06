@@ -9,8 +9,9 @@ import {Symbol} from "../ts-port/core/symbol";
 import {Eq, Ne, Gt, Lt, Ge, Le, is_eq, is_ge} from "../ts-port/core/relational";
 import { nsimplify } from "./simplify/simplify";
 import { Basic, _Basic } from "./core/basic";
+import { _simple_dens } from "./solvers/solvers";
 
 const x = new Symbol("x");
 const n = _Number_.new(2.6804)
-const mexpr = new Mul(true, true, n, x);
-console.log(nsimplify(mexpr).toString());
+const mexpr = nsimplify(new Mul(true, true, n, x));
+console.log(_simple_dens(mexpr));
