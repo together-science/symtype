@@ -70,7 +70,10 @@ export function int_nthroot(y: number, n: number) {
 
 // turn a float to a rational -> replicates mpmath functionality but we should
 // probably find a library to do this eventually
-export function toRatio(n: any, eps: number) {
+export function toRatio(n: number | Float, eps: number) {
+    if (n instanceof Float) {
+        n = parseFloat(n.decimal.toString());
+    }
     const gcde = (e: number, x: number, y: number) => {
         const _gcd: any = (a: number, b: number) => (b < e ? a : _gcd(b, a % b));
         return _gcd(Math.abs(x), Math.abs(y));
@@ -510,10 +513,9 @@ class Rational extends _Number_ {
         if (typeof q === "undefined") {
             if (p instanceof Rational) {
                 return p;
-            } else {
-                if (typeof p === "number" && p % 1 !== 0) {
-                    return new Rational(toRatio(p, 0.0001));
-                } else {}
+            } else if ((typeof p === "number" && p % 1 !== 0) || p instanceof Float) {
+                const [numer, denom] = toRatio(p, 0.0001)
+                return new Rational(numer, denom);
             }
             q = 1;
             gcd = 1;
@@ -554,6 +556,14 @@ class Rational extends _Number_ {
 
     hashKey() {
         return this.constructor.name + this.p + this.q;
+    }
+
+    // limit denominator works differently than sympy (due to its reliance on 
+    // mpmath) but hopefully this recreates the functionality
+    limit_denominator(max_denom: number) {
+        const dec = this._float_val().decimal;
+        const asstr = dec.toFraction(max_denom);
+        return new Rational(asstr[0], asstr[1]);
     }
 
     __add__(other: any) {
@@ -717,7 +727,7 @@ class Rational extends _Number_ {
         return [this, S.Zero];
     }
 
-    _float_val(prec: number): any {
+    _float_val(prec: number = 15): any {
         const a = new Decimal(this.p);
         const b = new Decimal(this.q);
         return new Float(Decimal.set({precision: prec}).div(a, b));
@@ -851,6 +861,7 @@ class Rational extends _Number_ {
     as_numer_denom() {
         return [new Integer(this.p), new Integer(this.q)]
     }
+
 
     toString() {
         return String(this.p) + "/" + String(this.q)

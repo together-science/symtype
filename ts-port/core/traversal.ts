@@ -1,3 +1,5 @@
+import { Basic, _Basic } from "./basic";
+
 class preorder_traversal {
     /*
     Do a pre-order traversal of a tree.
@@ -36,9 +38,10 @@ class preorder_traversal {
 
     _skip_flag: any;
     _pt: any;
+    node: any
     constructor(node: any) {
         this._skip_flag = false;
-        this._pt = this._preorder_traversal(node);
+        this.node = node;
     }
 
     * _preorder_traversal(node: any): any {
@@ -47,7 +50,7 @@ class preorder_traversal {
             this._skip_flag = false;
             return;
         }
-        if (node.instanceofBasic) {
+        if (node.isinstance(Basic)) {
             let args;
             if (node._argset) {
                 args = node._argset;
@@ -70,7 +73,7 @@ class preorder_traversal {
 
     asIter() {
         const res: any[] = [];
-        for (const item of this._pt) {
+        for (const item of this._preorder_traversal(this.node)) {
             res.push(item);
         }
         return res;

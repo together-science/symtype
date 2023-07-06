@@ -13,6 +13,9 @@ import {as_property, make_property, ManagedProperties, _assume_defined, StdFactK
 import {Util, HashDict, mix, base, HashSet} from "./utility";
 import {UndefinedKind} from "./kind";
 import {preorder_traversal} from "./traversal";
+import { Dummy } from "./symbol";
+import { Global } from "./global";
+import { S } from "./singleton";
 
 
 const _Basic = (superclass: any) => class _Basic extends superclass {
@@ -50,6 +53,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     _args: any[];
     _mhash: Number | undefined;
     _assumptions: StdFactKB;
+    static clsname = "Basic"
 
     // To be overridden with True in the appropriate subclasses
     static is_number = false;
@@ -125,12 +129,12 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         if (this instanceof cls) {
             return true;
         }
-        const supers = (this.constructor as any).supers;
+        const supers: Set<string> = (this.constructor as any).supers;
         if (supers) {
             if (cls.clsname) {
-                return supers.has(cls.clsname) || (this.constructor as any).clsname === cls.clsname;
+                return [...supers].some((e: any) => e.includes(cls.clsname)) || (this.constructor as any).clsname === cls.clsname;
             }
-            return supers.has(cls.name) || (this.constructor as any).name === cls.name;
+            return [...supers].some((e: any) => e.includes(cls.name)) || (this.constructor as any).clsname === cls.name;
         }
         return false;
     }
@@ -295,7 +299,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return true;
     }
 
-    subs(...args: any) {
+    subs(kwargs: Record<any, any> = {}, ...args: any[]) {
         let sequence;
         if (args.length === 1) {
             sequence = args[0];
@@ -311,19 +315,45 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         } else {
             throw new Error("sub accepts 1 or 2 args");
         }
-        let rv = this;
-        for (const item of sequence) {
-            const old = item[0];
-            const _new = item[1];
-            rv = rv._subs(old, _new);
-            if (!(rv instanceof Basic)) {
-                break;
+
+        if (kwargs["simultaneous"]) {
+            console.log("???")
+            const reps: Record<any, any> = {};
+            let rv = this;
+            kwargs["hack2"] = true;
+            const m = Global.construct("Dummy", "subs_m");
+            for (const item of sequence) {
+                const old = item[0];
+                const _new = item[1];
+                let com = _new.is_commutative();
+                if (typeof com === "undefined") {
+                    com = true;
+                }
+                const d = Global.construct("Dummy", "subs_d", undefined, {"commutative" : com});
+                rv = rv._subs(kwargs, old, d.__mul__(m));
+                if (!(rv.isinstance)) { // shows that its a basic
+                    break;
+                }
+                reps[d] = _new;
             }
+            reps[m] = S.One;
+            return rv.xreplace(reps)
+
+        } else {
+            let rv = this;
+            for (const item of sequence) {
+                const old = item[0];
+                const _new = item[1];
+                rv = rv._subs(kwargs, old, _new);
+                if (!(rv.isinstance)) {
+                    break;
+                }
+            }
+            return rv;
         }
-        return rv;
     }
 
-    _subs(old: any, _new: any) {
+    _subs(kwargs: Record<any, any> = {} , old: any, _new: any) {
         function fallback(cls: any, old: any, _new: any) {
             let hit = false;
             const args = cls._args;
@@ -332,7 +362,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
                 if (!(arg._eval_subs)) {
                     continue;
                 }
-                arg = arg._subs(old, _new);
+                arg = arg._subs(kwargs, old, _new);
                 if (!(cls._aresame(arg, args[i]))) {
                     hit = true;
                     args[i] = arg;
@@ -340,9 +370,9 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
             }
             if (hit) {
                 let rv;
-                if (cls.constructor.name === "Mul" || cls.constructor.name === "Add") {
+                if (cls.constructor.name.includes("Mul") || cls.constructor.name.includes("Add")) {
                     rv = new cls.constructor(true, true, ...args);
-                } else if (cls.constructor.name === "Pow") {
+                } else if (cls.constructor.name.includes("Pow")) {
                     rv = new cls.constructor(...args);
                 }
                 return rv;
@@ -546,6 +576,178 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
     // of Add and Mul, which makes it so that they need their own func methods
     func(...args: any[]) {
         return new (this.constructor as any)(...args);
+    }
+
+    xreplace(rule: Record<any, any>) {
+        /*
+        Replace occurrences of objects within the expression.
+
+        Parameters
+        ==========
+
+        rule : dict-like
+            Expresses a replacement rule
+
+        Returns
+        =======
+
+        xreplace : the result of the replacement
+
+        Examples
+        ========
+
+        >>> from sympy import symbols, pi, exp
+        >>> x, y, z = symbols('x y z')
+        >>> (1 + x*y).xreplace({x: pi})
+        pi*y + 1
+        >>> (1 + x*y).xreplace({x: pi, y: 2})
+        1 + 2*pi
+
+        Replacements occur only if an entire node in the expression tree is
+        matched:
+
+        >>> (x*y + z).xreplace({x*y: pi})
+        z + pi
+        >>> (x*y*z).xreplace({x*y: pi})
+        x*y*z
+        >>> (2*x).xreplace({2*x: y, x: z})
+        y
+        >>> (2*2*x).xreplace({2*x: y, x: z})
+        4*z
+        >>> (x + y + 2).xreplace({x + y: 2})
+        x + y + 2
+        >>> (x + 2 + exp(x + 2)).xreplace({x + 2: y})
+        x + exp(y) + 2
+
+        xreplace does not differentiate between free and bound symbols. In the
+        following, subs(x, y) would not change x since it is a bound symbol,
+        but xreplace does:
+
+        >>> from sympy import Integral
+        >>> Integral(x, (x, 1, 2*x)).xreplace({x: y})
+        Integral(y, (y, 1, 2*y))
+
+        Trying to replace x with an expression raises an error:
+
+        >>> Integral(x, (x, 1, 2*x)).xreplace({x: 2*y}) # doctest: +SKIP
+        ValueError: Invalid limits given: ((2*y, 1, 4*y),)
+
+        See Also
+        ========
+        replace: replacement capable of doing wildcard-like matching,
+                 parsing of match, and conditional replacements
+        subs: substitution of subexpressions as defined by the objects
+              themselves.
+
+        */
+        const [val, _] = this._xreplace(rule);
+        return val;
+    }
+
+    _xreplace(rule: Record<any, any>) {
+        if (!(rule instanceof HashDict)) {
+            rule = new HashDict(rule)
+        }
+        if (rule.has(this)) {
+            return [rule.get(this), true];
+        } else if (rule.size > 0) {
+            const args = [];
+            let changed: number = 0;
+            for (const a of this._args) {
+                if (typeof a["_xreplace"] !== "undefined") {
+                    const a_xr = a["_xreplace"](rule);
+                    args.push(a_xr[0]);
+                    changed |= Number(a_xr[1]);
+                } else {
+                    args.push(a);
+                }
+            }
+            if (changed === 1) {
+                return [this.func(...args), true];
+            }
+        }
+        return [this, false];
+    }
+
+    atoms(...types: any[]) {
+        /*
+        Returns the atoms that form the current object.
+
+        By default, only objects that are truly atomic and cannot
+        be divided into smaller pieces are returned: symbols, numbers,
+        and number symbols like I and pi. It is possible to request
+        atoms of any type, however, as demonstrated below.
+
+        Examples
+        ========
+
+        >>> from sympy import I, pi, sin
+        >>> from sympy.abc import x, y
+        >>> (1 + x + 2*sin(y + I*pi)).atoms()
+        {1, 2, I, pi, x, y}
+
+        If one or more types are given, the results will contain only
+        those types of atoms.
+
+        >>> from sympy import Number, NumberSymbol, Symbol
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(Symbol)
+        {x, y}
+
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(Number)
+        {1, 2}
+
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol)
+        {1, 2, pi}
+
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(Number, NumberSymbol, I)
+        {1, 2, I, pi}
+
+        Note that I (imaginary unit) and zoo (complex infinity) are special
+        types of number symbols and are not part of the NumberSymbol class.
+
+        The type can be given implicitly, too:
+
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(x) # x is a Symbol
+        {x, y}
+
+        Be careful to check your assumptions when using the implicit option
+        since ``S(1).is_Integer = True`` but ``type(S(1))`` is ``One``, a special type
+        of SymPy atom, while ``type(S(2))`` is type ``Integer`` and will find all
+        integers in an expression:
+
+        >>> from sympy import S
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(S(1))
+        {1}
+
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(S(2))
+        {1, 2}
+
+        Finally, arguments to atoms() can select more than atomic atoms: any
+        SymPy type (loaded in core/__init__.py) can be listed as an argument
+        and those types of "atoms" as found in scanning the arguments of the
+        expression recursively:
+
+        >>> from sympy import Function, Mul
+        >>> from sympy.core.function import AppliedUndef
+        >>> f = Function('f')
+        >>> (1 + f(x) + 2*sin(y + I*pi)).atoms(Function)
+        {f(x), sin(y + I*pi)}
+        >>> (1 + f(x) + 2*sin(y + I*pi)).atoms(AppliedUndef)
+        {f(x)}
+
+        >>> (1 + x + 2*sin(y + I*pi)).atoms(Mul)
+        {I*pi, 2*sin(y + I*pi)}
+
+        """
+        */
+        const nodes = new preorder_traversal(this).asIter();
+        let res = [];
+        if (types) {
+            res = nodes.filter((node: any) => types.some((type: any) => node instanceof type));
+        } else {
+            res = nodes.filter((node: any) => !node._args);
+        }
+        return new Set(res);
     }
 };
 

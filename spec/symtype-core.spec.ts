@@ -169,12 +169,12 @@ describe("Core", function () {
         const n3 = _Number_.new(-1.5);
         const n4 = _Number_.new(1, 3);
         const x = new Symbol("x");
-        expect(new Pow(n, x).subs(x, n3).toString()).toBe("0.125");
-        expect(new Mul(false, true, n, n2, n3, x, x).subs(x, n2).toString()).toBe("-0.526748971193417");
-        expect(new Add(false, true, n, n2, x, x).subs(x, n).toString()).toBe("112/9");
-        expect(new Mul(true, true, n, new Add(true, true, x, n)).subs(x, n).toString()).toBe("32")
-        expect(new Pow(n, new Mul(true, true, n, x)).subs(x, n3).toString()).toBe("0.000244140625");
-        expect(new Mul(true, true, n, new Add(true, true, x, n)).subs(x, n3).toString()).toBe("10");
+        expect(new Pow(n, x).subs({}, x, n3).toString()).toBe("0.125");
+        expect(new Mul(false, true, n, n2, n3, x, x).subs({}, x, n2).toString()).toBe("-0.526748971193417");
+        expect(new Add(false, true, n, n2, x, x).subs({}, x, n).toString()).toBe("112/9");
+        expect(new Mul(true, true, n, new Add(true, true, x, n)).subs({}, x, n).toString()).toBe("32")
+        expect(new Pow(n, new Mul(true, true, n, x)).subs({}, x, n3).toString()).toBe("0.000244140625");
+        expect(new Mul(true, true, n, new Add(true, true, x, n)).subs({}, x, n3).toString()).toBe("10");
     });
 
     it("should factor large ints and rationals correctly", function () {

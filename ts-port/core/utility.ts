@@ -354,7 +354,7 @@ class HashDict {
         this.size = 0;
         this.dict = {};
         for (const item of Object.entries(d)) {
-            this.dict[Util.hashKey(item[0])] = [item[0], item[1]];
+            this.add(item[0], item[1]);
         }
     }
 

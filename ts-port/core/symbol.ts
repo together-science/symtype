@@ -11,6 +11,7 @@ import {NumberKind, UndefinedKind} from "./kind";
 import {fuzzy_bool} from "./logic";
 import {StdFactKB} from "./assumptions";
 import {ManagedProperties} from "./assumptions";
+import { Global } from "./global";
 
 
 class Symbol extends mix(base).with(Boolean, AtomicExpr) {
@@ -108,6 +109,7 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         return res;
     }
 
+
     toString() {
         return this.name;
     }
@@ -170,8 +172,14 @@ class Dummy extends Symbol {
         return super._hashable_content().concat(this.dummy_index);
     }
 
+    static _new(...args: any[]) {
+        return new Dummy(...args);
+    }
+
+
 }
 
 ManagedProperties.register(Dummy);
+Global.register("Dummy", Dummy._new);
 
 export {Symbol, Dummy};
