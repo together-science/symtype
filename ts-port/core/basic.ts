@@ -12,7 +12,7 @@ Notable changes made (and notes):
 import {as_property, make_property, ManagedProperties, _assume_defined, StdFactKB} from "./assumptions";
 import {Util, HashDict, mix, base, HashSet} from "./utility";
 import {UndefinedKind} from "./kind";
-import {preorder_traversal} from "./traversal";
+import {iterargs, preorder_traversal} from "./traversal";
 import { Dummy } from "./symbol";
 import { Global } from "./global";
 import { S } from "./singleton";
@@ -299,6 +299,88 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return true;
     }
 
+    __ne__(other: any) {
+        return !this.__eq__(other);
+    }
+
+    has(...patterns: any[]) {
+        /*
+        Test whether any subexpression matches any of the patterns.
+
+        Examples
+        ========
+
+        >>> from sympy import sin
+        >>> from sympy.abc import x, y, z
+        >>> (x**2 + sin(x*y)).has(z)
+        False
+        >>> (x**2 + sin(x*y)).has(x, y, z)
+        True
+        >>> x.has(x)
+        True
+
+        Note ``has`` is a structural algorithm with no knowledge of
+        mathematics. Consider the following half-open interval:
+
+        >>> from sympy import Interval
+        >>> i = Interval.Lopen(0, 5); i
+        Interval.Lopen(0, 5)
+        >>> i.args
+        (0, 5, True, False)
+        >>> i.has(4)  # there is no "4" in the arguments
+        False
+        >>> i.has(0)  # there *is* a "0" in the arguments
+        True
+
+        Instead, use ``contains`` to determine whether a number is in the
+        interval or not:
+
+        >>> i.contains(4)
+        True
+        >>> i.contains(0)
+        False
+
+
+        Note that ``expr.has(*patterns)`` is exactly equivalent to
+        ``any(expr.has(p) for p in patterns)``. In particular, ``False`` is
+        returned when the list of patterns is empty.
+
+        >>> x.has()
+        False
+
+        */
+        return this._has(iterargs, ...patterns);
+    }
+
+    _has(iterargs: any, ...patterns: any[]) {
+        const type_set: HashSet = new HashSet()
+        const p_set: HashSet = new HashSet()
+        for (const p of patterns) {
+            if (Util.isCls(p)) {
+                type_set.add(p);
+                continue;
+            }
+            if (!p.isinstance) {
+                continue;
+            }
+            p_set.add(p);
+        }
+        const types = type_set.toArray();
+        for (const i of iterargs(this)) {
+            if (p_set.has(i)) {
+                return true;
+            }
+            if (types.some((cls: any) => i.isinstance(cls))) {
+                return true;
+            }
+        }
+
+        // matchers not yet implemented (not needed for solve or derivative)
+        // TODO: add this when it becomes necessary
+
+        return false;
+    }
+
     subs(kwargs: Record<any, any> = {}, ...args: any[]) {
         let sequence;
         if (args.length === 1) {
@@ -407,7 +489,7 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return n.precision != 1
     }
 
-    free_symbols() {
+    free_symbols(): HashSet {
         /*
         Return from the atoms of self those which are free symbols.
 
@@ -669,6 +751,224 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return [this, false];
     }
 
+    replace(query: Function, value: Function, map: boolean = false, simultaneous: boolean = true, exact: boolean = undefined) {
+        /*
+        Replace matching subexpressions of ``self`` with ``value``.
+
+        If ``map = True`` then also return the mapping {old: new} where ``old``
+        was a sub-expression found with query and ``new`` is the replacement
+        value for it. If the expression itself does not match the query, then
+        the returned value will be ``self.xreplace(map)`` otherwise it should
+        be ``self.subs(ordered(map.items()))``.
+
+        Traverses an expression tree and performs replacement of matching
+        subexpressions from the bottom to the top of the tree. The default
+        approach is to do the replacement in a simultaneous fashion so
+        changes made are targeted only once. If this is not desired or causes
+        problems, ``simultaneous`` can be set to False.
+
+        In addition, if an expression containing more than one Wild symbol
+        is being used to match subexpressions and the ``exact`` flag is None
+        it will be set to True so the match will only succeed if all non-zero
+        values are received for each Wild that appears in the match pattern.
+        Setting this to False accepts a match of 0; while setting it True
+        accepts all matches that have a 0 in them. See example below for
+        cautions.
+
+        The list of possible combinations of queries and replacement values
+        is listed below:
+
+        Examples
+        ========
+
+        Initial setup
+
+        >>> from sympy import log, sin, cos, tan, Wild, Mul, Add
+        >>> from sympy.abc import x, y
+        >>> f = log(sin(x)) + tan(sin(x**2))
+
+        1.1. type -> type
+            obj.replace(type, newtype)
+
+            When object of type ``type`` is found, replace it with the
+            result of passing its argument(s) to ``newtype``.
+
+            >>> f.replace(sin, cos)
+            log(cos(x)) + tan(cos(x**2))
+            >>> sin(x).replace(sin, cos, map=True)
+            (cos(x), {sin(x): cos(x)})
+            >>> (x*y).replace(Mul, Add)
+            x + y
+
+        1.2. type -> func
+            obj.replace(type, func)
+
+            When object of type ``type`` is found, apply ``func`` to its
+            argument(s). ``func`` must be written to handle the number
+            of arguments of ``type``.
+
+            >>> f.replace(sin, lambda arg: sin(2*arg))
+            log(sin(2*x)) + tan(sin(2*x**2))
+            >>> (x*y).replace(Mul, lambda *args: sin(2*Mul(*args)))
+            sin(2*x*y)
+
+        2.1. pattern -> expr
+            obj.replace(pattern(wild), expr(wild))
+
+            Replace subexpressions matching ``pattern`` with the expression
+            written in terms of the Wild symbols in ``pattern``.
+
+            >>> a, b = map(Wild, 'ab')
+            >>> f.replace(sin(a), tan(a))
+            log(tan(x)) + tan(tan(x**2))
+            >>> f.replace(sin(a), tan(a/2))
+            log(tan(x/2)) + tan(tan(x**2/2))
+            >>> f.replace(sin(a), a)
+            log(x) + tan(x**2)
+            >>> (x*y).replace(a*x, a)
+            y
+
+            Matching is exact by default when more than one Wild symbol
+            is used: matching fails unless the match gives non-zero
+            values for all Wild symbols:
+
+            >>> (2*x + y).replace(a*x + b, b - a)
+            y - 2
+            >>> (2*x).replace(a*x + b, b - a)
+            2*x
+
+            When set to False, the results may be non-intuitive:
+
+            >>> (2*x).replace(a*x + b, b - a, exact=False)
+            2/x
+
+        2.2. pattern -> func
+            obj.replace(pattern(wild), lambda wild: expr(wild))
+
+            All behavior is the same as in 2.1 but now a function in terms of
+            pattern variables is used rather than an expression:
+
+            >>> f.replace(sin(a), lambda a: sin(2*a))
+            log(sin(2*x)) + tan(sin(2*x**2))
+
+        3.1. func -> func
+            obj.replace(filter, func)
+
+            Replace subexpression ``e`` with ``func(e)`` if ``filter(e)``
+            is True.
+
+            >>> g = 2*sin(x**3)
+            >>> g.replace(lambda expr: expr.is_Number, lambda expr: expr**2)
+            4*sin(x**9)
+
+        The expression itself is also targeted by the query but is done in
+        such a fashion that changes are not made twice.
+
+            >>> e = x*(x*y + 1)
+            >>> e.replace(lambda x: x.is_Mul, lambda x: 2*x)
+            2*x*(2*x*y + 1)
+
+        When matching a single symbol, `exact` will default to True, but
+        this may or may not be the behavior that is desired:
+
+        Here, we want `exact=False`:
+
+        >>> from sympy import Function
+        >>> f = Function('f')
+        >>> e = f(1) + f(0)
+        >>> q = f(a), lambda a: f(a + 1)
+        >>> e.replace(*q, exact=False)
+        f(1) + f(2)
+        >>> e.replace(*q, exact=True)
+        f(0) + f(2)
+
+        But here, the nature of matching makes selecting
+        the right setting tricky:
+
+        >>> e = x**(1 + y)
+        >>> (x**(1 + y)).replace(x**(1 + a), lambda a: x**-a, exact=False)
+        x
+        >>> (x**(1 + y)).replace(x**(1 + a), lambda a: x**-a, exact=True)
+        x**(-x - y + 1)
+        >>> (x**y).replace(x**(1 + a), lambda a: x**-a, exact=False)
+        x
+        >>> (x**y).replace(x**(1 + a), lambda a: x**-a, exact=True)
+        x**(1 - y)
+
+        It is probably better to use a different form of the query
+        that describes the target expression more precisely:
+
+        >>> (1 + x**(1 + y)).replace(
+        ... lambda x: x.is_Pow and x.exp.is_Add and x.exp.args[0] == 1,
+        ... lambda x: x.base**(1 - (x.exp - 1)))
+        ...
+        x**(1 - y) + 1
+
+        See Also
+        ========
+
+        subs: substitution of subexpressions as defined by the objects
+              themselves.
+        xreplace: exact node replacement in expr tree; also capable of
+                  using matching rules
+        */
+
+        // NOTE: ONLY SUPPORTS LAMBDAS AS ARGUMENTS
+
+        let _query: Function;
+        let _value: Function;
+        if (typeof query === "function") {
+            _query = query;
+            if (typeof value === "function") {
+                _value = (expr: any) => value(expr);
+            } else {
+                throw new Error("given a callable, replace expects both args to be callable")
+            }
+        }
+        function walk(rv: any, F: Function) {
+            const args = rv._args;
+            if (typeof args !== "undefined") {
+                const newargs = args.map((a: any) => walk(a, F));
+                if (!Util.arrEq(args, newargs)) {
+                    rv = rv.func(...newargs);
+                    if (simultaneous) {
+                        for (let i = 0; i < args.length; i++) {
+                            const e = args[i];
+                            if (rv.__eq__(e) && e.__ne__(newargs[i])) {
+                                return rv;
+                            }
+                        }
+                    }
+                }
+                rv = F(rv);
+            }
+            return rv;
+        }
+
+        const mapping: Record<any, any> = {};
+
+        function rec_replace(expr: any) {
+            const result = _query(expr);
+            if (result) {
+                const v = _value(expr, result);
+                if (typeof v !== "undefined" && v.__ne__(expr)) {
+                    if (map) {
+                        mapping[expr] = v;
+                    }
+                    expr = v;
+                }
+            }
+            return expr;
+        }
+
+        const rv = walk(this, rec_replace);
+        if (map) {
+            return [rv, mapping];
+        } else {
+            return rv;
+        }
+    }
+
     atoms(...types: any[]) {
         /*
         Returns the atoms that form the current object.
@@ -749,6 +1049,23 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         }
         return new Set(res);
     }
+
+    _eval_derivative_n_times(s: any, n: any) {
+        if (n.is_Integer()) {
+            let obj = this;
+            let obj_new;
+            for (let i = 0; i < n.p; i++) {
+                obj_new = obj._eval_derivative(s);
+                if (obj.__eq__(obj_new) || typeof obj_new === "undefined") {
+                    break;
+                }
+                obj = obj_new;
+            }
+            return obj_new;
+        } else {
+            return undefined;
+        }
+    }
 };
 
 // eslint-disable-next-line new-cap
@@ -787,7 +1104,7 @@ const Atom = (superclass: any) => class Atom extends mix(base).with(_Basic) {
 };
 
 // eslint-disable-next-line new-cap
-const _AtomicExpr = Atom(Object);
-ManagedProperties.register(_AtomicExpr);
+const _Atom = Atom(Object);
+ManagedProperties.register(_Atom);
 
-export {_Basic, Basic, Atom, _AtomicExpr};
+export {_Basic, Basic, Atom, _Atom};

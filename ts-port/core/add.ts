@@ -260,6 +260,11 @@ export class Add extends mix(base).with(Expr, AssocOp) {
         return new Add(evaluate, simplify, ...args);
     }
 
+    _eval_derivative(s: any) {
+        const args = this._args.map((a: any) => a.diff(s));
+        return this.func(...this._args.map((a: any) => a.diff(s)));
+    }
+
     // WB addition for jasmine tests
     toString() {
         let result = "";

@@ -679,6 +679,19 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         return _fuzzy_group(allargs);
     }
 
+    _eval_derivative(s: any) {
+        const args = this._args;
+        const terms: any[] = [];
+        for (let i = 0; i < args.length; i++) {
+            const d = args[i].diff(s);
+            if (d !== S.Zero) {
+                const iter = args.slice(0, i).concat([d], args.slice(i + 1));
+                terms.push(iter.reduce((x: any, y: any) => x.__mul__(y), S.One));
+            }
+        }
+        return new Add(true, true, ...terms);
+    }
+
     // WB addition for jasmine tests
     toString() {
         let result = "";

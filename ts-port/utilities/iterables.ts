@@ -8,7 +8,7 @@
 
 import {ArrDefaultDict} from "../core/utility";
 
-// import {HashDict} from "../core/utility.js";
+import {HashDict, Util, HashSet} from "../core/utility";
 
 // class NotIterable {
 //     /*
@@ -792,114 +792,114 @@ export function sift(seq: any[], keyfunc: any, binary: boolean = false) {
 //     }
 // }
 
-// function topological_sort(graph: any[], key: any = undefined) { // / !!! to do: debug
-//     /*
-//     Topological sort of graph's vertices.
-//     Parameters
-//     ==========
-//     graph : tuple[list, list[tuple[T, T]]
-//         A tuple consisting of a list of vertices and a list of edges of
-//         a graph to be sorted topologically.
-//     key : callable[T] (optional)
-//         Ordering key for vertices on the same level. By default the natural
-//         (e.g. lexicographic) ordering is used (in this case the base type
-//         must implement ordering relations).
-//     Examples
-//     ========
-//     Consider a graph::
-//         +---+     +---+     +---+
-//         | 7 |\    | 5 |     | 3 |
-//         +---+ \   +---+     +---+
-//           |   _\___/ ____   _/ |
-//           |  /  \___/    \ /   |
-//           V  V           V V   |
-//          +----+         +---+  |
-//          | 11 |         | 8 |  |
-//          +----+         +---+  |
-//           | | \____   ___/ _   |
-//           | \      \ /    / \  |
-//           V  \     V V   /  V  V
-//         +---+ \   +---+ |  +----+
-//         | 2 |  |  | 9 | |  | 10 |
-//         +---+  |  +---+ |  +----+
-//                \________/
-//     where vertices are integers. This graph can be encoded using
-//     elementary Python's data structures as follows::
-//         >>> V = [2, 3, 5, 7, 8, 9, 10, 11]
-//         >>> E = [(7, 11), (7, 8), (5, 11), (3, 8), (3, 10),
-//         ...      (11, 2), (11, 9), (11, 10), (8, 9)]
-//     To compute a topological sort for graph ``(V, E)`` issue::
-//         >>> from sympy.utilities.iterables import topological_sort
-//         >>> topological_sort((V, E))
-//         [3, 5, 7, 8, 11, 2, 9, 10]
-//     If specific tie breaking approach is needed, use ``key`` parameter::
-//         >>> topological_sort((V, E), key=lambda v: -v)
-//         [7, 5, 11, 3, 10, 8, 9, 2]
-//     Only acyclic graphs can be sorted. If the input graph has a cycle,
-//     then ``ValueError`` will be raised::
-//         >>> topological_sort((V, E + [(10, 7)]))
-//         Traceback (most recent call last):
-//         ...
-//         ValueError: cycle detected
-//     References
-//     ==========
-//     .. [1] https://en.wikipedia.org/wiki/Topological_sorting
-//     */
-//     const [V, E] = graph;
-//     const L = [];
-//     const S = new HashSet();
-//     S.addArr(V);
+export function topological_sort(graph: any[], key: any = undefined) { // / !!! to do: debug
+    /*
+    Topological sort of graph's vertices.
+    Parameters
+    ==========
+    graph : tuple[list, list[tuple[T, T]]
+        A tuple consisting of a list of vertices and a list of edges of
+        a graph to be sorted topologically.
+    key : callable[T] (optional)
+        Ordering key for vertices on the same level. By default the natural
+        (e.g. lexicographic) ordering is used (in this case the base type
+        must implement ordering relations).
+    Examples
+    ========
+    Consider a graph::
+        +---+     +---+     +---+
+        | 7 |\    | 5 |     | 3 |
+        +---+ \   +---+     +---+
+          |   _\___/ ____   _/ |
+          |  /  \___/    \ /   |
+          V  V           V V   |
+         +----+         +---+  |
+         | 11 |         | 8 |  |
+         +----+         +---+  |
+          | | \____   ___/ _   |
+          | \      \ /    / \  |
+          V  \     V V   /  V  V
+        +---+ \   +---+ |  +----+
+        | 2 |  |  | 9 | |  | 10 |
+        +---+  |  +---+ |  +----+
+               \________/
+    where vertices are integers. This graph can be encoded using
+    elementary Python's data structures as follows::
+        >>> V = [2, 3, 5, 7, 8, 9, 10, 11]
+        >>> E = [(7, 11), (7, 8), (5, 11), (3, 8), (3, 10),
+        ...      (11, 2), (11, 9), (11, 10), (8, 9)]
+    To compute a topological sort for graph ``(V, E)`` issue::
+        >>> from sympy.utilities.iterables import topological_sort
+        >>> topological_sort((V, E))
+        [3, 5, 7, 8, 11, 2, 9, 10]
+    If specific tie breaking approach is needed, use ``key`` parameter::
+        >>> topological_sort((V, E), key=lambda v: -v)
+        [7, 5, 11, 3, 10, 8, 9, 2]
+    Only acyclic graphs can be sorted. If the input graph has a cycle,
+    then ``ValueError`` will be raised::
+        >>> topological_sort((V, E + [(10, 7)]))
+        Traceback (most recent call last):
+        ...
+        ValueError: cycle detected
+    References
+    ==========
+    .. [1] https://en.wikipedia.org/wiki/Topological_sorting
+    */
+    const [V, E] = graph;
+    const L = [];
+    const S = new HashSet();
+    S.addArr(V);
 
-//     for (const item of E) {
-//         if (S.has(item[1])) {
-//             S.remove(item[1]);
-//         }
-//     }
+    for (const item of E) {
+        if (S.has(item[1])) {
+            S.remove(item[1]);
+        }
+    }
 
-//     if (typeof key === "undefined") {
-//         key = (a: any, b: any) => a - b;
-//     }
+    if (typeof key === "undefined") {
+        key = (a: any, b: any) => a - b;
+    }
 
-//     S.sort(key, true);
+    S.sort(key, true);
 
-//     while (S.size > 0) {
-//         const node = S.pop();
-//         L.push(node);
-//         for (const item of E) {
-//             const u = item[0];
-//             const v = item[1];
-//             if (u === node) {
-//                 const idx = Util.getArrIndex(E, [u, v]);
-//                 E.splice(idx, 1);
-//                 find: {
-//                     for (const elem of E) {
-//                         const _u = elem[0];
-//                         const _v = elem[1];
-//                         // console.log(v, _v)
-//                         if (v === _v) {
-//                             break find;
-//                         }
-//                     }
-//                     const arr = S.sortedArr;
-//                     search: {
-//                         for (let i = 0; i < arr.length; i++) {
-//                             const s = arr[i];
+    while (S.size > 0) {
+        const node = S.pop();
+        L.push(node);
+        for (const item of E) {
+            const u = item[0];
+            const v = item[1];
+            if (u === node) {
+                const idx = Util.getArrIndex(E, [u, v]);
+                E.splice(idx, 1);
+                find: {
+                    for (const elem of E) {
+                        const _u = elem[0];
+                        const _v = elem[1];
+                        // console.log(v, _v)
+                        if (v === _v) {
+                            break find;
+                        }
+                    }
+                    const arr = S.sortedArr;
+                    search: {
+                        for (let i = 0; i < arr.length; i++) {
+                            const s = arr[i];
 
-//                             if (key(v, s) > 0) {
-//                                 console.log(i, v);
-//                                 S.add([i, v]);
-//                                 break search;
-//                             }
-//                         }
-//                         S.add(v);
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     if (E) {
-//         throw "cycle detected";
-//     } else {
-//         return L;
-//     }
-// }
+                            if (key(v, s) > 0) {
+                                console.log(i, v);
+                                S.add([i, v]);
+                                break search;
+                            }
+                        }
+                        S.add(v);
+                    }
+                }
+            }
+        }
+    }
+    if (E) {
+        throw "cycle detected";
+    } else {
+        return L;
+    }
+}

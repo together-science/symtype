@@ -298,6 +298,10 @@ export class Pow extends _Expr {
         return new Pow(b, e);
     }
 
+    _eval_derivative(s: any) {
+        throw new Error("eval derivative not yet supported for Pow expressions")
+    }
+
     // WB addition for jasmine tests
     toString() {
         const b = this._args[0].toString();

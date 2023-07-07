@@ -10,6 +10,7 @@ import {Pow} from "../ts-port/core/power";
 import {Symbol} from "../ts-port/core/symbol";
 import {Eq, Ne, Ge, Gt, Le, Lt} from "../ts-port/core/relational";
 import {factorint, factorrat} from "../ts-port/ntheory/factor_";
+import { Derivative } from "../ts-port/core/function";
 
 
 describe("Core", function () {
@@ -354,6 +355,48 @@ describe("Core", function () {
         const d: any = new Symbol("d", {"commutative": false})
         expect(new Mul(true, true, c, d).__eq__(new Mul(true, true, d, c))).toBeFalse();
         expect(new Add(true, true, c, d).__eq__(new Add(true, true, d, c))).toBeFalse();
+    });
+
+    it("should compute derivates accurately", function () { 
+        // NOTE: POW IS NOT YET SUPPORTED, SO ONLY DEGREE ONE EXPRESSIONS WORK
+        const f = _Number_.new(1.5)
+        const n = _Number_.new(2)
+        const r = _Number_.new(-2, 3)
+        const x = new Symbol("x");
+        const y =  new Symbol("y");
+        const addexpr1 = new Add(true, true, x, f);
+        const addexpr2 = new Add(true, true, x, x, y, n, r);
+        const mulexpr1 = new Mul(true, true, x, f);
+        const mulexpr2 = new Mul(true, true, x, y, n, r);
+
+ 
+        // // test atoms
+        // expect(new Derivative(f, true)).toBe(S.Zero);
+        // expect(new Derivative(n, true)).toBe(S.Zero);
+        // expect(new Derivative(r, true)).toBe(S.Zero);
+        // expect(new Derivative(S.Infinity, true)).toBe(S.Zero);
+        // expect(new Derivative(x, true)).toBe(S.One);
+        expect(new Derivative(x, false).toString()).toBe("Derivative(x)");
+
+        // test unevalulated
+        expect(new Derivative(addexpr1, false).toString()).toBe("Derivative(1.5 + x)");
+        expect(new Derivative(addexpr2, false, x).toString()).toBe("Derivative(4/3 + 2*x + y)");
+        expect(new Derivative(mulexpr1, false).toString()).toBe("Derivative(1.5*x)");
+        expect(new Derivative(mulexpr2, false, y).toString()).toBe("Derivative(-4/3*x*y)");
+
+
+        // test evalulated 
+        expect(new Derivative(addexpr1, true).toString()).toBe("1");
+        expect(new Derivative(addexpr2, true, x).toString()).toBe("2");
+        expect(new Derivative(mulexpr1, true).toString()).toBe("1.5");
+        expect(new Derivative(mulexpr2, true, y).toString()).toBe("-4/3*x");
+
+        // test doit
+        expect(new Derivative(addexpr1, false).doit().toString()).toBe("1");
+        expect(new Derivative(addexpr2, false, x).doit().toString()).toBe("2");
+        expect(new Derivative(mulexpr1, false).doit().toString()).toBe("1.5");
+        expect(new Derivative(mulexpr2, false, y).doit().toString()).toBe("-4/3*x");
+        expect(new Derivative(mulexpr2, false, x).doit().toString()).toBe("-4/3*y");
     });
 });
 

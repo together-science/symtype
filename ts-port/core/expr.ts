@@ -11,6 +11,7 @@ import {ManagedProperties} from "./assumptions";
 import {S} from "./singleton";
 import {Global} from "./global";
 import {as_int} from "../utilities/misc";
+// import { _derivative_dispatch } from "./function";
 
 
 const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic) {
@@ -192,6 +193,10 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
     __lt__(other: any) {
         return Global.construct("Lt", this, other);
     }
+
+    diff(...symbols: any[]) {
+        return Global.construct("_derivative_dispatch", this, ...symbols);
+    }
 };
 
 // eslint-disable-next-line new-cap
@@ -228,6 +233,13 @@ const AtomicExpr = (superclass: any) => class AtomicExpr extends mix(superclass)
 
     _eval_nseries(x: any, n: any, logx: any, cdor: any = 0) {
         return this;
+    }
+
+    _eval_derivative(s: any) {
+        if (this.__eq__(s)) {
+            return S.One;
+        }
+        return S.Zero;
     }
 };
 

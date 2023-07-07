@@ -10,8 +10,17 @@ import {Eq, Ne, Gt, Lt, Ge, Le, is_eq, is_ge} from "../ts-port/core/relational";
 import { nsimplify } from "./simplify/simplify";
 import { Basic, _Basic } from "./core/basic";
 import { _simple_dens } from "./solvers/solvers";
+import { Derivative } from "./core/function";
 
+const f = _Number_.new(1.5)
+const n = _Number_.new(2)
+const r = _Number_.new(-2, 3)
 const x = new Symbol("x");
-const n = _Number_.new(2.6804)
-const mexpr = nsimplify(new Mul(true, true, n, x));
-console.log(_simple_dens(mexpr));
+const y =  new Symbol("y");
+const addexpr1 = new Add(true, true, x, f, y);
+const addexpr2 = new Add(true, true, x, x, y, n, r);
+const mulexpr1 = new Mul(true, true, x, f);
+const mulexpr2 = new Mul(true, true, x, y, n);
+
+
+console.log(mulexpr2.isinstance(Derivative))

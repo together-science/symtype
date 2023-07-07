@@ -77,6 +77,9 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
     }
 
     __eq__(other: Symbol) {
+        if (!(other instanceof Symbol)) {
+            return super.__eq__(other);
+        }
         if (this.name = other.name) {
             if (this._assumptions.isSame(other._assumptions)) {
                 return true;

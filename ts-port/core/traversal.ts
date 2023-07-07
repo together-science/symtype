@@ -1,4 +1,31 @@
-import { Basic, _Basic } from "./basic";
+export function * iterargs(expr: any) {
+    /*
+    Yield the args of a Basic object in a breadth-first traversal.
+    Depth-traversal stops if `arg.args` is either empty or is not
+    an iterable.
+
+    Examples
+    ========
+
+    >>> from sympy import Integral, Function
+    >>> from sympy.abc import x
+    >>> f = Function('f')
+    >>> from sympy.core.traversal import iterargs
+    >>> list(iterargs(Integral(f(x), (f(x), 1))))
+    [Integral(f(x), (f(x), 1)), f(x), (f(x), 1), x, f(x), 1, x]
+
+    See Also
+    ========
+    iterfreeargs, preorder_traversal
+    */
+    let args = [expr];
+    for (const i of args) {
+        yield i;
+        if (i._args) {
+            args = args.concat(i._args)
+        }
+    }
+}
 
 class preorder_traversal {
     /*
@@ -50,7 +77,7 @@ class preorder_traversal {
             this._skip_flag = false;
             return;
         }
-        if (node.isinstance(Basic)) {
+        if (node.isinstance) {
             let args;
             if (node._argset) {
                 args = node._argset;

@@ -217,6 +217,11 @@ class Util {
             throw new Error("abs not supported for this object type")
         }
     }
+
+    static isCls(input: any) {
+        // use regex
+        return typeof input === "function" && /^\s*class\s+/.test(input.toString());
+    }
 }
 
 // custom version of the Set class
