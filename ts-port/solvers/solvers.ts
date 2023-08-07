@@ -1,10 +1,18 @@
+/*
+Notes by WB:
+- checksol has a reduced functionality, but it is enough for the current solve
+  capibilities
+*/
+
+import { Add } from "../core/add";
 import { _Expr } from "../core/expr";
 import { Mul } from "../core/mul";
 import { _AssocOp } from "../core/operations";
+import { Eq, Ne } from "../core/relational";
 import { S } from "../core/singleton";
 import {Symbol, Dummy} from "../core/symbol";
 import { preorder_traversal } from "../core/traversal";
-import { HashSet } from "../core/utility";
+import { HashDict, HashSet } from "../core/utility";
 import { denom } from "../simplify/radsimp";
 
 function recast_to_symbols(eqs: any[], symbols: any[]) {
@@ -134,27 +142,113 @@ function denoms(eq: any, ...symbols: Symbol[]): HashSet {
     }
     return new HashSet(rv);
 }
-/*
 
 
-def denoms(eq, *symbols):
-    pot = preorder_traversal(eq)
-    dens = set()
-    for p in pot:
-        # Here p might be Tuple or Relational
-        # Expr subtrees (e.g. lhs and rhs) will be traversed after by pot
-        if not isinstance(p, Expr):
-            continue
-        den = denom(p)
-        if den is S.One:
-            continue
-        for d in Mul.make_args(den):
-            dens.add(d)
-    if not symbols:
-        return dens
-    elif len(symbols) == 1:
-        if iterable(symbols[0]):
-            symbols = symbols[0]
-    return {d for d in dens if any(s in d.free_symbols for s in symbols)}
+function checksol(f: any, symbol: Symbol, sol: any = undefined, kwgs: Record<string, boolean> | HashDict = undefined) {
+    /*
+    Checks whether sol is a solution of equation f == 0.
 
-*/
+    Explanation
+    ===========
+
+    Input can be either a single symbol and corresponding value
+    or a dictionary of symbols and values. When given as a dictionary
+    and flag ``simplify=True``, the values in the dictionary will be
+    simplified. *f* can be a single equation or an iterable of equations.
+    A solution must satisfy all equations in *f* to be considered valid;
+    if a solution does not satisfy any equation, False is returned; if one or
+    more checks are inconclusive (and none are False) then None is returned.
+
+    Examples
+    ========
+
+    >>> from sympy import checksol, symbols
+    >>> x, y = symbols('x,y')
+    >>> checksol(x**4 - 1, x, 1)
+    True
+    >>> checksol(x**4 - 1, x, 0)
+    False
+    >>> checksol(x**2 + y**2 - 5**2, {x: 3, y: 4})
+    True
+
+    To check if an expression is zero using ``checksol()``, pass it
+    as *f* and send an empty dictionary for *symbol*:
+
+    >>> checksol(x**2 + x - x*(x + 1), {})
+    True
+
+    None is returned if ``checksol()`` could not conclude.
+
+    flags:
+        'numerical=True (default)'
+           do a fast numerical check if ``f`` has only one symbol.
+        'minimal=True (default is False)'
+           a very fast, minimal testing.
+        'warn=True (default is False)'
+           show a warning if checksol() could not conclude.
+        'simplify=True (default)'
+           simplify solution before substituting into function and
+           simplify the function before trying specific simplifications
+        'force=True (default is False)'
+           make positive all symbols without assumptions regarding sign.
+    */
+    let flags: HashDict;
+    if (kwgs && !(kwgs instanceof HashDict)) {
+        flags = new HashDict(kwgs);
+    } else if (!kwgs) {
+        flags = new HashDict();
+    }
+
+    const minimal = flags.get("minimal", false);
+    if (typeof sol !== "undefined") {
+        sol = {symbol: sol}; // ???????
+    } else if (symbol instanceof HashDict) {
+        sol = symbol;
+    } else {
+        throw new Error("Expecting (sym, val) or ({sym: val}, None)");
+    }
+
+    if (Array.isArray(f)) {
+        if (!f) {
+            throw new Error("no functions to check");
+
+        }
+        let rv = true;
+        for (const fi of f) {
+            const check = checksol(fi, sol, undefined, flags);
+            if (check) {
+                continue;
+            }
+            if (check === false) {
+                return false;
+            }
+            rv = undefined;
+        }
+        return rv;
+    }
+
+    if (f.is_number()) {
+        return f.is_zero();
+    }
+
+    if (f instanceof Eq || f instanceof Ne) {
+        if (f.rhs === true || f.rhs === false) {
+            f = !f;
+        }
+        const [B, E] = f._args;
+        // skipping booleanatom since we never use it
+        f = f.rewrite(Add, undefined, true, {"evaluate" : false});
+    }
+
+    // skipping boolean atoms again
+    if (!f.is_Relational && !f) {
+        return f as boolean;
+    }
+
+    const illegal = new HashSet([S.NaN, S.Infinity, S.NegativeInfinity, S.ComplexInfinity]);
+    if (sol.items().some(([k, v]: any) => v.atoms().intersects(illegal))) {
+        return false;
+    }
+
+    throw new Error("the rest of checksol is not yet implemented");
+}

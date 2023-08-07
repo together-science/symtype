@@ -197,6 +197,10 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
     diff(...symbols: any[]) {
         return Global.construct("_derivative_dispatch", this, ...symbols);
     }
+
+    static _expand_hint(expr: any, hint: string, deep: boolean = true, hints: Record<string, boolean> = {}) {
+        
+    }
 };
 
 // eslint-disable-next-line new-cap
