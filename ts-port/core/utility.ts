@@ -381,6 +381,16 @@ class HashDict {
         }
     }
 
+    pop(key: any, def: any = undefined): any {
+        const hash = Util.hashKey(key);
+        if (hash in this.dict) {
+            const toreturn = this.dict[hash][1];
+            this.remove(key);
+            return toreturn;
+        }
+        return def;
+    }
+
     get(key: any, def: any = undefined): any {
         const hash = Util.hashKey(key);
         if (hash in this.dict) {

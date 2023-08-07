@@ -13,7 +13,7 @@ import {global_parameters} from "./parameters";
 import {S} from "./singleton";
 import {is_gt, is_lt} from "./relational";
 import { fuzzy_not } from "./logic";
-import {Util} from "./utility";
+import {HashDict, Util} from "./utility";
 
 
 export class Pow extends _Expr {
@@ -300,6 +300,20 @@ export class Pow extends _Expr {
 
     _eval_derivative(s: any) {
         throw new Error("eval derivative not yet supported for Pow expressions")
+    }
+
+    _eval_expand_power_exp(hints: HashDict) {
+        // skipping base E since it is not yet supported
+        const b = this._args[0];
+        const e = this._args[1];
+        if (e.is_Add() && e.is_commutative()) {
+            const expr = [];
+            for (const x of e._args) {
+                expr.push(this.func(b, x));
+            }
+            return Global.construct("Mul", true, true, ...expr);
+        }
+        return this.func(b, e);
     }
 
     // WB addition for jasmine tests

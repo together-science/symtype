@@ -6,12 +6,11 @@ Notable changes made (and notes):
 */
 
 import {_Basic, Atom} from "./basic";
-import {HashSet, mix} from "./utility";
+import {HashDict, HashSet, mix} from "./utility";
 import {ManagedProperties} from "./assumptions";
 import {S} from "./singleton";
 import {Global} from "./global";
 import {as_int} from "../utilities/misc";
-// import { _derivative_dispatch } from "./function";
 
 
 const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic) {
@@ -198,8 +197,131 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
         return Global.construct("_derivative_dispatch", this, ...symbols);
     }
 
-    static _expand_hint(expr: any, hint: string, deep: boolean = true, hints: Record<string, boolean> = {}) {
-        
+    static _expand_hint(expr: any, hint: string, deep: boolean = true, hints: HashDict) {
+        /*
+        Helper for ``expand()``.  Recursively calls ``expr._eval_expand_hint()``.
+
+        Returns ``(expr, hit)``, where expr is the (possibly) expanded
+        ``expr`` and ``hit`` is ``True`` if ``expr`` was truly expanded and
+        ``False`` otherwise.
+        */
+        let hit = false;
+        if (deep && expr._args && !expr.is_Atom()) {
+            const sargs = [];
+            for (const arg of expr._args) {
+                const [args, arghit] = Expr._expand_hint(arg, hint, true, hints);
+                hit = ((hit as unknown as number) | (arghit as unknown as number)) as unknown as boolean; // ????
+                sargs.push(arg);
+            }
+            if (hit) {
+                expr = expr.func(...sargs);
+            }
+        }
+
+        if (expr[hint]) {
+            const newexpr = expr[hint](hints) 
+            if (newexpr.__ne__(expr)) {
+                return [newexpr, true];
+            }
+        }
+
+        return [expr, hit];
+    }
+
+
+    _expand(hints: HashDict) {
+        let expr = this;
+        if (hints.pop("frac", false)) {
+            const [n, d] = Global.evalfunc("fraction", this).map((a: any) => a._expand(hints));
+            return n.__truediv__(d);
+        } else if (hints.pop("denom", false)) {
+            const [n, d] = Global.evalfunc("fraction", this);
+            return (n.__truediv__(d)).expand(hints);
+        } else if (hints.pop("numer", false)) {
+            const [n, d] = Global.evalfunc("fraction", this);
+            return (n.expand(hints)).__truediv__(d);
+        }
+
+        function _expand_hint_key(hint: string) {
+            if (hint === "mul") {
+                return "mulz";
+            }
+            return hint;
+        }
+
+        const compare_func = (a: any, b: any) => {
+            if (_expand_hint_key(a) > _expand_hint_key(b)) {
+                return 1;
+            } else if (_expand_hint_key(a) < _expand_hint_key(b)) {
+                return -1;
+            }
+            return 0;
+        } 
+
+        for (let hint of hints.keys().sort(compare_func)) {
+            const use_hint = hints.get(hint);
+            if (use_hint) {
+                hint = "_eval_expand_" + hint;;
+                expr = Expr._expand_hint(expr, hint, true, hints)[0];
+            }
+        }
+
+        while (true) {
+            const was = expr;
+            if (hints.get("multinomial", false)) {
+                expr = Expr._expand_hint(expr, "_eval_expand_multinomial", true, hints)[0];
+            }
+            if (hints.get("mul", false)) {
+                expr = Expr._expand_hint(expr, "_eval_expand_mul", true, hints)[0];
+            }
+            if (hints.get("log", false)) {
+                expr = Expr._expand_hint(expr, "_eval_expand_log", true, hints)[0];
+            }
+            if (expr.__eq__(was)) {
+                break;
+            }
+        }
+
+        // modulus is not yet supported
+
+        return expr;
+    }
+
+    expand(params: {
+        deep?: boolean,
+        modulus?: any,
+        power_base?: boolean,
+        power_exp?: boolean,
+        mul?: boolean,
+        log?: boolean,
+        multinomial?: boolean,
+        basic?: boolean,
+        frac?: boolean,
+        denom?: boolean,
+        numer?: boolean,
+        }={}) {
+
+        // define the defaults
+        const defaults = {
+            deep: true,
+            modulus: true,
+            power_base: true,
+            power_exp: true,
+            mul: true,
+            log: true,
+            multinomial: true,
+            basic: true,
+            frac: false,
+            numer: false,
+            denom: false
+        };
+
+        // put defaults into options
+        params = {...defaults, ...params};
+
+        const hints = new HashDict(params);
+
+        return this._expand(hints);
     }
 };
 

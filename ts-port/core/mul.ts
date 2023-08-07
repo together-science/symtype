@@ -692,6 +692,80 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         return new Add(true, true, ...terms);
     }
 
+    static _expandsums(sums: any[]): any {
+        const L = sums.length;
+        if (L === 1) {
+            return sums[0]._args;
+        }
+
+        const terms = [];
+        const left = Mul._expandsums(sums.slice(0, Math.floor(L / 2)));
+        const right = Mul._expandsums(sums.slice(Math.floor(L / 2)));
+        for (const a of left) {
+            for (const b of right) {
+                terms.push(new Mul(true, true, a, b));
+            }
+        }
+        const added = new Add(true, true, ...terms);
+        return _AssocOp.make_args(Add, added);
+
+    }
+
+    _eval_expand_mul(hints: HashDict) {
+        let expr = this;
+        let [n, d] = Global.evalfunc("fraction", expr);
+        if (d.is_Mul()) {
+            [n, d] = [n, d].map(i => {
+                if (i.is_Mul) {
+                    return i._eval_expand_mul(hints)
+                }
+                return i;
+            })
+        }
+        expr = n.__truediv__(d);
+        if (!expr.is_Mul()) {
+            return expr;
+        }
+
+        let plain = [];
+        const sums = [];
+        let rewrite = false;
+        
+        for (const factor of expr._args) {
+            if (factor.is_Add()) {
+                sums.push(factor);
+                rewrite = true;
+            } else {
+                if (factor.is_commutative()) {
+                    plain.push(factor);
+                } else {
+                    sums.push(new Basic(factor)); // ?????
+                }
+            }
+        }
+
+        if (!rewrite) {
+            return expr;
+        } else {
+            plain = this.func(...plain);
+            if (sums.length > 0) {
+                const deep = hints.get("deep", false);
+                const terms = Mul._expandsums(sums);
+                const args = [];
+                for (const term of terms) {
+                    let t = this.func(plain, term);
+                    if (t.is_Mul() && t._args.some((a: any) => a.is_Add()) && deep) {
+                        t = t._eval_expand_mul();
+                    }
+                    args.push(t);
+                }
+                return new Add(true, true, ...args);
+            } else {
+                return plain;
+            }
+        }
+    }
+
     // WB addition for jasmine tests
     toString() {
         let result = "";

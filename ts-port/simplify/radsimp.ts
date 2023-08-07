@@ -4,13 +4,14 @@ Notes (WB)
   is unncessary for solve capability and requires a lot more stuff to be ported
 */
 
+import { Global } from "../core/global";
 import { Mul } from "../core/mul";
 import { _Number_ } from "../core/numbers";
 import { _AssocOp } from "../core/operations";
 import { Pow } from "../core/power";
 import { S } from "../core/singleton";
 
-function fraction(expr: any) {
+export function fraction(expr: any) {
     /*
     Returns a pair with expression's numerator and denominator.
     If the given expression is not a fraction then this function
@@ -67,7 +68,6 @@ function fraction(expr: any) {
     >>> fraction(u, exact=True)
     (2*(x  + 1), 1)
     */
-
     const [numer, denom]: any[] = [[], []];
     for (const term of _AssocOp.make_args(Mul, expr)) {
         if (term.is_commutative() && term.is_Pow()) {
@@ -106,3 +106,5 @@ function fraction(expr: any) {
 export function denom(expr: any) {
     return fraction(expr)[1];
 }
+
+Global.registerfunc("fraction", fraction);

@@ -545,5 +545,39 @@ export function _derivative_dispatch(expr: any, ...variables: any[]) {
     return new Derivative(expr, true, ...variables);
 }
 
+export function expand_mul(expr: any, deep: boolean = true) {
+    /*
+    Wrapper around expand that only uses the mul hint.  See the expand
+    docstring for more information.
+
+    Examples
+    ========
+
+    >>> from sympy import symbols, expand_mul, exp, log
+    >>> x, y = symbols('x,y', positive=True)
+    >>> expand_mul(exp(x+y)*(x+y)*log(x*y**2))
+    x*exp(x + y)*log(x*y**2) + y*exp(x + y)*log(x*y**2)
+    */
+    return expr.expand({deep : deep, mul : true, power_exp : false, power_base : false, 
+        basic : false, multinmial : false, log : false});
+}
+
+export function expand_power_exp(expr: any, deep: boolean = true) {
+    /*
+    Wrapper around expand that only uses the mul hint.  See the expand
+    docstring for more information.
+
+    Examples
+    ========
+
+    >>> from sympy import symbols, expand_mul, exp, log
+    >>> x, y = symbols('x,y', positive=True)
+    >>> expand_mul(exp(x+y)*(x+y)*log(x*y**2))
+    x*exp(x + y)*log(x*y**2) + y*exp(x + y)*log(x*y**2)
+    */
+    return expr.expand({deep : deep, mul : false, power_exp : true, power_base : false, 
+        basic : false, multinmial : false, log : false, complex : false});
+}
+
 ManagedProperties.register(Derivative);
 Global.register("_derivative_dispatch", _derivative_dispatch);

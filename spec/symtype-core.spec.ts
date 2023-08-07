@@ -10,7 +10,8 @@ import {Pow} from "../ts-port/core/power";
 import {Symbol} from "../ts-port/core/symbol";
 import {Eq, Ne, Ge, Gt, Le, Lt} from "../ts-port/core/relational";
 import {factorint, factorrat} from "../ts-port/ntheory/factor_";
-import { Derivative } from "../ts-port/core/function";
+import { Derivative, expand_mul, expand_power_exp } from "../ts-port/core/function";
+import { fraction } from "../ts-port/simplify/radsimp";
 
 
 describe("Core", function () {
@@ -354,7 +355,7 @@ describe("Core", function () {
         const c: any = new Symbol("c", {"commutative": false})
         const d: any = new Symbol("d", {"commutative": false})
         expect(new Mul(true, true, c, d).__eq__(new Mul(true, true, d, c))).toBeFalse();
-        expect(new Add(true, true, c, d).__eq__(new Add(true, true, d, c))).toBeFalse();
+        expect(new Add(true, true, c, d).__eq__(new Add(true, true, d, c))).toBeTrue();
     });
 
     it("should compute derivates accurately", function () { 
@@ -398,6 +399,16 @@ describe("Core", function () {
         expect(new Derivative(mulexpr2, false, y).doit().toString()).toBe("-4/3*x");
         expect(new Derivative(mulexpr2, false, x).doit().toString()).toBe("-4/3*y");
     });
+
+    it("should expand and simplify expressions correctly", function () { 
+        const x = new Symbol("x");
+        const y = new Symbol("y");
+        const z = new Symbol("z");
+        const f = fraction(x); // need to do this or global doesnt register
+        
+        // expand mul
+        expect(expand_mul(new Mul(true, true, x, new Add(true, true, y, z))).toString()).toBe("x*y + x*z");
+        // expand pow
+        expect(expand_power_exp(new Pow(_Number_.new(2), new Add(true, true, x, y))).toString()).toBe("2^(x)*2^(y)");
+    });
 });
-
-
