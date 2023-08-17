@@ -154,6 +154,17 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         return this._mhash;
     }
 
+    class_key() {
+        if ((this.constructor as any).clsname) {
+            return [5, 0, (this.constructor as any).clsname]
+        }
+        return [5, 0, this.constructor.name]
+    }
+
+    _sorted_args() {
+        return this._args;
+    }
+
     assumptions0() {
         /*
         Return object `type` assumptions.
@@ -190,6 +201,38 @@ const _Basic = (superclass: any) => class _Basic extends superclass {
         been defined by a class. See note about this in Basic.__eq__.*/
 
         return this._args;
+    }
+
+    sort_key(order: boolean = undefined) {
+        /*
+        Return a sort key.
+
+        Examples
+        ========
+
+        >>> from sympy import S, I
+
+        >>> sorted([S(1)/2, I, -I], key=lambda x: x.sort_key())
+        [1/2, -I, I]
+
+        >>> S("[x, 1/x, 1/x**2, x**2, x**(1/2), x**(1/4), x**(3/2)]")
+        [x, 1/x, x**(-2), x**2, sqrt(x), x**(1/4), x**(3/2)]
+        >>> sorted(_, key=lambda x: x.sort_key())
+        [x**(-2), 1/x, x**(1/4), sqrt(x), x, x**(3/2), x**2]
+        */
+
+        function inner_key(arg: any) {
+            if (arg.isinstance) {
+                return arg.sort_key(order);
+            } else {
+                return arg;
+            }
+        }
+
+        let args = this._sorted_args();
+        args = [args.length].concat(args.map((arg: any) => inner_key(arg)));
+        return [this.class_key(), args, S.One.sort_key(), S.One];
+
     }
 
     static cmp(self: any, other: any): any {

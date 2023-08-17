@@ -316,6 +316,10 @@ export class Pow extends _Expr {
         return this.func(b, e);
     }
 
+    class_key() {
+        return [3, 2, this.constructor.name];
+    }
+
     // WB addition for jasmine tests
     toString() {
         const b = this._args[0].toString();

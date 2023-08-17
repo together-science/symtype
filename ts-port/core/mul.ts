@@ -766,6 +766,20 @@ export class Mul extends mix(base).with(Expr, AssocOp) {
         }
     }
 
+    as_ordered_factors(order: boolean = undefined) {
+        const [cpart, ncpart] = this.args_cnc();
+        cpart.sort((a: any, b: any) => a.sort_key() > b.sort_key()) // !!! CHECK THIS
+        return cpart.concat(ncpart);
+    }
+
+    _sorted_args() {
+        return this.as_ordered_factors();
+    }
+
+    class_key() {
+        return [3, 0, this.constructor.name];
+    }
+
     // WB addition for jasmine tests
     toString() {
         let result = "";

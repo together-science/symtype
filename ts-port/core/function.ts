@@ -189,6 +189,7 @@ export class Derivative extends mix(base).with(Expr)  {
     */
 
     static clsname = "Derivative"
+    static is_Derivative = true;
 
     constructor(expr: any, evaluate: boolean, ...variables: any[]) { // using any since we might reassign
         super(expr, ...variables);

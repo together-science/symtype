@@ -304,6 +304,14 @@ class _Number_ extends _AtomicExpr {
     __le__(other: any) {
         throw new Error("object needs __le__() method")
     }
+
+    class_key() {
+        return [1, 0, "Number"];
+    }
+
+    sort_key(order: boolean = undefined): any {
+        return [this.class_key(), [0, []], [], this];
+    }
 };
 
 // eslint-disable-next-line new-cap

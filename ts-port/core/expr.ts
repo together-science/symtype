@@ -11,6 +11,7 @@ import {ManagedProperties} from "./assumptions";
 import {S} from "./singleton";
 import {Global} from "./global";
 import {as_int} from "../utilities/misc";
+import { default_sort_key } from "./sorting";
 
 
 const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic) {
@@ -322,6 +323,39 @@ const Expr = (superclass: any) => class Expr extends mix(superclass).with(_Basic
         const hints = new HashDict(params);
 
         return this._expand(hints);
+    }
+
+    sort_key(order: boolean = undefined) {
+        let [coeff, expr] = this.as_coeff_Mul();
+        let exp;
+
+        if (expr.is_Pow()) {
+            [expr, exp] = expr._args;
+        } else {
+            exp = S.One;
+        }
+
+        let args;
+        if (expr.is_Dummy()) {
+            args  = [expr.sort_key()];
+        } else if (expr.is_Atom()) {
+            args = [expr.toString()]
+        } else {
+            if (expr.is_Add()) {
+                throw new Error("as_ordered_terms not yet implemented");
+                // args = expr.as_ordered_terms(order);
+            } else if (expr.is_Mul()) {
+                throw new Error("as_ordered_factors not yet implemented");
+                // args = expr.as_ordered_factors(order);
+            } else {
+                args = expr.args;
+            }
+            args = args.map((arg: any) => default_sort_key(arg, order));
+        }
+
+        args = [args.length, [args]];
+        exp = exp.sort_key(order);
+        return [expr.class_key(), args, exp, coeff];
     }
 };
 

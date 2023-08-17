@@ -252,4 +252,80 @@ class ManagedProperties {
     }
 }
 
+export function check_assumptions(expr: any, assume: Record<string, boolean> = {}) {
+    /*
+    Checks whether assumptions of ``expr`` match the T/F assumptions
+    given (or possessed by ``against``). True is returned if all
+    assumptions match; False is returned if there is a mismatch and
+    the assumption in ``expr`` is not None; else None is returned.
+
+    Explanation
+    ===========
+
+    *assume* is a dict of assumptions with True or False values
+
+    Examples
+    ========
+
+    >>> from sympy import Symbol, pi, I, exp, check_assumptions
+    >>> check_assumptions(-5, integer=True)
+    True
+    >>> check_assumptions(pi, real=True, integer=False)
+    True
+    >>> check_assumptions(pi, negative=True)
+    False
+    >>> check_assumptions(exp(I*pi/7), real=False)
+    True
+    >>> x = Symbol('x', positive=True)
+    >>> check_assumptions(2*x + 1, positive=True)
+    True
+    >>> check_assumptions(-2*x - 5, positive=True)
+    False
+
+    To check assumptions of *expr* against another variable or expression,
+    pass the expression or variable as ``against``.
+
+    >>> check_assumptions(2*x + 1, x)
+    True
+
+    To see if a number matches the assumptions of an expression, pass
+    the number as the first argument, else its specific assumptions
+    may not have a non-None value in the expression:
+
+    >>> check_assumptions(x, 3)
+    >>> check_assumptions(3, x)
+    True
+
+    ``None`` is returned if ``check_assumptions()`` could not conclude.
+
+    >>> check_assumptions(2*x - 1, x)
+
+    >>> z = Symbol('z')
+    >>> check_assumptions(z, real=True)
+
+    See Also
+    ========
+
+    failing_assumptions
+    */
+    
+    // against seems very redundant as a parameter, so I'm deciding to not use it
+    let known;
+    for (const [k, v] of Object.entries(assume)) {
+        if (typeof v === "undefined") {
+            continue;
+        }
+        let e = expr["is_" + k];
+        if (typeof e === "undefined") {
+            known = undefined;
+        } else {
+            e = expr["is_" + k]();
+            if (v !== e) {
+                return false;
+            }
+        }
+    }
+    return known;
+}
+
 export {StdFactKB, ManagedProperties};

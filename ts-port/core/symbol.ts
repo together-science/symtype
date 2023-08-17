@@ -12,6 +12,7 @@ import {fuzzy_bool} from "./logic";
 import {StdFactKB} from "./assumptions";
 import {ManagedProperties} from "./assumptions";
 import { Global } from "./global";
+import { S } from "./singleton";
 
 
 class Symbol extends mix(base).with(Boolean, AtomicExpr) {
@@ -110,6 +111,10 @@ class Symbol extends mix(base).with(Boolean, AtomicExpr) {
         const res: HashSet= new HashSet();
         res.add(this);
         return res;
+    }
+
+    sort_key(order: boolean = undefined) {
+        return [this.class_key(), [1, [this.name]], S.One.sort_key(), S.One]
     }
 
 

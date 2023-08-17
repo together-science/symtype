@@ -14,6 +14,7 @@ import {ManagedProperties} from "./assumptions";
 import {Mul} from "./mul";
 import {Global} from "./global";
 import {_fuzzy_group} from "./logic";
+import { default_sort_key } from "./sorting";
 
 function _addsort(args: any[]) {
     // eslint-disable-next-line new-cap
@@ -263,6 +264,14 @@ export class Add extends mix(base).with(Expr, AssocOp) {
     _eval_derivative(s: any) {
         const args = this._args.map((a: any) => a.diff(s));
         return this.func(...this._args.map((a: any) => a.diff(s)));
+    }
+
+    class_key() {
+        return [3, 1, this.constructor.name];
+    }
+
+    _sorted_args() {
+        return this._args.sort(default_sort_key);
     }
 
     // WB addition for jasmine tests

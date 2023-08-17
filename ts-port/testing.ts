@@ -12,7 +12,6 @@ import { Basic, _Basic } from "./core/basic";
 import { _simple_dens } from "./solvers/solvers";
 import { Derivative, expand_mul, expand_power_exp } from "./core/function";
 
-const c: any = new Symbol("c", {"commutative": false})
-const d: any = new Symbol("d", {"commutative": false})
-console.log(new Mul(true, true, c, d).__eq__(new Mul(true, true, d, c)))
-console.log(new Add(true, true, c, d).__eq__(new Add(true, true, d, c)))
+const mydict = {"cat": 2, "dog": 1}
+
+console.log(typeof mydict)
