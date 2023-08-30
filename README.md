@@ -25,3 +25,18 @@ If you are looking for a fully functional, in-browser or node.js symbolic algebr
 
 This project is licensed under the [MIT License](https://github.com/together-science/symtype/blob/main/LICENSE).
 
+## Where things stand
+
+Here is William's statement from the end of his internship this summer ('23):
+
+Changes this summer: 
+- properties system is working
+- relational system is implemented
+- operations are a bit more flushed out
+  
+Big next steps: 
+- linear solve: I already have a branch for linear solve, and I can finish up the branch during my next school break or someone else can take that over
+- polynomial: This will be a big effort but its crucial for more advanced solve capabilities
+
+In my opinion, simplify can come a bit later (after we have these things) since its really complicated and nothing we’re solving at the moment is complicated enough to be simplified
+
